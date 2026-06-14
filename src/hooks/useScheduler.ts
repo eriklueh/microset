@@ -7,12 +7,11 @@ import {
 } from "@/lib/notify";
 
 const TICK_MS = 30_000;
-const SNOOZE_MIN = 30;
 
 /**
  * While the app runs (even hidden in the tray, since the webview stays alive),
- * fire a native notification when a scheduled block becomes due. One reminder
- * per tick; a block is re-notified only if it gets rescheduled to a new time.
+ * fire a native notification when a scheduled block becomes due. Respects the
+ * user's notification toggle. A block is re-notified only if rescheduled.
  */
 export function useScheduler(): void {
   useEffect(() => {
@@ -25,14 +24,15 @@ export function useScheduler(): void {
       if (cancelled || !granted) return;
       await listenForNotificationActions({
         done: (id) => useStore.getState().done(id),
-        snooze: (id) => useStore.getState().snooze(id, SNOOZE_MIN),
+        snooze: (id) =>
+          useStore.getState().snooze(id, useStore.getState().snoozeMinutes),
         decline: (id) => useStore.getState().decline(id),
       });
     })();
 
     const tick = () => {
-      const { day } = useStore.getState();
-      if (!day) return;
+      const { day, notificationsEnabled } = useStore.getState();
+      if (!day || !notificationsEnabled) return;
       if (day.date !== dayKey) {
         dayKey = day.date;
         notified.clear();

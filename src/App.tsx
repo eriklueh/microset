@@ -1,72 +1,57 @@
-import { useEffect } from "react";
-import { Moon, Sun } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useScheduler } from "@/hooks/useScheduler";
-import { resolveDark } from "@/lib/theme";
+import { setPanelVisible } from "@/lib/windows";
+import { Sidebar, type Section } from "@/components/studio/Sidebar";
+import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
 import { RoutineView } from "@/components/studio/RoutineView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { SettingsView } from "@/components/studio/SettingsView";
 
+const HEADINGS: Record<Section, { title: string; subtitle: string }> = {
+  coach: { title: "Coach", subtitle: "Tu entrenador inteligente" },
+  today: { title: "Hoy", subtitle: "Tu día, repartido en pausas" },
+  routine: { title: "Rutina", subtitle: "Qué entrenás cada día" },
+  equipment: { title: "Equipo", subtitle: "Lo que tenés en casa" },
+  settings: { title: "Ajustes", subtitle: "Preferencias de microset" },
+};
+
 function App() {
+  const [section, setSection] = useState<Section>("coach");
   const ensureToday = useStore((s) => s.ensureToday);
-  const theme = useStore((s) => s.theme);
-  const setThemeMode = useStore((s) => s.setThemeMode);
+  const panelEnabled = useStore((s) => s.panelEnabled);
 
   useEffect(() => {
     ensureToday();
   }, [ensureToday]);
+
+  // Apply the panel visibility preference once on startup.
+  useEffect(() => {
+    void setPanelVisible(panelEnabled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useScheduler();
 
-  const isDark = resolveDark(theme.mode);
+  const heading = HEADINGS[section];
 
   return (
-    <div className="bg-background/90 flex h-screen flex-col">
-      <header className="flex items-center justify-between px-5 pt-4 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary text-primary-foreground grid size-6 place-items-center rounded-md text-[11px] font-bold">
-            m
-          </div>
-          <span className="text-sm font-semibold tracking-tight">microset</span>
+    <div className="bg-background/90 flex h-screen">
+      <Sidebar active={section} onSelect={setSection} />
+      <main className="flex min-w-0 flex-1 flex-col">
+        <header className="px-6 pt-5 pb-4">
+          <h1 className="text-lg font-semibold tracking-tight">{heading.title}</h1>
+          <p className="text-muted-foreground text-xs">{heading.subtitle}</p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+          {section === "coach" && <CoachView onStart={() => setSection("today")} />}
+          {section === "today" && <TodayView />}
+          {section === "routine" && <RoutineView />}
+          {section === "equipment" && <EquipmentView />}
+          {section === "settings" && <SettingsView />}
         </div>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label="Cambiar tema"
-          onClick={() => setThemeMode(isDark ? "light" : "dark")}
-        >
-          {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </Button>
-      </header>
-
-      <Tabs
-        defaultValue="today"
-        className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-5"
-      >
-        <TabsList className="bg-muted/50 grid w-full grid-cols-4">
-          <TabsTrigger value="today">Hoy</TabsTrigger>
-          <TabsTrigger value="routine">Rutina</TabsTrigger>
-          <TabsTrigger value="equipment">Equipo</TabsTrigger>
-          <TabsTrigger value="settings">Ajustes</TabsTrigger>
-        </TabsList>
-
-        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-          <TabsContent value="today">
-            <TodayView />
-          </TabsContent>
-          <TabsContent value="routine">
-            <RoutineView />
-          </TabsContent>
-          <TabsContent value="equipment">
-            <EquipmentView />
-          </TabsContent>
-          <TabsContent value="settings">
-            <SettingsView />
-          </TabsContent>
-        </div>
-      </Tabs>
+      </main>
     </div>
   );
 }

@@ -58,7 +58,7 @@ pub fn run() {
             if let Some(panel) = app.get_webview_window("panel") {
                 if let Ok(Some(monitor)) = panel.primary_monitor() {
                     let size = monitor.size();
-                    let x = (size.width as i32) - 300 - 24;
+                    let x = (size.width as i32) - 272 - 24;
                     let _ = panel.set_position(tauri::PhysicalPosition::new(x.max(0), 48));
                 }
             }

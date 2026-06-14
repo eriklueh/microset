@@ -10,6 +10,7 @@ import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
 import type { EquipmentId } from "@/domain/types";
 import { DEFAULT_OWNED, DEFAULT_ROUTINE, DEFAULT_SETTINGS } from "@/domain/seed";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
+import { setPanelVisible } from "@/lib/windows";
 
 /** Local date key (YYYY-M-D) used to detect day rollover. */
 function todayKey(): string {
@@ -35,6 +36,11 @@ interface State {
   day: DayPlan | null;
   theme: ThemeConfig;
 
+  // preferences
+  panelEnabled: boolean;
+  notificationsEnabled: boolean;
+  snoozeMinutes: number;
+
   // editing
   toggleEquipment: (id: EquipmentId) => void;
   setSettings: (patch: Partial<Settings>) => void;
@@ -45,6 +51,11 @@ interface State {
   // theme
   setThemeMode: (mode: ThemeMode) => void;
   setAccent: (accent: Accent) => void;
+
+  // preferences setters
+  setPanelEnabled: (value: boolean) => void;
+  setNotificationsEnabled: (value: boolean) => void;
+  setSnoozeMinutes: (minutes: number) => void;
 
   // today / engine
   ensureToday: () => void;
@@ -62,6 +73,9 @@ export const useStore = create<State>()(
       settings: DEFAULT_SETTINGS,
       day: null,
       theme: { mode: "dark", accent: "lime" },
+      panelEnabled: true,
+      notificationsEnabled: true,
+      snoozeMinutes: 30,
 
       toggleEquipment: (id) =>
         set((s) => ({
@@ -112,6 +126,16 @@ export const useStore = create<State>()(
         applyTheme(t.mode, t.accent);
       },
 
+      setPanelEnabled: (value) => {
+        set({ panelEnabled: value });
+        void setPanelVisible(value);
+      },
+
+      setNotificationsEnabled: (value) => set({ notificationsEnabled: value }),
+
+      setSnoozeMinutes: (minutes) =>
+        set({ snoozeMinutes: Math.max(5, Math.min(180, minutes)) }),
+
       ensureToday: () => {
         const { day } = get();
         if (!day || day.date !== todayKey()) get().replan();
@@ -146,13 +170,15 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      // Only durable config is persisted; the day plan is recomputed on load.
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,
         routine: s.routine,
         settings: s.settings,
         day: s.day,
         theme: s.theme,
+        panelEnabled: s.panelEnabled,
+        notificationsEnabled: s.notificationsEnabled,
+        snoozeMinutes: s.snoozeMinutes,
       }),
     },
   ),

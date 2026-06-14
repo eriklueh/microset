@@ -47,7 +47,7 @@ export function notifyBlock(block: Block): void {
   notifToBlock.set(id, block.id);
   sendNotification({
     id,
-    title: "Toca una serie 💪",
+    title: "Toca una serie",
     body: `${block.name}${suffix} — ¿la hacés ahora?`,
     actionTypeId: ACTION_TYPE,
   });

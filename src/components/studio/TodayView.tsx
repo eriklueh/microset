@@ -98,7 +98,7 @@ export function TodayView() {
         <div className={`${CARD} text-muted-foreground p-4 text-sm`}>
           {overflow.length > 0
             ? "No hay más series para hoy (fuera de tu horario laboral). Mañana se reparten de nuevo."
-            : "¡Todo hecho por hoy! 💪"}
+            : "Todo listo por hoy."}
         </div>
       )}
 

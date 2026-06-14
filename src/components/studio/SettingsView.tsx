@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ACCENTS, THEME_MODES } from "@/lib/theme";
 import { useStore } from "@/store/useStore";
 
@@ -12,22 +15,25 @@ export function SettingsView() {
   const theme = useStore((s) => s.theme);
   const setThemeMode = useStore((s) => s.setThemeMode);
   const setAccent = useStore((s) => s.setAccent);
+  const panelEnabled = useStore((s) => s.panelEnabled);
+  const setPanelEnabled = useStore((s) => s.setPanelEnabled);
+  const notificationsEnabled = useStore((s) => s.notificationsEnabled);
+  const setNotificationsEnabled = useStore((s) => s.setNotificationsEnabled);
+  const snoozeMinutes = useStore((s) => s.snoozeMinutes);
+  const setSnoozeMinutes = useStore((s) => s.setSnoozeMinutes);
+  const replan = useStore((s) => s.replan);
   const lunch = settings.avoidWindows[0];
 
   return (
-    <div className="flex flex-col gap-3">
-      <section className={`${CARD} flex flex-col gap-3 p-4`}>
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-          Apariencia
-        </span>
-        <div>
-          <Label className="text-muted-foreground mb-1.5 block text-xs">Tema</Label>
+    <div className="flex max-w-xl flex-col gap-3">
+      <Section title="Apariencia">
+        <Row label="Tema">
           <div className="bg-muted/50 flex gap-1 rounded-lg p-1">
             {THEME_MODES.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setThemeMode(m.id)}
-                className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                   theme.mode === m.id
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -37,9 +43,8 @@ export function SettingsView() {
               </button>
             ))}
           </div>
-        </div>
-        <div>
-          <Label className="text-muted-foreground mb-1.5 block text-xs">Acento</Label>
+        </Row>
+        <Row label="Acento">
           <div className="flex gap-2">
             {ACCENTS.map((a) => (
               <button
@@ -56,13 +61,37 @@ export function SettingsView() {
               />
             ))}
           </div>
-        </div>
-      </section>
+        </Row>
+      </Section>
 
-      <section className={`${CARD} flex flex-col gap-3 p-4`}>
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-          Horario laboral
-        </span>
+      <Section title="Panel flotante">
+        <Row
+          label="Mostrar panel"
+          hint="Mini-ventana siempre visible con el próximo ejercicio."
+        >
+          <Switch checked={panelEnabled} onCheckedChange={setPanelEnabled} />
+        </Row>
+      </Section>
+
+      <Section title="Notificaciones">
+        <Row label="Avisos de microset" hint="Te avisa cuando toca una serie.">
+          <Switch checked={notificationsEnabled} onCheckedChange={setNotificationsEnabled} />
+        </Row>
+        <Row label="Tiempo de posponer">
+          <div className="w-24">
+            <NumberInput
+              value={snoozeMinutes}
+              suffix="min"
+              min={5}
+              max={120}
+              step={5}
+              onChange={setSnoozeMinutes}
+            />
+          </div>
+        </Row>
+      </Section>
+
+      <Section title="Horario laboral">
         <div className="grid grid-cols-2 gap-3">
           <Field
             label="Inicio"
@@ -81,12 +110,9 @@ export function SettingsView() {
             onChange={(h) => setSettings({ workWindow: { ...settings.workWindow, end: h * 60 } })}
           />
         </div>
-      </section>
+      </Section>
 
-      <section className={`${CARD} flex flex-col gap-3 p-4`}>
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-          Almuerzo
-        </span>
+      <Section title="Almuerzo">
         <div className="grid grid-cols-2 gap-3">
           <Field
             label="Desde"
@@ -105,12 +131,9 @@ export function SettingsView() {
             onChange={(h) => setSettings({ avoidWindows: [{ start: lunch?.start ?? 13 * 60, end: h * 60 }] })}
           />
         </div>
-      </section>
+      </Section>
 
-      <section className={`${CARD} flex flex-col gap-3 p-4`}>
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-          Descanso mínimo
-        </span>
+      <Section title="Descanso mínimo">
         <Field
           label="Entre series"
           suffix="min"
@@ -120,7 +143,46 @@ export function SettingsView() {
           step={5}
           onChange={(m) => setSettings({ minRest: m })}
         />
-      </section>
+      </Section>
+
+      <Section title="Datos">
+        <Row label="Replanificar hoy" hint="Vuelve a repartir las series desde ahora.">
+          <Button size="sm" variant="outline" onClick={replan}>
+            Replanificar
+          </Button>
+        </Row>
+      </Section>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className={`${CARD} flex flex-col gap-3 p-4`}>
+      <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+        {title}
+      </span>
+      {children}
+    </section>
+  );
+}
+
+function Row({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <div className="text-sm">{label}</div>
+        {hint && <div className="text-muted-foreground text-xs">{hint}</div>}
+      </div>
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }
@@ -145,25 +207,45 @@ function Field({
   return (
     <div className="flex flex-col gap-1.5">
       <Label className="text-muted-foreground text-xs">{label}</Label>
-      <div className="relative">
-        <Input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onChange={(e) => {
-            const n = Number(e.currentTarget.value);
-            if (!Number.isNaN(n)) onChange(n);
-          }}
-          className="pr-9 font-mono"
-        />
-        {suffix && (
-          <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs">
-            {suffix}
-          </span>
-        )}
-      </div>
+      <NumberInput value={value} suffix={suffix} onChange={onChange} min={min} max={max} step={step} />
+    </div>
+  );
+}
+
+function NumberInput({
+  value,
+  suffix,
+  onChange,
+  min,
+  max,
+  step = 1,
+}: {
+  value: number;
+  suffix?: string;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  return (
+    <div className="relative">
+      <Input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(e) => {
+          const n = Number(e.currentTarget.value);
+          if (!Number.isNaN(n)) onChange(n);
+        }}
+        className="w-full pr-8 font-mono"
+      />
+      {suffix && (
+        <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-xs">
+          {suffix}
+        </span>
+      )}
     </div>
   );
 }

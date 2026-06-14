@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, GripHorizontal, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Button } from "@/components/ui/button";
 import { formatMinute } from "@/lib/engine";
@@ -27,16 +27,15 @@ export function FloatingPanel() {
   const reps = next ? (exerciseById(next.exerciseId)?.defaultReps ?? "") : "";
 
   return (
-    <div
-      data-tauri-drag-region
-      className="bg-card/70 flex h-screen w-screen cursor-grab flex-col rounded-xl border backdrop-blur-2xl select-none"
-    >
-      <div className="flex items-center justify-between px-3 pt-2">
-        <div className="flex items-center gap-1.5">
-          <span className="bg-primary size-1.5 rounded-full" />
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
-            microset
-          </span>
+    <div className="bg-card/70 flex h-screen w-screen flex-col overflow-hidden rounded-xl border backdrop-blur-2xl select-none">
+      {/* Drag handle — grab here to move the panel. */}
+      <div
+        data-tauri-drag-region
+        className="hover:bg-muted/40 flex h-6 cursor-grab items-center justify-between px-2 transition-colors active:cursor-grabbing"
+      >
+        <div className="text-muted-foreground/70 pointer-events-none flex items-center gap-1">
+          <GripHorizontal className="size-3.5" />
+          <span className="text-[10px] font-semibold tracking-widest uppercase">microset</span>
         </div>
         <button
           onClick={() => void getCurrentWindow().hide()}
@@ -48,12 +47,10 @@ export function FloatingPanel() {
       </div>
 
       {next ? (
-        <div className="flex flex-1 flex-col justify-center gap-2 px-3 pb-2.5">
+        <div className="flex flex-1 flex-col justify-center gap-2 px-3 pb-3">
           <div className="flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-[15px] leading-tight font-semibold">
-                {next.name}
-              </div>
+              <div className="truncate text-[15px] leading-tight font-semibold">{next.name}</div>
               <div className="text-muted-foreground text-[11px]">
                 {reps} · {formatMinute(next.time)}
               </div>
@@ -77,8 +74,8 @@ export function FloatingPanel() {
           </div>
         </div>
       ) : (
-        <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 pb-2 text-center text-[11px]">
-          Sin series pendientes 💪
+        <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 pb-3 text-center text-[11px]">
+          Sin series pendientes
         </div>
       )}
     </div>
