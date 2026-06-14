@@ -120,7 +120,7 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 - ✅ **M4** — Floating panel (2nd always-on-top window; cross-window sync via Tauri events)
 - ✅ **Fases 0–4** — full UX/product backlog (editable prescriptions, variants/progression, methodologies, weekly day-types, catalog + custom exercises). See [docs/MODEL.md](docs/MODEL.md).
 - 🛠️ **M5** — Stats ✅ (Progreso view) · autostart + installer ⬜
-- 🛠️ **M6** — AI coach: provider-agnostic contract ✅ · Claude Code mode ✅ · in-app API/local chat ⬜
+- ✅ **M6** — AI coach: provider-agnostic contract + 3 interchangeable modes (Claude Code, Anthropic API, local OpenAI-compatible), with review-and-apply. See [docs/agent/coach.md](docs/agent/coach.md).
 
 ## Coach mode (M6) — running Claude Code in this repo
 
