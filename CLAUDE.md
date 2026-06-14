@@ -52,6 +52,8 @@ microset/
 │   ├── hooks/                # useScheduler (notification timer)
 │   ├── lib/notify.ts         # native notifications + action buttons
 │   ├── components/studio/    # Studio views (Hoy/Rutina/Equipo/Ajustes)
+│   ├── components/panel/     # FloatingPanel (always-on-top widget)
+│   ├── store/sync.ts         # cross-window state sync (Tauri events)
 │   ├── components/ui/        # shadcn components
 │   ├── App.tsx
 │   └── index.css             # Tailwind + shadcn theme (oklch, light/dark)
@@ -109,6 +111,6 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 - ✅ **M1** — Scheduling engine (`src/lib/engine/`, pure TS + Vitest, 9 tests)
 - ✅ **M2** — Studio (tabs Hoy/Rutina/Equipo/Ajustes; Zustand store, JSON persistence)
 - ✅ **M3** — Notification loop (`useScheduler` + native notifications, action buttons)
-- ⬜ **M4** — Floating panel (next set + countdown; Hyprland rules) ← **next**
-- ⬜ **M5** — Stats + autostart + polish
+- ✅ **M4** — Floating panel (2nd always-on-top window; cross-window sync via Tauri events)
+- ⬜ **M5** — Stats + autostart + polish ← **next**
 - ⬜ **M6** — AI coach (Claude API, optional)

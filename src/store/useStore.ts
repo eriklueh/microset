@@ -132,6 +132,7 @@ export const useStore = create<State>()(
         ownedEquipment: s.ownedEquipment,
         routine: s.routine,
         settings: s.settings,
+        day: s.day,
       }),
     },
   ),

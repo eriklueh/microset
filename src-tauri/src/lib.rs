@@ -18,8 +18,10 @@ pub fn run() {
         .setup(|app| {
             // --- System tray ---
             let show_item = MenuItem::with_id(app, "show", "Abrir microset", true, None::<&str>)?;
+            let panel_item =
+                MenuItem::with_id(app, "panel", "Mostrar/ocultar panel", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+            let menu = Menu::with_items(app, &[&show_item, &panel_item, &quit_item])?;
 
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
@@ -28,6 +30,7 @@ pub fn run() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => show_main_window(app),
+                    "panel" => toggle_panel(app),
                     "quit" => app.exit(0),
                     _ => {}
                 })
@@ -51,9 +54,18 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // Position the floating panel near the top-right of the primary monitor.
+            if let Some(panel) = app.get_webview_window("panel") {
+                if let Ok(Some(monitor)) = panel.primary_monitor() {
+                    let size = monitor.size();
+                    let x = (size.width as i32) - 300 - 24;
+                    let _ = panel.set_position(tauri::PhysicalPosition::new(x.max(0), 48));
+                }
+            }
+
             Ok(())
         })
-        // Closing the window hides it to the tray instead of quitting:
+        // Closing a window hides it to the tray instead of quitting:
         // microset keeps running in the background to remind you.
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
@@ -71,5 +83,16 @@ fn show_main_window(app: &tauri::AppHandle) {
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();
+    }
+}
+
+fn toggle_panel(app: &tauri::AppHandle) {
+    if let Some(panel) = app.get_webview_window("panel") {
+        if panel.is_visible().unwrap_or(false) {
+            let _ = panel.hide();
+        } else {
+            let _ = panel.show();
+            let _ = panel.set_focus();
+        }
     }
 }

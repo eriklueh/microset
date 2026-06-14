@@ -108,11 +108,15 @@ in the tray (the webview stays alive). Action buttons **Hecho / Posponer 30' / A
 (`src/lib/notify.ts`) feed back into the engine actions. A "Probar aviso" button in *Hoy*
 triggers one on demand. A block is re-notified only if it's rescheduled to a new time.
 
-### ⬜ M4 — Floating panel ← next
-Always-visible mini-window: next exercise + countdown. On Hyprland, positioned/pinned via
-windowrules.
+### ✅ M4 — Floating panel (done 2026-06-13)
+A second always-on-top, frameless window (`label: "panel"`) rendered from the same bundle
+(`main.tsx` branches on the window label) showing the next exercise + countdown with quick
+Hecho/Ahora no actions (`src/components/panel/FloatingPanel.tsx`). State stays in sync
+between the main and panel windows via `day` persistence + Tauri sync events
+(`src/store/sync.ts`); the scheduler runs only in the main window. Toggle from the tray
+("Mostrar/ocultar panel"). On Hyprland, position/pin via the windowrules below.
 
-### ⬜ M5 — Stats + polish
+### ⬜ M5 — Stats + polish ← next
 Weekly completion stats, autostart on boot (`tauri-plugin-autostart`), polish.
 
 ### ⬜ M6 — AI coach (optional, expanded vision)
