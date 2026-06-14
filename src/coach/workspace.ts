@@ -29,7 +29,7 @@ dayKind[i] is "home" | "office" | null.
 
 ## Rules
 - Use ids that exist in context.json (catalog / dayTypes); create before referencing.
-- Keep week & dayKind length 7; keep at least one dayType.
+- Keep week & dayKind length 7 and at least one dayType. If asked to delete everything, refuse or leave a default — an empty config breaks the app (the app sanitizes on load anyway).
 - Before adding volume, check fitsInDay; if it won't fit, trim sets or widen the work window.
 - Respect profile constraints (e.g. injuries). Never edit logs.json or the live day plan.
 - Desk-context exercises (silent, no setup) suit office days / meeting hours; space ones suit home days.

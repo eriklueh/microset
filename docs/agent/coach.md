@@ -74,7 +74,7 @@ Carpeta: `%APPDATA%/com.microset.app/` (Win) · `~/.config/com.microset.app/` (L
 
 ## Reglas duras
 - No inventes `exerciseId`/`dayTypeId`: usá los del contexto, o creá primero.
-- Mantené `week` y `dayKind` con largo 7; `dayTypes` con al menos 1.
+- Mantené `week` y `dayKind` con largo 7 y `dayTypes` con **al menos 1**. Si te piden "borrar todo", negate o dejá un tipo por defecto — un config vacío rompe la app (la app igual lo sanea al cargar).
 - Antes de subir volumen, chequeá `fitsInDay`; si no entra, recortá o ampliá horario.
 - Respetá restricciones del `profile` (ej. molestias) — no prescribas lo contraindicado.
 - No toques el plan del día en curso ni los logs; el motor reprograma solo.

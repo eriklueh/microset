@@ -47,11 +47,21 @@ export function RoutineView() {
   const addCustomExercise = useStore((s) => s.addCustomExercise);
 
   const { all, byId } = useCatalog();
-  const [selectedId, setSelectedId] = useState(dayTypes[0].id);
+  const [selectedId, setSelectedId] = useState(dayTypes[0]?.id ?? "");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
 
   const selected = dayTypes.find((d) => d.id === selectedId) ?? dayTypes[0];
+  if (!selected) {
+    return (
+      <div className="flex flex-col px-[34px] py-[30px]">
+        <Masthead title="RUTINA" sub="ARMÁ CADA TIPO DE DÍA" />
+        <div className="border border-[var(--rule2)] p-8 text-center text-[13px] text-[var(--faint)]">
+          No hay tipos de día. Restablecé desde Ajustes o creá uno.
+        </div>
+      </div>
+    );
+  }
   const routine = selected.routine;
   const method = methodologyById(methodologyId) ?? METHODOLOGIES[0];
   const usedDays = DOW.filter((_, i) => week[i] === selected.id);

@@ -3,7 +3,7 @@ import { exists, mkdir, readTextFile, watchImmediate, writeTextFile } from "@tau
 import { applyTheme } from "@/lib/theme";
 import { buildCoachContext } from "@/coach/context";
 import { COACH_CLAUDE_MD } from "@/coach/workspace";
-import { useStore } from "./useStore";
+import { REST, useStore } from "./useStore";
 
 /**
  * Mirror the user's config to human-editable JSON files in the OS config folder
@@ -110,9 +110,47 @@ async function readAll(): Promise<Partial<State>> {
   return patch as Partial<State>;
 }
 
+type DayTypeLike = { id: string; name: string; routine: unknown[] };
+const isDayType = (d: any): d is DayTypeLike =>
+  d && typeof d.id === "string" && typeof d.name === "string" && Array.isArray(d.routine);
+
+/**
+ * Guarantee config invariants so a bad hand-edit (yours, mine, or the coach's)
+ * can't crash the app: at least one dayType, and week/dayKind length 7 with valid
+ * slots. An edit that would violate these is corrected or ignored, not applied.
+ */
+function sanitize(patch: Partial<State>): Partial<State> {
+  const cur = useStore.getState();
+  const out = { ...patch } as Record<string, unknown>;
+
+  if (out.dayTypes !== undefined) {
+    const dts = Array.isArray(out.dayTypes) ? (out.dayTypes as any[]).filter(isDayType) : [];
+    if (dts.length === 0) delete out.dayTypes; // never empty dayTypes — keep current
+    else out.dayTypes = dts;
+  }
+  const dayTypes = (out.dayTypes as DayTypeLike[] | undefined) ?? cur.dayTypes;
+  const fallbackId = dayTypes[0]?.id ?? "default";
+  const valid = new Set<string>([...dayTypes.map((d) => d.id), REST]);
+
+  if (out.week !== undefined) {
+    const w = Array.isArray(out.week) ? (out.week as any[]) : [];
+    out.week = Array.from({ length: 7 }, (_, i) => (valid.has(w[i]) ? w[i] : fallbackId));
+  }
+  if (out.dayKind !== undefined) {
+    const k = Array.isArray(out.dayKind) ? (out.dayKind as any[]) : [];
+    out.dayKind = Array.from({ length: 7 }, (_, i) =>
+      k[i] === "home" || k[i] === "office" ? k[i] : null,
+    );
+  }
+  for (const key of ["ownedEquipment", "customEquipment", "customExercises", "logs"] as const) {
+    if (out[key] !== undefined && !Array.isArray(out[key])) delete out[key];
+  }
+  return out as Partial<State>;
+}
+
 /** Apply files to the store, then recompute today + re-apply theme. */
 async function loadIntoStore(): Promise<void> {
-  const patch = await readAll();
+  const patch = sanitize(await readAll());
   suppress = true;
   useStore.setState(patch);
   suppress = false;
