@@ -32,6 +32,18 @@
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "visible": true
+      },
+      {
+        "label": "toast",
+        "title": "microset",
+        "width": 340,
+        "height": 128,
+        "resizable": false,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "focus": false,
+        "visible": false
       }
     ],
     "security": {

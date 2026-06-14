@@ -97,6 +97,7 @@ interface State {
   theme: ThemeConfig;
   logs: LogEntry[];
   methodologyId: string;
+  toastBlockId: string | null; // block currently shown in the toast window
 
   // preferences
   panelEnabled: boolean;
@@ -149,6 +150,10 @@ interface State {
   done: (blockId: string) => void;
   decline: (blockId: string) => void;
   snooze: (blockId: string, minutes: number) => void;
+
+  // toast reminder window
+  showToast: (blockId: string) => void;
+  dismissToast: () => void;
 }
 
 function demoBlocks(routine: RoutineItem[], owned: EquipmentId[], now: Minute): Block[] {
@@ -183,6 +188,7 @@ export const useStore = create<State>()(
       theme: DEFAULT_THEME,
       logs: [],
       methodologyId: DEFAULT_METHODOLOGY,
+      toastBlockId: null,
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -361,6 +367,7 @@ export const useStore = create<State>()(
           theme: DEFAULT_THEME,
           logs: [],
           methodologyId: DEFAULT_METHODOLOGY,
+          toastBlockId: null,
           panelEnabled: true,
           notificationsEnabled: true,
           snoozeMinutes: 30,
@@ -451,6 +458,9 @@ export const useStore = create<State>()(
           : engineSnooze(day.blocks, blockId, minutes, settings, nowMinutes()).blocks;
         set({ day: { ...day, blocks } });
       },
+
+      showToast: (blockId) => set({ toastBlockId: blockId }),
+      dismissToast: () => set({ toastBlockId: null }),
     }),
     {
       name: "microset-store",
@@ -477,6 +487,7 @@ export const useStore = create<State>()(
         theme: s.theme,
         logs: s.logs,
         methodologyId: s.methodologyId,
+        toastBlockId: s.toastBlockId,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,

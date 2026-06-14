@@ -73,7 +73,7 @@ pub fn run() {
                 api.prevent_close();
             }
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![greet, show_toast, hide_toast])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -94,5 +94,38 @@ fn toggle_panel(app: &tauri::AppHandle) {
             let _ = panel.show();
             let _ = panel.set_focus();
         }
+    }
+}
+
+/// Place the toast in the bottom-right of the primary monitor, above the taskbar.
+fn position_toast(toast: &tauri::WebviewWindow) {
+    if let Ok(Some(monitor)) = toast.primary_monitor() {
+        let size = monitor.size();
+        let scale = monitor.scale_factor();
+        let (w, h) = match toast.outer_size() {
+            Ok(s) => (s.width as i32, s.height as i32),
+            Err(_) => ((340.0 * scale) as i32, (128.0 * scale) as i32),
+        };
+        let margin = (20.0 * scale) as i32;
+        let taskbar = (56.0 * scale) as i32;
+        let x = (size.width as i32 - w - margin).max(0);
+        let y = (size.height as i32 - h - margin - taskbar).max(0);
+        let _ = toast.set_position(tauri::PhysicalPosition::new(x, y));
+    }
+}
+
+/// Position and show the toast reminder window (without stealing focus).
+#[tauri::command]
+fn show_toast(app: tauri::AppHandle) {
+    if let Some(toast) = app.get_webview_window("toast") {
+        position_toast(&toast);
+        let _ = toast.show();
+    }
+}
+
+#[tauri::command]
+fn hide_toast(app: tauri::AppHandle) {
+    if let Some(toast) = app.get_webview_window("toast") {
+        let _ = toast.hide();
     }
 }

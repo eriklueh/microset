@@ -50,9 +50,10 @@ microset/
 │   ├── domain/               # exercise/equipment model + seed data
 │   ├── store/                # Zustand store (state + JSON persistence)
 │   ├── hooks/                # useScheduler (notification timer)
-│   ├── lib/notify.ts         # native notifications + action buttons
-│   ├── components/studio/    # Studio views (Hoy/Rutina/Equipo/Ajustes)
+│   ├── lib/notify.ts         # native OS notifications (fallback; unused by default)
+│   ├── components/studio/    # Studio views (Coach/Hoy/Rutina/Semana/Equipo/Progreso/Ajustes)
 │   ├── components/panel/     # FloatingPanel (always-on-top widget)
+│   ├── components/toast/     # Toast (custom in-app reminder window)
 │   ├── store/sync.ts         # cross-window state sync (Tauri events)
 │   ├── components/ui/        # shadcn components
 │   ├── App.tsx
@@ -91,6 +92,7 @@ cargo build                   # (in src-tauri/) compile Rust only
   in English.
 - Keep `tauri.conf.json` identifier `com.microset.app`.
 - Closing the main window **hides to tray** (does not quit) — quit is via tray → "Salir".
+- **Reminders use a custom toast window** (`toast` label, `components/toast/Toast.tsx`), not native notifications: borderless, always-on-top, no-focus, positioned bottom-right in Rust via the `show_toast`/`hide_toast` commands. The scheduler sets `toastBlockId`; the toast window shows/positions itself, auto-dismisses after 45s, and HECHO/POSPONER/AHORA NO drive the engine. This keeps the notification fully styled (Manifiesto) and identical on Windows and Hyprland. Native notifications (`lib/notify.ts`) remain an unused fallback.
 
 ## Cross-platform
 
