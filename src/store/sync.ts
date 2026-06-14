@@ -1,4 +1,5 @@
 import { emit, listen } from "@tauri-apps/api/event";
+import { applyTheme } from "@/lib/theme";
 import { useStore } from "./useStore";
 
 const SYNC_EVENT = "microset://sync";
@@ -21,6 +22,10 @@ export function setupCrossWindowSync(): void {
     suppress = true;
     try {
       await useStore.persist.rehydrate();
+      // Re-apply the theme: rehydrate restores the store data but not the
+      // imperative `.dark`/accent classes, so panel + toast follow theme changes.
+      const { mode, accent } = useStore.getState().theme;
+      applyTheme(mode, accent);
     } finally {
       suppress = false;
     }
