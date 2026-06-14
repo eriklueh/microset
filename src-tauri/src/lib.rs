@@ -67,12 +67,14 @@ pub fn run() {
             // acrylic for the floating panel. (Linux/Hyprland uses compositor blur.)
             #[cfg(target_os = "windows")]
             {
-                use window_vibrancy::{apply_acrylic, apply_mica};
+                use window_vibrancy::apply_acrylic;
+                // App paints its own themed background; acrylic only adds a subtle
+                // blurred translucency on top, so it stays readable in any system theme.
                 if let Some(main) = app.get_webview_window("main") {
-                    let _ = apply_mica(&main, None);
+                    let _ = apply_acrylic(&main, Some((16, 16, 20, 40)));
                 }
                 if let Some(panel) = app.get_webview_window("panel") {
-                    let _ = apply_acrylic(&panel, Some((18, 18, 22, 90)));
+                    let _ = apply_acrylic(&panel, Some((16, 16, 20, 80)));
                 }
             }
 

@@ -29,7 +29,7 @@ export function FloatingPanel() {
   return (
     <div
       data-tauri-drag-region
-      className="bg-card/55 flex h-screen w-screen cursor-grab flex-col rounded-xl border backdrop-blur-2xl select-none"
+      className="bg-card/70 flex h-screen w-screen cursor-grab flex-col rounded-xl border backdrop-blur-2xl select-none"
     >
       <div className="flex items-center justify-between px-3 pt-2">
         <div className="flex items-center gap-1.5">

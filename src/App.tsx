@@ -23,7 +23,7 @@ function App() {
   const isDark = resolveDark(theme.mode);
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="bg-background/90 flex h-screen flex-col">
       <header className="flex items-center justify-between px-5 pt-4 pb-3">
         <div className="flex items-center gap-2">
           <div className="bg-primary text-primary-foreground grid size-6 place-items-center rounded-md text-[11px] font-bold">
