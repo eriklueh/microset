@@ -1,5 +1,7 @@
+import { useStore } from "@/store/useStore";
 import type { ProposedChange } from "./changes";
 import { anthropicProvider } from "./providers/anthropic";
+import { localProvider } from "./providers/local";
 
 export interface CoachMessage {
   role: "user" | "assistant";
@@ -18,10 +20,9 @@ export interface CoachProvider {
   complete(history: CoachMessage[]): Promise<CoachReply>;
 }
 
-const DEFAULT_MODEL = "claude-sonnet-4-6";
-
-/** Pick the active provider. For now: Anthropic API (Sonnet). Phase F adds local
- *  + a coach.json selector. */
+/** Pick the active provider from the user's coach config (provider/model/endpoint). */
 export function getProvider(): CoachProvider {
-  return anthropicProvider(DEFAULT_MODEL);
+  const c = useStore.getState().coach;
+  if (c.provider === "local") return localProvider(c.model, c.endpoint);
+  return anthropicProvider(c.model);
 }

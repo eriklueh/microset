@@ -70,6 +70,7 @@ Carpeta: `%APPDATA%/com.microset.app/` (Win) · `~/.config/com.microset.app/` (L
 - `equipment.json` — `{ owned:string[], custom:[{id,name}] }`
 - `exercises.json` — `{ custom: Exercise[] }`
 - `profile.json` — `{ goals, diet, constraints }`
+- `coach.json` — `{ provider, model, endpoint }` (config del coach: anthropic|local)
 - `logs.json` — `LogEntry[]` (solo lectura para el coach)
 
 ## Reglas duras

@@ -79,7 +79,8 @@ pub fn run() {
             show_toast,
             hide_toast,
             open_coach,
-            coach_complete
+            coach_complete,
+            coach_complete_openai
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -168,6 +169,40 @@ async fn coach_complete(
         .await
         .map_err(|e| e.to_string())?;
 
+    let status = resp.status();
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    if !status.is_success() {
+        return Err(format!("API {status}: {text}"));
+    }
+    Ok(text)
+}
+
+/// Call an OpenAI-compatible chat/completions endpoint (e.g. Ollama / LM Studio)
+/// for the local coach provider. Returns the raw JSON response as a string.
+#[tauri::command]
+async fn coach_complete_openai(
+    endpoint: String,
+    model: String,
+    messages: serde_json::Value,
+    tools: serde_json::Value,
+) -> Result<String, String> {
+    let url = format!("{}/chat/completions", endpoint.trim_end_matches('/'));
+    let mut body = serde_json::json!({
+        "model": model,
+        "messages": messages,
+        "max_tokens": 2048,
+    });
+    if !tools.is_null() {
+        body["tools"] = tools;
+    }
+
+    let client = reqwest::Client::new();
+    let mut req = client.post(&url).header("content-type", "application/json");
+    if let Ok(key) = std::env::var("OPENAI_API_KEY") {
+        req = req.header("authorization", format!("Bearer {key}"));
+    }
+
+    let resp = req.json(&body).send().await.map_err(|e| e.to_string())?;
     let status = resp.status();
     let text = resp.text().await.map_err(|e| e.to_string())?;
     if !status.is_success() {

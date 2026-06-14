@@ -12,6 +12,8 @@ const field =
 export function CoachView({ onStart }: { onStart: () => void }) {
   const profile = useStore((s) => s.profile);
   const setProfile = useStore((s) => s.setProfile);
+  const coach = useStore((s) => s.coach);
+  const setCoachConfig = useStore((s) => s.setCoachConfig);
 
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [input, setInput] = useState("");
@@ -53,7 +55,43 @@ export function CoachView({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="COACH" sub="AGENTE IA · SONNET" />
+      <Masthead title="COACH" sub={`AGENTE IA · ${coach.provider === "local" ? "LOCAL" : "API"}`} />
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {(["anthropic", "local"] as const).map((p) => {
+          const on = coach.provider === p;
+          return (
+            <button
+              key={p}
+              onClick={() => setCoachConfig({ provider: p })}
+              className="border px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.06em]"
+              style={{
+                borderColor: on ? "var(--acc)" : "var(--rule2)",
+                background: on ? "var(--acc)" : "transparent",
+                color: on ? "var(--on)" : "var(--dim)",
+              }}
+            >
+              {p === "anthropic" ? "API" : "LOCAL"}
+            </button>
+          );
+        })}
+        <input
+          value={coach.model}
+          onChange={(e) => setCoachConfig({ model: e.currentTarget.value })}
+          aria-label="Modelo"
+          placeholder="modelo"
+          className="w-[190px] border border-[var(--rule2)] bg-transparent px-2.5 py-1.5 font-mono text-[11px] text-[var(--fg)] outline-none focus:border-[var(--acc)] placeholder:text-[var(--faint2)]"
+        />
+        {coach.provider === "local" && (
+          <input
+            value={coach.endpoint}
+            onChange={(e) => setCoachConfig({ endpoint: e.currentTarget.value })}
+            aria-label="Endpoint"
+            placeholder="http://localhost:11434/v1"
+            className="min-w-[170px] flex-1 border border-[var(--rule2)] bg-transparent px-2.5 py-1.5 font-mono text-[11px] text-[var(--fg)] outline-none focus:border-[var(--acc)] placeholder:text-[var(--faint2)]"
+          />
+        )}
+      </div>
 
       <div className="flex flex-col border border-[var(--rule2)]">
         <div className="flex max-h-[340px] min-h-[150px] flex-col gap-2.5 overflow-y-auto p-4">
@@ -112,7 +150,7 @@ export function CoachView({ onStart }: { onStart: () => void }) {
           VER MI DÍA
         </button>
         <span className="font-mono text-[10px] tracking-[0.06em] text-[var(--faint2)]">
-          REQUIERE ANTHROPIC_API_KEY · O USÁ CLAUDE CODE (CAMBIOS EN VIVO)
+          {coach.provider === "local" ? "ENDPOINT OPENAI-COMPATIBLE (OLLAMA/LM STUDIO)" : "REQUIERE ANTHROPIC_API_KEY"} · O USÁ CLAUDE CODE
         </span>
       </div>
 

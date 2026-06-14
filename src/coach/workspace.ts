@@ -23,6 +23,7 @@ the essentials are below.
 - "exercises.json" — { custom:[Exercise] }  (a custom exercise needs axis:[{id:"bw",label:"Peso corporal",kind:"bodyweight"}])
 - "settings.json" — { settings:{workWindow:{start,end},minRest,avoidWindows}, methodologyId, ... }
 - "profile.json" — { goals, diet, constraints }
+- "coach.json" — { provider, model, endpoint } (coach provider config)
 
 Times are minutes since midnight. week[i] is a dayType id or "rest" (0=Mon … 6=Sun).
 dayKind[i] is "home" | "office" | null.

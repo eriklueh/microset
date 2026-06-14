@@ -48,9 +48,21 @@ export interface CustomExerciseInput {
   defaultReps: string;
 }
 
+export type CoachProviderId = "anthropic" | "local";
+export interface CoachConfig {
+  provider: CoachProviderId;
+  model: string;
+  endpoint: string; // for local (OpenAI-compatible) providers
+}
+
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 const DEFAULT_METHODOLOGY = "gtg";
 const DEFAULT_PROFILE: UserProfile = { goals: "", diet: "", constraints: "" };
+const DEFAULT_COACH: CoachConfig = {
+  provider: "anthropic",
+  model: "claude-sonnet-4-6",
+  endpoint: "http://localhost:11434/v1",
+};
 const DEFAULT_DAYTYPE_ID = "default";
 const DEFAULT_DAYTYPES: DayType[] = [
   { id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine: DEFAULT_ROUTINE },
@@ -110,7 +122,8 @@ interface State {
   logs: LogEntry[];
   methodologyId: string;
   toastBlockId: string | null; // block currently shown in the toast window
-  profile: UserProfile; // goals/diet/constraints for the future AI coach
+  profile: UserProfile; // goals/diet/constraints for the AI coach
+  coach: CoachConfig; // provider/model/endpoint for the AI coach
 
   // preferences
   panelEnabled: boolean;
@@ -139,8 +152,9 @@ interface State {
   addCustomEquipment: (name: string) => Equipment;
   removeCustomEquipment: (id: string) => void;
 
-  // coach profile
+  // coach profile + provider config
   setProfile: (patch: Partial<UserProfile>) => void;
+  setCoachConfig: (patch: Partial<CoachConfig>) => void;
 
   // week
   setWeekDay: (index: number, slot: string) => void;
@@ -211,6 +225,7 @@ export const useStore = create<State>()(
       methodologyId: DEFAULT_METHODOLOGY,
       toastBlockId: null,
       profile: DEFAULT_PROFILE,
+      coach: DEFAULT_COACH,
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -347,6 +362,7 @@ export const useStore = create<State>()(
       },
 
       setProfile: (patch) => set((s) => ({ profile: { ...s.profile, ...patch } })),
+      setCoachConfig: (patch) => set((s) => ({ coach: { ...s.coach, ...patch } })),
 
       setWeekDay: (index, slot) => {
         set((s) => ({ week: s.week.map((v, i) => (i === index ? slot : v)) }));
@@ -416,6 +432,7 @@ export const useStore = create<State>()(
           methodologyId: DEFAULT_METHODOLOGY,
           toastBlockId: null,
           profile: DEFAULT_PROFILE,
+          coach: DEFAULT_COACH,
           panelEnabled: true,
           notificationsEnabled: true,
           snoozeMinutes: 30,
@@ -538,6 +555,7 @@ export const useStore = create<State>()(
         methodologyId: s.methodologyId,
         toastBlockId: s.toastBlockId,
         profile: s.profile,
+        coach: s.coach,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,

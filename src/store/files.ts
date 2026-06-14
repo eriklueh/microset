@@ -22,6 +22,7 @@ const FILES = {
   equipment: "equipment.json",
   exercises: "exercises.json",
   profile: "profile.json",
+  coach: "coach.json",
   logs: "logs.json",
 } as const;
 
@@ -50,6 +51,7 @@ function groups(s: State): Record<string, unknown> {
     [FILES.equipment]: { owned: s.ownedEquipment, custom: s.customEquipment },
     [FILES.exercises]: { custom: s.customExercises },
     [FILES.profile]: s.profile,
+    [FILES.coach]: s.coach,
     [FILES.logs]: s.logs,
   };
 }
@@ -105,6 +107,8 @@ async function readAll(): Promise<Partial<State>> {
   if (ex && Array.isArray(ex.custom)) patch.customExercises = ex.custom;
   const profile = await readJSON(FILES.profile);
   if (profile && typeof profile === "object") patch.profile = profile;
+  const coach = await readJSON(FILES.coach);
+  if (coach && typeof coach === "object") patch.coach = coach;
   const logs = await readJSON(FILES.logs);
   if (Array.isArray(logs)) patch.logs = logs;
   return patch as Partial<State>;
