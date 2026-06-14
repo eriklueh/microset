@@ -63,6 +63,19 @@ pub fn run() {
                 }
             }
 
+            // Native translucency on Windows 11: subtle mica for the Studio,
+            // acrylic for the floating panel. (Linux/Hyprland uses compositor blur.)
+            #[cfg(target_os = "windows")]
+            {
+                use window_vibrancy::{apply_acrylic, apply_mica};
+                if let Some(main) = app.get_webview_window("main") {
+                    let _ = apply_mica(&main, None);
+                }
+                if let Some(panel) = app.get_webview_window("panel") {
+                    let _ = apply_acrylic(&panel, Some((18, 18, 22, 90)));
+                }
+            }
+
             Ok(())
         })
         // Closing a window hides it to the tray instead of quitting:

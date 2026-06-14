@@ -2002,6 +2002,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-notification",
  "tauri-plugin-opener",
+ "window-vibrancy",
 ]
 
 [[package]]

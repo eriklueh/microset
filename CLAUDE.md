@@ -83,6 +83,7 @@ cargo build                   # (in src-tauri/) compile Rust only
 - **Engine is framework-free.** Anything schedule/time-related goes in `src/lib/engine/`
   as pure functions with tests, not in components or Rust.
 - **shadcn for Studio UI**, trimmed components for the widget/floating panel.
+- **Theme & translucency:** light/dark/system + accent presets in `src/lib/theme.ts` (toggles `.dark` + `[data-accent]`, persisted in the store). Windows are transparent with native **mica** (main) / **acrylic** (panel) applied in `lib.rs` via `window-vibrancy` (Windows only; Linux/Hyprland uses compositor blur). Surfaces use `bg-card/60 backdrop-blur-xl`; numerals use `font-mono` (Geist Mono).
 - Spanish is fine in user-facing copy (the user is a Spanish speaker); keep code/identifiers
   in English.
 - Keep `tauri.conf.json` identifier `com.microset.app`.

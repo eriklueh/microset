@@ -9,6 +9,7 @@ import {
 import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
 import type { EquipmentId } from "@/domain/types";
 import { DEFAULT_OWNED, DEFAULT_ROUTINE, DEFAULT_SETTINGS } from "@/domain/seed";
+import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 
 /** Local date key (YYYY-M-D) used to detect day rollover. */
 function todayKey(): string {
@@ -32,6 +33,7 @@ interface State {
   routine: RoutineItem[];
   settings: Settings;
   day: DayPlan | null;
+  theme: ThemeConfig;
 
   // editing
   toggleEquipment: (id: EquipmentId) => void;
@@ -39,6 +41,10 @@ interface State {
   addToRoutine: (item: RoutineItem) => void;
   setRoutineSets: (exerciseId: string, sets: number) => void;
   removeFromRoutine: (exerciseId: string) => void;
+
+  // theme
+  setThemeMode: (mode: ThemeMode) => void;
+  setAccent: (accent: Accent) => void;
 
   // today / engine
   ensureToday: () => void;
@@ -55,6 +61,7 @@ export const useStore = create<State>()(
       routine: DEFAULT_ROUTINE,
       settings: DEFAULT_SETTINGS,
       day: null,
+      theme: { mode: "dark", accent: "lime" },
 
       toggleEquipment: (id) =>
         set((s) => ({
@@ -93,6 +100,18 @@ export const useStore = create<State>()(
         get().replan();
       },
 
+      setThemeMode: (mode) => {
+        set((s) => ({ theme: { ...s.theme, mode } }));
+        const t = get().theme;
+        applyTheme(t.mode, t.accent);
+      },
+
+      setAccent: (accent) => {
+        set((s) => ({ theme: { ...s.theme, accent } }));
+        const t = get().theme;
+        applyTheme(t.mode, t.accent);
+      },
+
       ensureToday: () => {
         const { day } = get();
         if (!day || day.date !== todayKey()) get().replan();
@@ -127,12 +146,13 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      // Only the durable config is persisted; the day plan is recomputed on load.
+      // Only durable config is persisted; the day plan is recomputed on load.
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,
         routine: s.routine,
         settings: s.settings,
         day: s.day,
+        theme: s.theme,
       }),
     },
   ),
