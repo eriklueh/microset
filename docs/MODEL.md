@@ -79,7 +79,7 @@ etc. — the data the assist/load variants and the agent need.
 - **Fase 2** ✅ — Methodology presets (apply sets + rest across the routine) + a simple
   "ready to level up" nudge in Progreso (v2b lite).
 - **Fase 3** ✅ — DayType + WeekPlan (split, rest days, home/office).
-- **Fase 4** ⬜ — Catalog UX (search/group/detail, custom exercises) + Equipment onboarding.
+- **Fase 4** ✅ — Catalog UX (search + group by muscle) + custom exercises + Equipment onboarding.
 - **M6** ⬜ — AI coach sits on top: consumes methodologies, variants/logs, week + goals/diet.
 
 See [ROADMAP.md](ROADMAP.md) for the product milestones.

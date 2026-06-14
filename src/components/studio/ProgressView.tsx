@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
-import { defaultVariantId, exerciseById } from "@/domain/seed";
-import type { LogEntry } from "@/domain/types";
+import { defaultVariantId } from "@/domain/seed";
+import type { Exercise, LogEntry } from "@/domain/types";
+import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
 
 const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
@@ -19,6 +20,7 @@ function shortDate(iso: string): string {
 
 export function ProgressView() {
   const logs = useStore((s) => s.logs);
+  const { byId } = useCatalog();
 
   if (logs.length === 0) {
     return (
@@ -58,36 +60,37 @@ export function ProgressView() {
         <Stat label="Activos" value={activeExercises} unit="ejercicios" />
       </div>
 
-      {ids.map((id) => (
-        <ExerciseProgress
-          key={id}
-          id={id}
-          logs={logs.filter((l) => l.exerciseId === id)}
-          now={now}
-          inLast7={inLast7}
-          inPrev7={inPrev7}
-        />
-      ))}
+      {ids.map((id) => {
+        const ex = byId(id);
+        if (!ex) return null;
+        return (
+          <ExerciseProgress
+            key={id}
+            ex={ex}
+            logs={logs.filter((l) => l.exerciseId === id)}
+            now={now}
+            inLast7={inLast7}
+            inPrev7={inPrev7}
+          />
+        );
+      })}
     </div>
   );
 }
 
 function ExerciseProgress({
-  id,
+  ex,
   logs,
   now,
   inLast7,
   inPrev7,
 }: {
-  id: string;
+  ex: Exercise;
   logs: LogEntry[];
   now: number;
   inLast7: (l: LogEntry) => boolean;
   inPrev7: (l: LogEntry) => boolean;
 }) {
-  const ex = exerciseById(id);
-  if (!ex) return null;
-
   const sorted = [...logs].sort((a, b) => (a.at < b.at ? -1 : 1));
   const lastLog = sorted[sorted.length - 1];
   const currentVariantId = lastLog?.variantId ?? defaultVariantId(ex);

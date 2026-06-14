@@ -7,7 +7,7 @@ import {
   snooze as engineSnooze,
 } from "@/lib/engine";
 import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
-import type { EquipmentId, LogEntry } from "@/domain/types";
+import type { EquipmentId, Exercise, LogEntry, Measure, MuscleGroup } from "@/domain/types";
 import {
   DEFAULT_OWNED,
   DEFAULT_ROUTINE,
@@ -29,6 +29,14 @@ export interface DayType {
 export type WeekKind = "home" | "office";
 /** Sentinel week slot for a rest day. */
 export const REST = "rest";
+
+export interface CustomExerciseInput {
+  name: string;
+  muscle: MuscleGroup;
+  equipment: EquipmentId[];
+  measure: Measure;
+  defaultReps: string;
+}
 
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 const DEFAULT_METHODOLOGY = "gtg";
@@ -83,6 +91,7 @@ interface State {
   dayTypes: DayType[];
   week: string[]; // length 7, Mon-first: dayTypeId or REST
   dayKind: (WeekKind | null)[]; // length 7, Mon-first
+  customExercises: Exercise[];
   settings: Settings;
   day: DayPlan | null;
   theme: ThemeConfig;
@@ -107,6 +116,10 @@ interface State {
   addDayType: (name: string) => string;
   renameDayType: (id: string, name: string) => void;
   removeDayType: (id: string) => void;
+
+  // custom exercises
+  addCustomExercise: (input: CustomExerciseInput) => Exercise;
+  removeCustomExercise: (id: string) => void;
 
   // week
   setWeekDay: (index: number, slot: string) => void;
@@ -164,6 +177,7 @@ export const useStore = create<State>()(
       dayTypes: DEFAULT_DAYTYPES,
       week: DEFAULT_WEEK,
       dayKind: DEFAULT_DAYKIND,
+      customExercises: [],
       settings: DEFAULT_SETTINGS,
       day: null,
       theme: DEFAULT_THEME,
@@ -247,12 +261,38 @@ export const useStore = create<State>()(
 
       removeDayType: (id) => {
         set((s) => {
-          if (s.dayTypes.length <= 1) return s; // keep at least one
+          if (s.dayTypes.length <= 1) return s;
           const dayTypes = s.dayTypes.filter((d) => d.id !== id);
           const fallback = dayTypes[0].id;
           const week = s.week.map((slot) => (slot === id ? fallback : slot));
           return { dayTypes, week };
         });
+        get().replan();
+      },
+
+      addCustomExercise: (input) => {
+        const ex: Exercise = {
+          id: newId(),
+          name: input.name,
+          equipment: input.equipment,
+          muscle: input.muscle,
+          measure: input.measure,
+          defaultSets: 3,
+          defaultReps: input.defaultReps,
+          axis: [{ id: "bw", label: "Peso corporal", kind: "bodyweight" }],
+        };
+        set((s) => ({ customExercises: [...s.customExercises, ex] }));
+        return ex;
+      },
+
+      removeCustomExercise: (id) => {
+        set((s) => ({
+          customExercises: s.customExercises.filter((e) => e.id !== id),
+          dayTypes: s.dayTypes.map((d) => ({
+            ...d,
+            routine: d.routine.filter((r) => r.exerciseId !== id),
+          })),
+        }));
         get().replan();
       },
 
@@ -316,6 +356,7 @@ export const useStore = create<State>()(
           dayTypes: DEFAULT_DAYTYPES,
           week: DEFAULT_WEEK,
           dayKind: DEFAULT_DAYKIND,
+          customExercises: [],
           settings: DEFAULT_SETTINGS,
           theme: DEFAULT_THEME,
           logs: [],
@@ -343,7 +384,6 @@ export const useStore = create<State>()(
         const routine = dayType?.routine ?? [];
 
         if (demoMode) {
-          // Demo always shows something: today's routine, or the first day-type's.
           const demoRoutine = routine.length ? routine : (dayTypes[0]?.routine ?? []);
           set({
             day: {
@@ -431,6 +471,7 @@ export const useStore = create<State>()(
         dayTypes: s.dayTypes,
         week: s.week,
         dayKind: s.dayKind,
+        customExercises: s.customExercises,
         settings: s.settings,
         day: s.day,
         theme: s.theme,

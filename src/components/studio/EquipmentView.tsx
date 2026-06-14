@@ -1,5 +1,6 @@
 import { Switch } from "@/components/ui/switch";
-import { EQUIPMENT, EXERCISES, exerciseById } from "@/domain/seed";
+import { EQUIPMENT } from "@/domain/seed";
+import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
 
 const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
@@ -8,8 +9,8 @@ export function EquipmentView() {
   const owned = useStore((s) => s.ownedEquipment);
   const dayTypes = useStore((s) => s.dayTypes);
   const toggle = useStore((s) => s.toggleEquipment);
+  const { all, byId } = useCatalog();
 
-  // Exercises used across any day-type's routine.
   const usedExercises = new Set(
     dayTypes.flatMap((d) => d.routine.map((r) => r.exerciseId)),
   );
@@ -17,12 +18,12 @@ export function EquipmentView() {
   return (
     <div className="flex max-w-2xl flex-col gap-2">
       <p className="text-muted-foreground px-1 pb-1 text-xs">
-        Lo que tenés define qué ejercicios podés sumar a tus rutinas.
+        Decinos qué tenés en casa: define qué ejercicios podés sumar a tus rutinas.
       </p>
       {EQUIPMENT.map((eq) => {
-        const enables = EXERCISES.filter((e) => e.equipment.includes(eq.id)).length;
+        const enables = all.filter((e) => e.equipment.includes(eq.id)).length;
         const used = [...usedExercises].filter((id) =>
-          exerciseById(id)?.equipment.includes(eq.id),
+          byId(id)?.equipment.includes(eq.id),
         ).length;
         const isOwned = owned.includes(eq.id);
         const orphaning = !isOwned && used > 0;
