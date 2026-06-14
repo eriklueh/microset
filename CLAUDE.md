@@ -113,5 +113,6 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 - ✅ **M2** — Studio (tabs Hoy/Rutina/Equipo/Ajustes; Zustand store, JSON persistence)
 - ✅ **M3** — Notification loop (`useScheduler` + native notifications, action buttons)
 - ✅ **M4** — Floating panel (2nd always-on-top window; cross-window sync via Tauri events)
-- ⬜ **M5** — Stats + autostart + polish ← **next**
+- ✅ **Fases 0–4** — full UX/product backlog (editable prescriptions, variants/progression, methodologies, weekly day-types, catalog + custom exercises). See [docs/MODEL.md](docs/MODEL.md).
+- 🛠️ **M5** — Stats ✅ (Progreso view) · autostart + installer ⬜
 - ⬜ **M6** — AI coach (Claude API, optional)

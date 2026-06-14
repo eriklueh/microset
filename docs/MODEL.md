@@ -5,81 +5,80 @@ The **target** domain model microset evolves toward. Designed for the end-state
 
 > **Golden rule:** design for the end-state, implement per phase, and keep defaults simple
 > — a casual user never has to touch methodologies, variants, or the weekly editor.
-> (methodology = Grease-the-Groove, week = same day repeated, variant = bodyweight.)
 
 Legend: ✅ implemented · 🛠️ partial · ⬜ planned
+
+> **Status (2026-06-14):** Fases 0–4 done. Remaining: M6 (AI coach) and M5
+> (autostart + installer). See [ROADMAP.md](ROADMAP.md) for milestones.
 
 ---
 
 ## Core concepts
 
 ### Exercise (catalog) ✅
-`{ id, name, muscle, equipment[], measure, axis[] }` — the static library.
-`measure: 'reps' | 'hold'` disambiguates reps vs seconds (kills "reps semantics" issue).
+`{ id, name, muscle, equipment[], measure, axis[] }` — seed library + user **custom
+exercises** (`useCatalog` = seed + custom). `measure: 'reps' | 'hold'`.
 
-### Intensity axis & Variant ⬜ (the spine of progression)
-Every exercise has an **intensity axis**; you record which rung you're on:
+### Intensity axis & Variant ✅
+Every exercise has an **intensity axis**; the user records which rung they're on:
 
 ```
 ASSIST ───────────── BODYWEIGHT ───────────── LOAD
 banda ancha→fina      peso corporal           +5kg, +10kg…
 ```
 
-`Variant { id, label, kind: 'assist' | 'bodyweight' | 'load', value? }`
-Progress = climbing the axis (e.g. dips: banda ancha → banda fina → libre → +5kg).
+`Variant { id, label, kind: 'assist' | 'bodyweight' | 'load' }`. Progress = climbing the axis.
+(Custom exercises ship with a single bodyweight rung.)
 
-### Prescription 🛠️ (sets ✅ · target editable 🛠️ · variant/load ⬜)
-How you train an exercise on a given day:
-`{ exerciseId, variantId?, sets, target }` where `target` = reps or seconds.
-Today: `RoutineItem { exerciseId, name, sets, target? }`. The variant/load come in Fase 1.
+### Prescription ✅ (load value ⬜)
+`RoutineItem { exerciseId, name, sets, target?, variantId? }` — sets + editable target
+(reps/seconds) + current variant. Explicit `+kg` load *value* tracking is still ⬜.
 
-### Methodology ⬜
-A template that **parametrizes** prescriptions: frequency, volume, intensity, rep scheme,
-rest. Presets: **Grease-the-Groove**, **5×5**, **EMOM**, **Libre (manual)**. Applying one
-auto-fills prescriptions; the user can override. The M6 agent selects/tunes it from the
-user's goals, characteristics and preferences (known methodologies or the user's own).
+### Methodology ✅ (rep-scheme parametrization ⬜)
+Presets in `src/domain/methodologies.ts` (**Grease-the-Groove, Volumen, Fuerza,
+Mantenimiento, Libre**). Applying one sets **sets + rest** across the selected day-type.
+Richer parametrization (per-exercise rep schemes, intensity) and agent-driven selection: ⬜.
 
-### DayType & WeekPlan ⬜
-`DayType { id, name, methodologyId, prescriptions[] }` — e.g. Empuje / Tirón / Full / Descanso.
-`WeekPlan { mon..sun: dayTypeId, dayKind?: 'home' | 'office' }` — assigns a day-type to each
-weekday; supports rest days and home-office vs office. Default: one day-type repeated.
+### DayType & WeekPlan ✅
+`DayType { id, name, routine }` + `week: (dayTypeId | 'rest')[7]` + `dayKind: ('home' |
+'office' | null)[7]`. Assign a day-type or rest to each weekday. (Methodology is currently
+global, not per day-type — a future refinement.)
 
-### Log ⬜ (optional → progression)
-`Log { date, blockId, variantId, repsDone?, load?, rpe?, note? }` — optional record of what
-you actually did. Feeds the progression view and the agent ("subiste de banda ancha a media,
-¿listo para peso?"). Never mandatory.
+### Log 🛠️ (richer fields ⬜)
+`LogEntry { at, exerciseId, variantId? }` — recorded on every "Hecho". Feeds Progreso
+(trajectory, streak, volume, level marker, ready-to-level nudge). `repsDone / load / rpe /
+note` per set: ⬜.
 
-### Equipment 🛠️ (on/off ✅ · attributes ⬜)
-`{ id, name, attrs? }`. Attributes later carry band resistance levels, available weights,
-etc. — the data the assist/load variants and the agent need.
+### Equipment 🛠️ (attributes ⬜)
+`{ id, name }` on/off. Band resistance is modeled as **variant rungs** rather than equipment
+attributes; richer attributes (weights, etc.) still ⬜.
 
 ---
 
-## Current source layout
+## Source layout
 
-- `src/lib/engine/` — pure scheduling (`Block`, `Settings`, `RoutineItem`, `Warning`,
-  `createDayPlan`, `reschedule`, actions). Stays framework-free + tested.
-- `src/domain/` — `Equipment`, `Exercise`, catalog + seed. Grows toward Variant/Methodology.
-- `src/store/` — Zustand state wiring engine + domain; persistence.
+- `src/lib/engine/` — pure scheduling (framework-free + tested).
+- `src/domain/` — `Exercise`/`Equipment` model, seed catalog, methodologies.
+- `src/hooks/useCatalog.ts` — seed + custom exercises.
+- `src/store/` — Zustand: day-types, week, logs, settings, prefs; persistence (+ migration).
 
 ---
 
-## Phase map (kills the UX/product backlog in clusters)
+## Phase map (the UX/product backlog, killed in clusters)
 
-- **Fase 0** ✅ — Quick wins: editable target (prescription seed), routine↔equipment coherence,
-  feasibility in the editor, push/pull/core balance.
-- **Fase 1** ✅ — Variants + intensity axis + optional logging + per-exercise progression
-  (band levels modeled as variant rungs).
-- **Progreso v2a** ⬜ — Make the progress view show a *trajectory*, not a snapshot: weekly
-  summary (vs last week + streak), a "you are here → next" level marker with the date it was
-  reached (derived from logs), and a real volume trend. Self-contained polish on Fase 1 data
-  (no overlap); finishes Fase 1's value. Do alongside / just after Fase 2.
-- **Progreso v2b (nudges)** ⬜ — "ready to level up" suggestions. Overlaps with Fase 2
-  (methodology defines readiness) and M6 (agent), so it's folded into those, not standalone.
-- **Fase 2** ✅ — Methodology presets (apply sets + rest across the routine) + a simple
-  "ready to level up" nudge in Progreso (v2b lite).
-- **Fase 3** ✅ — DayType + WeekPlan (split, rest days, home/office).
-- **Fase 4** ✅ — Catalog UX (search + group by muscle) + custom exercises + Equipment onboarding.
-- **M6** ⬜ — AI coach sits on top: consumes methodologies, variants/logs, week + goals/diet.
+- **Fase 0** ✅ — editable target, routine↔equipment coherence, feasibility, push/pull/core balance.
+- **Fase 1** ✅ — variants + intensity axis + optional logging + per-exercise progression.
+- **Fase 2** ✅ — methodology presets (apply sets + rest) + a "ready to level up" nudge (v2b lite).
+- **Fase 3** ✅ — day-types + weekly plan (split, rest days, home/office).
+- **Fase 4** ✅ — searchable/grouped catalog + custom exercises + equipment onboarding.
+- **Progreso v2a** ✅ — trajectory view: weekly summary (vs last week + streak), "you are
+  here → next" level marker with date reached, volume trend.
+- **Progreso v2b (full nudges)** 🛠️ — basic nudge shipped; richer "ready to progress" logic
+  belongs to M6 (the agent / methodology rules).
 
-See [ROADMAP.md](ROADMAP.md) for the product milestones.
+**The whole UX/product backlog (the 14-point critique) is done.** What's left is product
+direction, not refinement:
+
+- **M6 — AI coach** ⬜ — sits on top: consumes methodologies, variants/logs, the week +
+  goals/diet to build a multi-day plan the engine schedules.
+- **M5 — autostart + installer** ⬜ — see ROADMAP.

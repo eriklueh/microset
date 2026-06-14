@@ -116,8 +116,15 @@ between the main and panel windows via `day` persistence + Tauri sync events
 (`src/store/sync.ts`); the scheduler runs only in the main window. Toggle from the tray
 ("Mostrar/ocultar panel"). On Hyprland, position/pin via the windowrules below.
 
-### ⬜ M5 — Stats + polish ← next
-Weekly completion stats, autostart on boot (`tauri-plugin-autostart`), polish.
+### 🛠️ M5 — Stats + autostart + installer
+**Stats ✅** — the Progreso view (weekly summary, level trajectory, volume trend) covers
+this. **Pending:** autostart on boot (`tauri-plugin-autostart`) and producing the installer
+(`tauri build`) so it runs without a terminal.
+
+> **Product backlog — Fases 0–4: all ✅.** The UX/product refinements (editable prescriptions,
+> routine↔equipment coherence, feasibility, balance, variants/progression, methodologies,
+> weekly day-types, searchable catalog + custom exercises) are tracked in [MODEL.md](MODEL.md).
+> Only **M6** (AI coach) and the **M5** autostart/installer remain.
 
 ### ⬜ M6 — AI coach (optional, expanded vision)
 A Claude API agent the user briefs with **physical goals, diet, available equipment, work
