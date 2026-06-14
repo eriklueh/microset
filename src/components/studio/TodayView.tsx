@@ -2,7 +2,7 @@ import { Bell, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMinute } from "@/lib/engine";
 import type { Block } from "@/lib/engine";
-import { exerciseById } from "@/domain/seed";
+import { exerciseById, variantLabel } from "@/domain/seed";
 import { ensureNotificationSetup, notifyBlock } from "@/lib/notify";
 import { useStore } from "@/store/useStore";
 
@@ -79,9 +79,11 @@ export function TodayView() {
             <span className="font-mono">{formatMinute(next.time)}</span>
           </div>
           <div className="text-xl font-semibold tracking-tight">{next.name}</div>
-          {repsOf(next) && (
-            <div className="text-muted-foreground text-sm">{repsOf(next)}</div>
-          )}
+          <div className="text-muted-foreground text-sm">
+            {[repsOf(next), variantLabel(next.exerciseId, next.variantId)]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
           <div className="mt-3 flex gap-2">
             <Button size="sm" className="flex-1" onClick={() => done(next.id)}>
               <Check className="size-4" /> Hecho

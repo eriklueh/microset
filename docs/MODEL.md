@@ -68,8 +68,8 @@ etc. — the data the assist/load variants and the agent need.
 
 - **Fase 0** ✅ — Quick wins: editable target (prescription seed), routine↔equipment coherence,
   feasibility in the editor, push/pull/core balance.
-- **Fase 1** ⬜ — Variants + intensity axis + optional logging + per-exercise progression;
-  equipment attributes (band levels).
+- **Fase 1** ✅ — Variants + intensity axis + optional logging + per-exercise progression
+  (band levels modeled as variant rungs).
 - **Fase 2** ⬜ — Methodology presets parametrizing prescriptions.
 - **Fase 3** ⬜ — DayType + WeekPlan (split, rest days, home/office).
 - **Fase 4** ⬜ — Catalog UX (search/group/detail, custom exercises) + Equipment onboarding.

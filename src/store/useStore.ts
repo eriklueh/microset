@@ -7,7 +7,7 @@ import {
   snooze as engineSnooze,
 } from "@/lib/engine";
 import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
-import type { EquipmentId } from "@/domain/types";
+import type { EquipmentId, LogEntry } from "@/domain/types";
 import {
   DEFAULT_OWNED,
   DEFAULT_ROUTINE,
@@ -41,6 +41,7 @@ interface State {
   settings: Settings;
   day: DayPlan | null;
   theme: ThemeConfig;
+  logs: LogEntry[];
 
   // preferences
   panelEnabled: boolean;
@@ -53,6 +54,7 @@ interface State {
   addToRoutine: (item: RoutineItem) => void;
   setRoutineSets: (exerciseId: string, sets: number) => void;
   setRoutineTarget: (exerciseId: string, target: string) => void;
+  setRoutineVariant: (exerciseId: string, variantId: string) => void;
   removeFromRoutine: (exerciseId: string) => void;
 
   // theme
@@ -80,6 +82,7 @@ export const useStore = create<State>()(
       settings: DEFAULT_SETTINGS,
       day: null,
       theme: { mode: "dark", accent: "lime" },
+      logs: [],
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -124,6 +127,15 @@ export const useStore = create<State>()(
         }));
       },
 
+      setRoutineVariant: (exerciseId, variantId) => {
+        set((s) => ({
+          routine: s.routine.map((r) =>
+            r.exerciseId === exerciseId ? { ...r, variantId } : r,
+          ),
+        }));
+        get().replan();
+      },
+
       removeFromRoutine: (exerciseId) => {
         set((s) => ({
           routine: s.routine.filter((r) => r.exerciseId !== exerciseId),
@@ -160,7 +172,6 @@ export const useStore = create<State>()(
 
       replan: () => {
         const { routine, settings, ownedEquipment } = get();
-        // Only schedule exercises you can actually do with your current equipment.
         const doable = routine.filter((r) => {
           const ex = exerciseById(r.exerciseId);
           return ex ? isAvailable(ex, ownedEquipment) : true;
@@ -172,8 +183,21 @@ export const useStore = create<State>()(
       done: (blockId) => {
         const { day, settings } = get();
         if (!day) return;
+        const block = day.blocks.find((b) => b.id === blockId);
         const { blocks } = markDone(day.blocks, blockId, settings, nowMinutes());
-        set({ day: { ...day, blocks } });
+        set((s) => ({
+          day: { ...day, blocks },
+          logs: block
+            ? [
+                ...s.logs,
+                {
+                  at: new Date().toISOString(),
+                  exerciseId: block.exerciseId,
+                  variantId: block.variantId,
+                },
+              ]
+            : s.logs,
+        }));
       },
 
       decline: (blockId) => {
@@ -198,6 +222,7 @@ export const useStore = create<State>()(
         settings: s.settings,
         day: s.day,
         theme: s.theme,
+        logs: s.logs,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,

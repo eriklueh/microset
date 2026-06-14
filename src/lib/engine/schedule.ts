@@ -140,6 +140,7 @@ export function createDayPlan(
         name: item.name,
         sets: 1,
         target: item.target,
+        variantId: item.variantId,
         time: -1,
         status: "pending",
         priority: item.priority ?? 0,

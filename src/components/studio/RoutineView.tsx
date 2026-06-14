@@ -1,7 +1,7 @@
 import { AlertTriangle, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createDayPlan } from "@/lib/engine";
-import { EXERCISES, exerciseById, isAvailable } from "@/domain/seed";
+import { EXERCISES, defaultVariantId, exerciseById, isAvailable } from "@/domain/seed";
 import { MUSCLE_LABEL, type MuscleGroup } from "@/domain/types";
 import { useStore } from "@/store/useStore";
 
@@ -21,13 +21,13 @@ export function RoutineView() {
   const settings = useStore((s) => s.settings);
   const setRoutineSets = useStore((s) => s.setRoutineSets);
   const setRoutineTarget = useStore((s) => s.setRoutineTarget);
+  const setRoutineVariant = useStore((s) => s.setRoutineVariant);
   const removeFromRoutine = useStore((s) => s.removeFromRoutine);
   const addToRoutine = useStore((s) => s.addToRoutine);
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
   const available = EXERCISES.filter((e) => isAvailable(e, owned) && !inRoutine.has(e.id));
 
-  // Feasibility from the start of the work window (stable, time-independent).
   const doable = routine.filter((r) => {
     const ex = exerciseById(r.exerciseId);
     return ex ? isAvailable(ex, owned) : true;
@@ -75,60 +75,72 @@ export function RoutineView() {
           return (
             <div
               key={r.exerciseId}
-              className={`${CARD} flex items-center gap-3 p-2.5 pl-3 ${orphan ? "opacity-60" : ""}`}
+              className={`${CARD} flex flex-col gap-2.5 p-3 ${orphan ? "opacity-60" : ""}`}
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate text-sm font-medium">{r.name}</span>
-                  {orphan && (
-                    <AlertTriangle
-                      className="size-3.5 shrink-0 text-amber-500"
-                      aria-label="Te falta el equipo para este ejercicio"
-                    />
-                  )}
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-sm font-medium">{r.name}</span>
+                    {orphan && (
+                      <AlertTriangle
+                        className="size-3.5 shrink-0 text-amber-500"
+                        aria-label="Te falta el equipo para este ejercicio"
+                      />
+                    )}
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {ex ? MUSCLE_LABEL[ex.muscle] : ""}
+                    {orphan ? " · te falta equipo" : ""}
+                  </div>
                 </div>
-                <div className="text-muted-foreground text-xs">
-                  {ex ? MUSCLE_LABEL[ex.muscle] : ""}
-                  {orphan ? " · te falta equipo" : ""}
+
+                <input
+                  value={r.target ?? ex?.defaultReps ?? ""}
+                  onChange={(e) => setRoutineTarget(r.exerciseId, e.currentTarget.value)}
+                  aria-label="Reps o duración"
+                  className="border-input bg-background/40 focus:border-ring h-7 w-16 rounded-md border text-center font-mono text-xs outline-none"
+                />
+
+                <div className="flex items-center gap-0.5">
+                  <Button size="icon-xs" variant="ghost" onClick={() => setRoutineSets(r.exerciseId, r.sets - 1)} aria-label="Menos series">
+                    <Minus className="size-3.5" />
+                  </Button>
+                  <span className="w-8 text-center font-mono text-sm tabular-nums">{r.sets}×</span>
+                  <Button size="icon-xs" variant="ghost" onClick={() => setRoutineSets(r.exerciseId, r.sets + 1)} aria-label="Más series">
+                    <Plus className="size-3.5" />
+                  </Button>
                 </div>
-              </div>
 
-              <input
-                value={r.target ?? ex?.defaultReps ?? ""}
-                onChange={(e) => setRoutineTarget(r.exerciseId, e.currentTarget.value)}
-                aria-label="Reps o duración"
-                className="border-input bg-background/40 focus:border-ring h-7 w-16 rounded-md border text-center font-mono text-xs outline-none"
-              />
-
-              <div className="flex items-center gap-0.5">
                 <Button
                   size="icon-xs"
                   variant="ghost"
-                  onClick={() => setRoutineSets(r.exerciseId, r.sets - 1)}
-                  aria-label="Menos series"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => removeFromRoutine(r.exerciseId)}
+                  aria-label="Quitar"
                 >
-                  <Minus className="size-3.5" />
-                </Button>
-                <span className="w-8 text-center font-mono text-sm tabular-nums">{r.sets}×</span>
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  onClick={() => setRoutineSets(r.exerciseId, r.sets + 1)}
-                  aria-label="Más series"
-                >
-                  <Plus className="size-3.5" />
+                  <Trash2 className="size-3.5" />
                 </Button>
               </div>
 
-              <Button
-                size="icon-xs"
-                variant="ghost"
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => removeFromRoutine(r.exerciseId)}
-                aria-label="Quitar"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+              {ex && ex.axis.length > 1 && (
+                <div className="flex items-center gap-2 border-t pt-2.5">
+                  <span className="text-muted-foreground text-[11px] tracking-wide uppercase">
+                    Nivel
+                  </span>
+                  <select
+                    value={r.variantId ?? defaultVariantId(ex)}
+                    onChange={(e) => setRoutineVariant(r.exerciseId, e.currentTarget.value)}
+                    aria-label="Nivel de intensidad"
+                    className="border-input bg-background/40 text-foreground focus:border-ring h-7 flex-1 rounded-md border px-2 text-xs outline-none"
+                  >
+                    {ex.axis.map((v) => (
+                      <option key={v.id} value={v.id} className="bg-popover text-popover-foreground">
+                        {v.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           );
         })}
@@ -156,6 +168,7 @@ export function RoutineView() {
                     name: e.name,
                     sets: e.defaultSets,
                     target: e.defaultReps,
+                    variantId: defaultVariantId(e),
                   })
                 }
               >
@@ -193,10 +206,7 @@ function Balance({
         {order
           .filter((m) => balance[m] > 0)
           .map((m) => (
-            <span
-              key={m}
-              className="text-muted-foreground flex items-center gap-1.5 text-[11px]"
-            >
+            <span key={m} className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
               <span className="size-2 rounded-full" style={{ background: MUSCLE_COLOR[m] }} />
               {MUSCLE_LABEL[m]} · {balance[m]}
             </span>

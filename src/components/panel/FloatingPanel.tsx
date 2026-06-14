@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, GripHorizontal, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Button } from "@/components/ui/button";
-import { formatMinute } from "@/lib/engine";
-import { exerciseById } from "@/domain/seed";
+import { exerciseById, variantLabel } from "@/domain/seed";
 import { nowMinutes, useStore } from "@/store/useStore";
 
 /** Compact, translucent always-on-top widget: next set + countdown + quick actions. */
@@ -24,11 +23,17 @@ export function FloatingPanel() {
     .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
     .sort((a, b) => a.time - b.time)[0];
   const eta = next ? next.time - now : 0;
-  const reps = next ? (next.target ?? exerciseById(next.exerciseId)?.defaultReps ?? "") : "";
+  const detail = next
+    ? [
+        next.target ?? exerciseById(next.exerciseId)?.defaultReps ?? "",
+        variantLabel(next.exerciseId, next.variantId),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   return (
     <div className="bg-card/70 flex h-screen w-screen flex-col overflow-hidden rounded-xl border backdrop-blur-2xl select-none">
-      {/* Drag handle — grab here to move the panel. */}
       <div
         data-tauri-drag-region
         className="hover:bg-muted/40 flex h-6 cursor-grab items-center justify-between px-2 transition-colors active:cursor-grabbing"
@@ -51,9 +56,7 @@ export function FloatingPanel() {
           <div className="flex items-end justify-between gap-2">
             <div className="min-w-0">
               <div className="truncate text-[15px] leading-tight font-semibold">{next.name}</div>
-              <div className="text-muted-foreground text-[11px]">
-                {reps} · {formatMinute(next.time)}
-              </div>
+              <div className="text-muted-foreground truncate text-[11px]">{detail}</div>
             </div>
             <div className="text-right leading-none">
               <div className="font-mono text-lg font-semibold tabular-nums">

@@ -7,6 +7,7 @@ import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
 import { RoutineView } from "@/components/studio/RoutineView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
+import { ProgressView } from "@/components/studio/ProgressView";
 import { SettingsView } from "@/components/studio/SettingsView";
 
 const HEADINGS: Record<Section, { title: string; subtitle: string }> = {
@@ -14,6 +15,7 @@ const HEADINGS: Record<Section, { title: string; subtitle: string }> = {
   today: { title: "Hoy", subtitle: "Tu día, repartido en pausas" },
   routine: { title: "Rutina", subtitle: "Qué entrenás cada día" },
   equipment: { title: "Equipo", subtitle: "Lo que tenés en casa" },
+  progress: { title: "Progreso", subtitle: "Tu evolución por ejercicio" },
   settings: { title: "Ajustes", subtitle: "Preferencias de microset" },
 };
 
@@ -49,6 +51,7 @@ function App() {
           {section === "today" && <TodayView />}
           {section === "routine" && <RoutineView />}
           {section === "equipment" && <EquipmentView />}
+          {section === "progress" && <ProgressView />}
           {section === "settings" && <SettingsView />}
         </div>
       </main>

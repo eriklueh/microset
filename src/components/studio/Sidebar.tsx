@@ -1,15 +1,31 @@
-import { Activity, Boxes, ListChecks, Moon, Settings, Sparkles, Sun } from "lucide-react";
+import {
+  Activity,
+  Boxes,
+  ListChecks,
+  Moon,
+  Settings,
+  Sparkles,
+  Sun,
+  TrendingUp,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { resolveDark } from "@/lib/theme";
 import { useStore } from "@/store/useStore";
 
-export type Section = "coach" | "today" | "routine" | "equipment" | "settings";
+export type Section =
+  | "coach"
+  | "today"
+  | "routine"
+  | "equipment"
+  | "progress"
+  | "settings";
 
 const NAV: { id: Section; label: string; icon: LucideIcon }[] = [
   { id: "coach", label: "Coach", icon: Sparkles },
   { id: "today", label: "Hoy", icon: Activity },
   { id: "routine", label: "Rutina", icon: ListChecks },
   { id: "equipment", label: "Equipo", icon: Boxes },
+  { id: "progress", label: "Progreso", icon: TrendingUp },
 ];
 
 export function Sidebar({

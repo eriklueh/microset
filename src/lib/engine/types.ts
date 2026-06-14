@@ -18,6 +18,8 @@ export interface Block {
   sets: number;
   /** Prescription for display: reps or duration, e.g. "5" or "10-20s". */
   target?: string;
+  /** Current intensity variant (opaque id; resolved to a label by the UI). */
+  variantId?: string;
   /** Scheduled time, minutes since midnight. -1 means unscheduled (didn't fit). */
   time: Minute;
   status: BlockStatus;
@@ -44,6 +46,8 @@ export interface RoutineItem {
   sets: number;
   /** Reps or duration per set, e.g. "5" or "10-20s". Overrides the catalog default. */
   target?: string;
+  /** Current intensity variant id. */
+  variantId?: string;
   /** Higher = scheduled first when the day is tight. Default 0. */
   priority?: number;
 }
