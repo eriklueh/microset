@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, GripHorizontal, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Button } from "@/components/ui/button";
+import { formatMinute } from "@/lib/engine";
 import { exerciseById, variantLabel } from "@/domain/seed";
 import { nowMinutes, useStore } from "@/store/useStore";
 
@@ -32,6 +33,11 @@ export function FloatingPanel() {
         .join(" · ")
     : "";
 
+  // Countdown when soon, scheduled time when far away.
+  const near = eta > 0 && eta < 60;
+  const counter = eta <= 0 ? "ahora" : near ? String(eta) : formatMinute(next!.time);
+  const counterUnit = eta <= 0 ? "" : near ? "min" : "hs";
+
   return (
     <div className="bg-card/70 flex h-screen w-screen flex-col overflow-hidden rounded-xl border backdrop-blur-2xl select-none">
       <div
@@ -58,13 +64,17 @@ export function FloatingPanel() {
               <div className="truncate text-[15px] leading-tight font-semibold">{next.name}</div>
               <div className="text-muted-foreground truncate text-[11px]">{detail}</div>
             </div>
-            <div className="text-right leading-none">
-              <div className="font-mono text-lg font-semibold tabular-nums">
-                {eta <= 0 ? "0" : eta}
+            <div className="shrink-0 text-right leading-none">
+              <div
+                className={`font-mono font-semibold tabular-nums ${eta <= 0 ? "text-primary text-base" : "text-lg"}`}
+              >
+                {counter}
               </div>
-              <div className="text-muted-foreground text-[9px] tracking-wider uppercase">
-                {eta <= 0 ? "ahora" : "min"}
-              </div>
+              {counterUnit && (
+                <div className="text-muted-foreground text-[9px] tracking-wider uppercase">
+                  {counterUnit}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-1.5">
