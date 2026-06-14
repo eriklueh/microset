@@ -32,6 +32,10 @@ export function TodayView() {
   const next = day.blocks
     .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
     .sort((a, b) => a.time - b.time)[0];
+  const testBlock =
+    next ??
+    day.blocks.find((b) => b.status === "pending" || b.status === "snoozed") ??
+    day.blocks[0];
 
   return (
     <div className="flex flex-col gap-4">
@@ -43,13 +47,13 @@ export function TodayView() {
           {overflow.length > 0 && (
             <Badge variant="destructive">{overflow.length} no entran</Badge>
           )}
-          {next && (
+          {testBlock && (
             <Button
-              size="xs"
-              variant="ghost"
+              size="sm"
+              variant="outline"
               onClick={async () => {
                 await ensureNotificationSetup();
-                notifyBlock(next);
+                notifyBlock(testBlock);
               }}
             >
               Probar aviso
@@ -81,6 +85,14 @@ export function TodayView() {
             </Button>
           </div>
         </div>
+      )}
+
+      {!next && (
+        <p className="text-muted-foreground rounded-xl border border-dashed p-4 text-sm">
+          No hay series para este momento (estás fuera de tu horario laboral de
+          hoy). Durante la jornada vas a ver acá el próximo ejercicio. Igual podés
+          usar <strong>Probar aviso</strong> para ver cómo llega la notificación.
+        </p>
       )}
 
       <div className="flex flex-col gap-1.5">
