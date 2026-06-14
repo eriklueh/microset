@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Minus, Plus, Search, Trash2 } from "lucide-react";
-import { createDayPlan } from "@/lib/engine";
+import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, exerciseContext, isAvailable } from "@/domain/seed";
 import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
 import {
@@ -64,20 +64,7 @@ export function RoutineView() {
       e.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
-  const doable = routine.filter((r) => {
-    const ex = byId(r.exerciseId);
-    return ex ? isAvailable(ex, owned) : true;
-  });
-  const totalSets = doable.reduce((n, r) => n + r.sets, 0);
-  const plan = createDayPlan(doable, settings, settings.workWindow.start);
-  const fits = plan.blocks.filter((b) => b.time >= 0).length;
-  const allFit = fits >= totalSets;
-
-  const balance: Record<MuscleGroup, number> = { pull: 0, push: 0, core: 0, legs: 0 };
-  for (const r of doable) {
-    const ex = byId(r.exerciseId);
-    if (ex) balance[ex.muscle] += r.sets;
-  }
+  const { totalSets, fits, allFit, balance } = analyzeRoutine(routine, owned, settings, byId);
 
   const handleCreate = (i: {
     name: string;
