@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/useStore";
+import { useScheduler } from "@/hooks/useScheduler";
 import { TodayView } from "@/components/studio/TodayView";
 import { RoutineView } from "@/components/studio/RoutineView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
@@ -12,6 +13,8 @@ function App() {
   useEffect(() => {
     ensureToday();
   }, [ensureToday]);
+
+  useScheduler();
 
   return (
     <div className="mx-auto flex h-screen max-w-2xl flex-col gap-4 p-6">

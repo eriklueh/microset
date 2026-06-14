@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatMinute } from "@/lib/engine";
 import type { Block } from "@/lib/engine";
 import { exerciseById } from "@/domain/seed";
+import { ensureNotificationSetup, notifyBlock } from "@/lib/notify";
 import { useStore } from "@/store/useStore";
 
 function repsOf(block: Block): string {
@@ -34,13 +35,27 @@ export function TodayView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-muted-foreground text-sm">
           {doneCount} / {day.blocks.length} series hechas
         </span>
-        {overflow.length > 0 && (
-          <Badge variant="destructive">{overflow.length} no entran</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {overflow.length > 0 && (
+            <Badge variant="destructive">{overflow.length} no entran</Badge>
+          )}
+          {next && (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={async () => {
+                await ensureNotificationSetup();
+                notifyBlock(next);
+              }}
+            >
+              Probar aviso
+            </Button>
+          )}
+        </div>
       </div>
 
       {next && (

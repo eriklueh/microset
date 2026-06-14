@@ -101,11 +101,14 @@ catalog), **Ajustes** (work hours/lunch/minRest). Domain model + seed (`src/doma
 Zustand store with localStorage persistence wired to the M1 engine (`src/store/`).
 Persistence is JSON for now — SQLite (`tauri-plugin-sql`) deferred to M5.
 
-### ⬜ M3 — Notification loop ← next
-Timer fires due blocks → native notification with actions **Sí / Posponer / Ahora no** →
-feeds back into the engine to recompute.
+### ✅ M3 — Notification loop (done 2026-06-13)
+`src/hooks/useScheduler.ts` polls every 30s and fires a native notification
+(`tauri-plugin-notification`) when a block becomes due; runs even when the window is hidden
+in the tray (the webview stays alive). Action buttons **Hecho / Posponer 30' / Ahora no**
+(`src/lib/notify.ts`) feed back into the engine actions. A "Probar aviso" button in *Hoy*
+triggers one on demand. A block is re-notified only if it's rescheduled to a new time.
 
-### ⬜ M4 — Floating panel
+### ⬜ M4 — Floating panel ← next
 Always-visible mini-window: next exercise + countdown. On Hyprland, positioned/pinned via
 windowrules.
 

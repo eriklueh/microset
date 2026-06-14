@@ -49,6 +49,8 @@ microset/
 │   ├── lib/utils.ts          # cn() helper (shadcn)
 │   ├── domain/               # exercise/equipment model + seed data
 │   ├── store/                # Zustand store (state + JSON persistence)
+│   ├── hooks/                # useScheduler (notification timer)
+│   ├── lib/notify.ts         # native notifications + action buttons
 │   ├── components/studio/    # Studio views (Hoy/Rutina/Equipo/Ajustes)
 │   ├── components/ui/        # shadcn components
 │   ├── App.tsx
@@ -106,7 +108,7 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 - ✅ **M0** — Scaffold (Tauri + React + Tailwind + shadcn, tray, close-to-tray)
 - ✅ **M1** — Scheduling engine (`src/lib/engine/`, pure TS + Vitest, 9 tests)
 - ✅ **M2** — Studio (tabs Hoy/Rutina/Equipo/Ajustes; Zustand store, JSON persistence)
-- ⬜ **M3** — Notification loop (Sí / Posponer / Ahora no → recalc) ← **next**
-- ⬜ **M4** — Floating panel (next set + countdown; Hyprland rules)
+- ✅ **M3** — Notification loop (`useScheduler` + native notifications, action buttons)
+- ⬜ **M4** — Floating panel (next set + countdown; Hyprland rules) ← **next**
 - ⬜ **M5** — Stats + autostart + polish
 - ⬜ **M6** — AI coach (Claude API, optional)
