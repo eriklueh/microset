@@ -18,10 +18,23 @@ export function TodayView() {
   const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
 
-  if (!day || day.blocks.length === 0) {
+  if (!day) return null;
+
+  if (day.rest) {
+    return (
+      <div className={`${CARD} flex flex-col items-center gap-1 p-10 text-center`}>
+        <span className="text-lg font-semibold">Día de descanso</span>
+        <span className="text-muted-foreground text-sm">
+          Hoy toca recuperar. Mañana seguimos.
+        </span>
+      </div>
+    );
+  }
+
+  if (day.blocks.length === 0) {
     return (
       <div className={`${CARD} text-muted-foreground p-6 text-center text-sm`}>
-        No hay rutina cargada. Andá a{" "}
+        No hay ejercicios para hoy. Andá a{" "}
         <strong className="text-foreground">Rutina</strong> para armar tu día.
       </div>
     );
@@ -41,6 +54,12 @@ export function TodayView() {
 
   return (
     <div className="flex flex-col gap-3">
+      {day.dayTypeName && (
+        <div className="text-muted-foreground px-0.5 text-xs">
+          Tipo de día: <span className="text-foreground font-medium">{day.dayTypeName}</span>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <div className="flex-1">
           <div className="mb-1.5 flex items-center justify-between">

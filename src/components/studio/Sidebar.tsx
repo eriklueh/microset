@@ -1,6 +1,7 @@
 import {
   Activity,
   Boxes,
+  CalendarDays,
   ListChecks,
   Moon,
   Settings,
@@ -16,6 +17,7 @@ export type Section =
   | "coach"
   | "today"
   | "routine"
+  | "week"
   | "equipment"
   | "progress"
   | "settings";
@@ -24,6 +26,7 @@ const NAV: { id: Section; label: string; icon: LucideIcon }[] = [
   { id: "coach", label: "Coach", icon: Sparkles },
   { id: "today", label: "Hoy", icon: Activity },
   { id: "routine", label: "Rutina", icon: ListChecks },
+  { id: "week", label: "Semana", icon: CalendarDays },
   { id: "equipment", label: "Equipo", icon: Boxes },
   { id: "progress", label: "Progreso", icon: TrendingUp },
 ];

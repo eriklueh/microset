@@ -6,6 +6,7 @@ import { Sidebar, type Section } from "@/components/studio/Sidebar";
 import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
 import { RoutineView } from "@/components/studio/RoutineView";
+import { SemanaView } from "@/components/studio/SemanaView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { ProgressView } from "@/components/studio/ProgressView";
 import { SettingsView } from "@/components/studio/SettingsView";
@@ -13,7 +14,8 @@ import { SettingsView } from "@/components/studio/SettingsView";
 const HEADINGS: Record<Section, { title: string; subtitle: string }> = {
   coach: { title: "Coach", subtitle: "Tu entrenador inteligente" },
   today: { title: "Hoy", subtitle: "Tu día, repartido en pausas" },
-  routine: { title: "Rutina", subtitle: "Qué entrenás cada día" },
+  routine: { title: "Rutina", subtitle: "Qué entrenás en cada tipo de día" },
+  week: { title: "Semana", subtitle: "Qué hacés cada día de la semana" },
   equipment: { title: "Equipo", subtitle: "Lo que tenés en casa" },
   progress: { title: "Progreso", subtitle: "Tu evolución por ejercicio" },
   settings: { title: "Ajustes", subtitle: "Preferencias de microset" },
@@ -28,7 +30,6 @@ function App() {
     ensureToday();
   }, [ensureToday]);
 
-  // Apply the panel visibility preference once on startup.
   useEffect(() => {
     void setPanelVisible(panelEnabled);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,6 +51,7 @@ function App() {
           {section === "coach" && <CoachView onStart={() => setSection("today")} />}
           {section === "today" && <TodayView />}
           {section === "routine" && <RoutineView />}
+          {section === "week" && <SemanaView />}
           {section === "equipment" && <EquipmentView />}
           {section === "progress" && <ProgressView />}
           {section === "settings" && <SettingsView />}

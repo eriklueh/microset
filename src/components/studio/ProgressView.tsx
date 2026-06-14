@@ -19,7 +19,6 @@ function shortDate(iso: string): string {
 
 export function ProgressView() {
   const logs = useStore((s) => s.logs);
-  const routine = useStore((s) => s.routine);
 
   if (logs.length === 0) {
     return (
@@ -64,7 +63,6 @@ export function ProgressView() {
           key={id}
           id={id}
           logs={logs.filter((l) => l.exerciseId === id)}
-          routineVariantId={routine.find((r) => r.exerciseId === id)?.variantId}
           now={now}
           inLast7={inLast7}
           inPrev7={inPrev7}
@@ -77,14 +75,12 @@ export function ProgressView() {
 function ExerciseProgress({
   id,
   logs,
-  routineVariantId,
   now,
   inLast7,
   inPrev7,
 }: {
   id: string;
   logs: LogEntry[];
-  routineVariantId?: string;
   now: number;
   inLast7: (l: LogEntry) => boolean;
   inPrev7: (l: LogEntry) => boolean;
@@ -94,7 +90,7 @@ function ExerciseProgress({
 
   const sorted = [...logs].sort((a, b) => (a.at < b.at ? -1 : 1));
   const lastLog = sorted[sorted.length - 1];
-  const currentVariantId = routineVariantId ?? lastLog?.variantId ?? defaultVariantId(ex);
+  const currentVariantId = lastLog?.variantId ?? defaultVariantId(ex);
   const currentIdx = Math.max(
     0,
     ex.axis.findIndex((v) => v.id === currentVariantId),

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AlertTriangle, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createDayPlan } from "@/lib/engine";
@@ -8,6 +9,7 @@ import { useStore } from "@/store/useStore";
 
 const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
 const hh = (min: number) => `${Math.round(min / 60)}h`;
+const DOW = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 const MUSCLE_COLOR: Record<MuscleGroup, string> = {
   pull: "oklch(0.70 0.14 235)",
@@ -17,7 +19,8 @@ const MUSCLE_COLOR: Record<MuscleGroup, string> = {
 };
 
 export function RoutineView() {
-  const routine = useStore((s) => s.routine);
+  const dayTypes = useStore((s) => s.dayTypes);
+  const week = useStore((s) => s.week);
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
   const methodologyId = useStore((s) => s.methodologyId);
@@ -27,8 +30,16 @@ export function RoutineView() {
   const setRoutineVariant = useStore((s) => s.setRoutineVariant);
   const removeFromRoutine = useStore((s) => s.removeFromRoutine);
   const addToRoutine = useStore((s) => s.addToRoutine);
+  const addDayType = useStore((s) => s.addDayType);
+  const renameDayType = useStore((s) => s.renameDayType);
+  const removeDayType = useStore((s) => s.removeDayType);
+
+  const [selectedId, setSelectedId] = useState(dayTypes[0].id);
+  const selected = dayTypes.find((d) => d.id === selectedId) ?? dayTypes[0];
+  const routine = selected.routine;
 
   const method = methodologyById(methodologyId) ?? METHODOLOGIES[0];
+  const usedDays = DOW.filter((_, i) => week[i] === selected.id);
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
   const available = EXERCISES.filter((e) => isAvailable(e, owned) && !inRoutine.has(e.id));
@@ -50,6 +61,57 @@ export function RoutineView() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
+      {/* Day-type picker */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {dayTypes.map((dt) => (
+          <button
+            key={dt.id}
+            onClick={() => setSelectedId(dt.id)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              selected.id === dt.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {dt.name}
+          </button>
+        ))}
+        <button
+          onClick={() => setSelectedId(addDayType("Nuevo"))}
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/50 flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium"
+        >
+          <Plus className="size-3.5" /> Tipo de día
+        </button>
+      </div>
+
+      {/* Selected day-type header */}
+      <div className={`${CARD} flex flex-col gap-2 p-3`}>
+        <div className="flex items-center gap-2">
+          <input
+            value={selected.name}
+            onChange={(e) => renameDayType(selected.id, e.currentTarget.value)}
+            aria-label="Nombre del tipo de día"
+            className="focus:border-ring flex-1 rounded-md border border-transparent bg-transparent px-1 text-sm font-medium outline-none focus:bg-background/40"
+          />
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            className="text-muted-foreground hover:text-destructive"
+            disabled={dayTypes.length <= 1}
+            onClick={() => removeDayType(selected.id)}
+            aria-label="Eliminar tipo de día"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+        <div className="text-muted-foreground text-xs">
+          {usedDays.length > 0
+            ? `Usado: ${usedDays.join(", ")}`
+            : "Sin asignar a ningún día — andá a Semana."}
+        </div>
+      </div>
+
+      {/* Methodology */}
       <div className={`${CARD} flex flex-col gap-2 p-4`}>
         <div className="flex items-center justify-between gap-3">
           <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
@@ -57,7 +119,7 @@ export function RoutineView() {
           </span>
           <select
             value={methodologyId}
-            onChange={(e) => applyMethodology(e.currentTarget.value)}
+            onChange={(e) => applyMethodology(selected.id, e.currentTarget.value)}
             aria-label="Metodología"
             className="border-input bg-background/40 text-foreground focus:border-ring h-7 rounded-md border px-2 text-xs outline-none"
           >
@@ -70,13 +132,9 @@ export function RoutineView() {
         </div>
         <p className="text-sm font-medium">{method.tagline}</p>
         <p className="text-muted-foreground text-xs leading-relaxed">{method.description}</p>
-        {method.sets > 0 && (
-          <p className="text-muted-foreground text-[11px]">
-            Elegirla ajusta series y descanso de toda la rutina; afiná por ejercicio abajo.
-          </p>
-        )}
       </div>
 
+      {/* Summary */}
       <div className={`${CARD} flex flex-col gap-3 p-4`}>
         <div className="flex items-baseline justify-between">
           <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
@@ -94,6 +152,7 @@ export function RoutineView() {
         {totalSets > 0 && <Balance balance={balance} total={totalSets} />}
       </div>
 
+      {/* Exercises */}
       <section className="flex flex-col gap-2">
         <span className="text-muted-foreground px-1 text-[11px] font-medium tracking-wider uppercase">
           Ejercicios
@@ -128,17 +187,17 @@ export function RoutineView() {
 
                 <input
                   value={r.target ?? ex?.defaultReps ?? ""}
-                  onChange={(e) => setRoutineTarget(r.exerciseId, e.currentTarget.value)}
+                  onChange={(e) => setRoutineTarget(selected.id, r.exerciseId, e.currentTarget.value)}
                   aria-label="Reps o duración"
                   className="border-input bg-background/40 focus:border-ring h-7 w-16 rounded-md border text-center font-mono text-xs outline-none"
                 />
 
                 <div className="flex items-center gap-0.5">
-                  <Button size="icon-xs" variant="ghost" onClick={() => setRoutineSets(r.exerciseId, r.sets - 1)} aria-label="Menos series">
+                  <Button size="icon-xs" variant="ghost" onClick={() => setRoutineSets(selected.id, r.exerciseId, r.sets - 1)} aria-label="Menos series">
                     <Minus className="size-3.5" />
                   </Button>
                   <span className="w-8 text-center font-mono text-sm tabular-nums">{r.sets}×</span>
-                  <Button size="icon-xs" variant="ghost" onClick={() => setRoutineSets(r.exerciseId, r.sets + 1)} aria-label="Más series">
+                  <Button size="icon-xs" variant="ghost" onClick={() => setRoutineSets(selected.id, r.exerciseId, r.sets + 1)} aria-label="Más series">
                     <Plus className="size-3.5" />
                   </Button>
                 </div>
@@ -147,7 +206,7 @@ export function RoutineView() {
                   size="icon-xs"
                   variant="ghost"
                   className="text-muted-foreground hover:text-destructive"
-                  onClick={() => removeFromRoutine(r.exerciseId)}
+                  onClick={() => removeFromRoutine(selected.id, r.exerciseId)}
                   aria-label="Quitar"
                 >
                   <Trash2 className="size-3.5" />
@@ -161,7 +220,7 @@ export function RoutineView() {
                   </span>
                   <select
                     value={r.variantId ?? defaultVariantId(ex)}
-                    onChange={(e) => setRoutineVariant(r.exerciseId, e.currentTarget.value)}
+                    onChange={(e) => setRoutineVariant(selected.id, r.exerciseId, e.currentTarget.value)}
                     aria-label="Nivel de intensidad"
                     className="border-input bg-background/40 text-foreground focus:border-ring h-7 flex-1 rounded-md border px-2 text-xs outline-none"
                   >
@@ -195,7 +254,7 @@ export function RoutineView() {
                 size="xs"
                 variant="outline"
                 onClick={() =>
-                  addToRoutine({
+                  addToRoutine(selected.id, {
                     exerciseId: e.id,
                     name: e.name,
                     sets: e.defaultSets,

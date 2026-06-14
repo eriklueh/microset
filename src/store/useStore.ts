@@ -19,10 +19,35 @@ import { methodologyById } from "@/domain/methodologies";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { setPanelVisible } from "@/lib/windows";
 
+/** A named routine template that can be assigned to weekdays. */
+export interface DayType {
+  id: string;
+  name: string;
+  routine: RoutineItem[];
+}
+
+export type WeekKind = "home" | "office";
+/** Sentinel week slot for a rest day. */
+export const REST = "rest";
+
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 const DEFAULT_METHODOLOGY = "gtg";
+const DEFAULT_DAYTYPE_ID = "default";
+const DEFAULT_DAYTYPES: DayType[] = [
+  { id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine: DEFAULT_ROUTINE },
+];
+const DEFAULT_WEEK: string[] = Array(7).fill(DEFAULT_DAYTYPE_ID);
+const DEFAULT_DAYKIND: (WeekKind | null)[] = Array(7).fill(null);
 
-/** Local date key (YYYY-M-D) used to detect day rollover. */
+/** Monday-first weekday index for today (0 = Mon … 6 = Sun). */
+function weekdayIndex(): number {
+  return (new Date().getDay() + 6) % 7;
+}
+
+function newId(): string {
+  return crypto.randomUUID();
+}
+
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -34,14 +59,30 @@ export function nowMinutes(): Minute {
   return d.getHours() * 60 + d.getMinutes();
 }
 
+function dayTypeById(dayTypes: DayType[], id: string): DayType | undefined {
+  return dayTypes.find((d) => d.id === id);
+}
+
+function updateRoutine(
+  dayTypes: DayType[],
+  id: string,
+  fn: (routine: RoutineItem[]) => RoutineItem[],
+): DayType[] {
+  return dayTypes.map((d) => (d.id === id ? { ...d, routine: fn(d.routine) } : d));
+}
+
 interface DayPlan {
   date: string;
   blocks: Block[];
+  rest: boolean;
+  dayTypeName: string | null;
 }
 
 interface State {
   ownedEquipment: EquipmentId[];
-  routine: RoutineItem[];
+  dayTypes: DayType[];
+  week: string[]; // length 7, Mon-first: dayTypeId or REST
+  dayKind: (WeekKind | null)[]; // length 7, Mon-first
   settings: Settings;
   day: DayPlan | null;
   theme: ThemeConfig;
@@ -54,15 +95,26 @@ interface State {
   snoozeMinutes: number;
   demoMode: boolean;
 
-  // editing
+  // routine editing (per day-type)
+  addToRoutine: (dayTypeId: string, item: RoutineItem) => void;
+  setRoutineSets: (dayTypeId: string, exerciseId: string, sets: number) => void;
+  setRoutineTarget: (dayTypeId: string, exerciseId: string, target: string) => void;
+  setRoutineVariant: (dayTypeId: string, exerciseId: string, variantId: string) => void;
+  removeFromRoutine: (dayTypeId: string, exerciseId: string) => void;
+  applyMethodology: (dayTypeId: string, id: string) => void;
+
+  // day-type management
+  addDayType: (name: string) => string;
+  renameDayType: (id: string, name: string) => void;
+  removeDayType: (id: string) => void;
+
+  // week
+  setWeekDay: (index: number, slot: string) => void;
+  setDayKind: (index: number, kind: WeekKind | null) => void;
+
+  // equipment / settings
   toggleEquipment: (id: EquipmentId) => void;
   setSettings: (patch: Partial<Settings>) => void;
-  addToRoutine: (item: RoutineItem) => void;
-  setRoutineSets: (exerciseId: string, sets: number) => void;
-  setRoutineTarget: (exerciseId: string, target: string) => void;
-  setRoutineVariant: (exerciseId: string, variantId: string) => void;
-  removeFromRoutine: (exerciseId: string) => void;
-  applyMethodology: (id: string) => void;
 
   // theme
   setThemeMode: (mode: ThemeMode) => void;
@@ -86,7 +138,6 @@ interface State {
   snooze: (blockId: string, minutes: number) => void;
 }
 
-/** Demo plan: every set is due "now" so you can click through the whole flow instantly. */
 function demoBlocks(routine: RoutineItem[], owned: EquipmentId[], now: Minute): Block[] {
   const doable = routine.filter((r) => {
     const ex = exerciseById(r.exerciseId);
@@ -110,7 +161,9 @@ export const useStore = create<State>()(
   persist(
     (set, get) => ({
       ownedEquipment: DEFAULT_OWNED,
-      routine: DEFAULT_ROUTINE,
+      dayTypes: DEFAULT_DAYTYPES,
+      week: DEFAULT_WEEK,
+      dayKind: DEFAULT_DAYKIND,
       settings: DEFAULT_SETTINGS,
       day: null,
       theme: DEFAULT_THEME,
@@ -120,6 +173,96 @@ export const useStore = create<State>()(
       notificationsEnabled: true,
       snoozeMinutes: 30,
       demoMode: false,
+
+      addToRoutine: (dayTypeId, item) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
+            r.some((x) => x.exerciseId === item.exerciseId) ? r : [...r, item],
+          ),
+        }));
+        get().replan();
+      },
+
+      setRoutineSets: (dayTypeId, exerciseId, sets) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
+            r.map((x) => (x.exerciseId === exerciseId ? { ...x, sets: Math.max(1, sets) } : x)),
+          ),
+        }));
+        get().replan();
+      },
+
+      setRoutineTarget: (dayTypeId, exerciseId, target) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
+            r.map((x) => (x.exerciseId === exerciseId ? { ...x, target } : x)),
+          ),
+        }));
+      },
+
+      setRoutineVariant: (dayTypeId, exerciseId, variantId) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
+            r.map((x) => (x.exerciseId === exerciseId ? { ...x, variantId } : x)),
+          ),
+        }));
+        get().replan();
+      },
+
+      removeFromRoutine: (dayTypeId, exerciseId) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
+            r.filter((x) => x.exerciseId !== exerciseId),
+          ),
+        }));
+        get().replan();
+      },
+
+      applyMethodology: (dayTypeId, id) => {
+        const m = methodologyById(id);
+        if (!m || m.sets === 0) {
+          set({ methodologyId: id });
+        } else {
+          set((s) => ({
+            methodologyId: id,
+            dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
+              r.map((x) => ({ ...x, sets: m.sets })),
+            ),
+            settings: { ...s.settings, minRest: m.minRest },
+          }));
+        }
+        get().replan();
+      },
+
+      addDayType: (name) => {
+        const id = newId();
+        set((s) => ({ dayTypes: [...s.dayTypes, { id, name, routine: [] }] }));
+        return id;
+      },
+
+      renameDayType: (id, name) =>
+        set((s) => ({
+          dayTypes: s.dayTypes.map((d) => (d.id === id ? { ...d, name } : d)),
+        })),
+
+      removeDayType: (id) => {
+        set((s) => {
+          if (s.dayTypes.length <= 1) return s; // keep at least one
+          const dayTypes = s.dayTypes.filter((d) => d.id !== id);
+          const fallback = dayTypes[0].id;
+          const week = s.week.map((slot) => (slot === id ? fallback : slot));
+          return { dayTypes, week };
+        });
+        get().replan();
+      },
+
+      setWeekDay: (index, slot) => {
+        set((s) => ({ week: s.week.map((v, i) => (i === index ? slot : v)) }));
+        get().replan();
+      },
+
+      setDayKind: (index, kind) =>
+        set((s) => ({ dayKind: s.dayKind.map((v, i) => (i === index ? kind : v)) })),
 
       toggleEquipment: (id) => {
         set((s) => ({
@@ -132,63 +275,6 @@ export const useStore = create<State>()(
 
       setSettings: (patch) => {
         set((s) => ({ settings: { ...s.settings, ...patch } }));
-        get().replan();
-      },
-
-      addToRoutine: (item) => {
-        set((s) =>
-          s.routine.some((r) => r.exerciseId === item.exerciseId)
-            ? s
-            : { routine: [...s.routine, item] },
-        );
-        get().replan();
-      },
-
-      setRoutineSets: (exerciseId, sets) => {
-        set((s) => ({
-          routine: s.routine.map((r) =>
-            r.exerciseId === exerciseId ? { ...r, sets: Math.max(1, sets) } : r,
-          ),
-        }));
-        get().replan();
-      },
-
-      setRoutineTarget: (exerciseId, target) => {
-        set((s) => ({
-          routine: s.routine.map((r) =>
-            r.exerciseId === exerciseId ? { ...r, target } : r,
-          ),
-        }));
-      },
-
-      setRoutineVariant: (exerciseId, variantId) => {
-        set((s) => ({
-          routine: s.routine.map((r) =>
-            r.exerciseId === exerciseId ? { ...r, variantId } : r,
-          ),
-        }));
-        get().replan();
-      },
-
-      removeFromRoutine: (exerciseId) => {
-        set((s) => ({
-          routine: s.routine.filter((r) => r.exerciseId !== exerciseId),
-        }));
-        get().replan();
-      },
-
-      applyMethodology: (id) => {
-        const m = methodologyById(id);
-        // "Libre" (sets 0) only records the choice; presets apply sets + rest.
-        if (!m || m.sets === 0) {
-          set({ methodologyId: id });
-        } else {
-          set((s) => ({
-            methodologyId: id,
-            routine: s.routine.map((r) => ({ ...r, sets: m.sets })),
-            settings: { ...s.settings, minRest: m.minRest },
-          }));
-        }
         get().replan();
       },
 
@@ -227,7 +313,9 @@ export const useStore = create<State>()(
       resetAll: () => {
         set({
           ownedEquipment: DEFAULT_OWNED,
-          routine: DEFAULT_ROUTINE,
+          dayTypes: DEFAULT_DAYTYPES,
+          week: DEFAULT_WEEK,
+          dayKind: DEFAULT_DAYKIND,
           settings: DEFAULT_SETTINGS,
           theme: DEFAULT_THEME,
           logs: [],
@@ -248,17 +336,34 @@ export const useStore = create<State>()(
       },
 
       replan: () => {
-        const { routine, settings, ownedEquipment, demoMode } = get();
+        const { dayTypes, week, settings, ownedEquipment, demoMode } = get();
+        const slot = week[weekdayIndex()];
+        const rest = slot === REST;
+        const dayType = rest ? undefined : dayTypeById(dayTypes, slot);
+        const routine = dayType?.routine ?? [];
+
         if (demoMode) {
-          set({ day: { date: todayKey(), blocks: demoBlocks(routine, ownedEquipment, nowMinutes()) } });
+          // Demo always shows something: today's routine, or the first day-type's.
+          const demoRoutine = routine.length ? routine : (dayTypes[0]?.routine ?? []);
+          set({
+            day: {
+              date: todayKey(),
+              blocks: demoBlocks(demoRoutine, ownedEquipment, nowMinutes()),
+              rest: false,
+              dayTypeName: dayTypes[0]?.name ?? null,
+            },
+          });
           return;
         }
+
         const doable = routine.filter((r) => {
           const ex = exerciseById(r.exerciseId);
           return ex ? isAvailable(ex, ownedEquipment) : true;
         });
         const { blocks } = createDayPlan(doable, settings, nowMinutes());
-        set({ day: { date: todayKey(), blocks } });
+        set({
+          day: { date: todayKey(), blocks, rest, dayTypeName: dayType?.name ?? null },
+        });
       },
 
       done: (blockId) => {
@@ -309,9 +414,23 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
+      version: 1,
+      migrate: (persisted, version) => {
+        const p = persisted as Record<string, unknown>;
+        if (p && (version < 1 || !p.dayTypes)) {
+          const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
+          p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
+          p.week = Array(7).fill(DEFAULT_DAYTYPE_ID);
+          p.dayKind = Array(7).fill(null);
+          delete p.routine;
+        }
+        return p;
+      },
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,
-        routine: s.routine,
+        dayTypes: s.dayTypes,
+        week: s.week,
+        dayKind: s.dayKind,
         settings: s.settings,
         day: s.day,
         theme: s.theme,
