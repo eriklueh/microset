@@ -1,77 +1,73 @@
-import { Bot, Calendar, Dumbbell, Salad, Target } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Masthead } from "./Masthead";
 
-const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
+const ACC_DIM = "color-mix(in oklch, var(--acc) 18%, transparent)";
 
-const CAPABILITIES = [
-  {
-    icon: Target,
-    title: "Tus objetivos",
-    desc: "Fuerza, tu primer muscle-up, bajar grasa: le decís a dónde querés llegar.",
-  },
-  {
-    icon: Salad,
-    title: "Tu dieta",
-    desc: "Considera cómo comés para ajustar volumen, frecuencia y descanso.",
-  },
-  {
-    icon: Calendar,
-    title: "Tus días",
-    desc: "Sabe qué días son home office y cuáles de oficina, y arma el plan acorde.",
-  },
-  {
-    icon: Dumbbell,
-    title: "Tu equipo",
-    desc: "Recomienda ejercicios con lo que tenés en casa.",
-  },
+const CAPS = [
+  { n: "01", t: "Tus objetivos", d: "Fuerza, tu primer muscle-up, bajar grasa: a dónde querés llegar." },
+  { n: "02", t: "Tu dieta", d: "Cómo comés para ajustar volumen, frecuencia y descanso." },
+  { n: "03", t: "Tus días", d: "Qué días son home office y cuáles de oficina." },
+  { n: "04", t: "Tu equipo", d: "Recomienda ejercicios con lo que tenés en casa." },
 ];
 
 export function CoachView({ onStart }: { onStart: () => void }) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className={`${CARD} relative overflow-hidden p-5`}>
-        <div className="bg-primary absolute inset-x-0 top-0 h-0.5" />
-        <div className="text-muted-foreground mb-3 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
-          <Bot className="size-3" /> Próximamente
+    <div className="flex flex-col px-[34px] py-[30px]">
+      <Masthead title="COACH" sub="AGENTE IA · PRÓXIMAMENTE" />
+
+      <div className="relative border border-[var(--rule2)] p-[26px]">
+        <div className="absolute top-0 left-0 h-1 w-[60px] bg-[var(--acc)]" />
+        <div className="font-mono text-[10px] font-semibold tracking-[0.18em] text-[var(--acc)]">
+          ▢ PRÓXIMAMENTE
         </div>
-        <h2 className="text-xl font-semibold tracking-tight">Tu coach inteligente</h2>
-        <p className="text-muted-foreground mt-1.5 max-w-md text-sm leading-relaxed">
-          Contale tus objetivos, tu dieta, tu equipo y tus horarios. El coach arma un
-          calendario de entrenamiento a tu medida; después microset lo reparte en tu día
-          y te avisa cuando toca.
+        <div className="mt-3.5 text-[38px] leading-[0.95] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
+          Tu coach
+          <br />
+          inteligente
+        </div>
+        <p className="mt-4 max-w-[520px] text-[13.5px] leading-[1.6] text-[var(--dim)]">
+          Contale tus objetivos, tu dieta, tu equipo y tus horarios. El coach arma un calendario
+          a tu medida; microset lo reparte y te avisa cuando toca.
         </p>
-        <div className="mt-4 flex gap-2">
-          <Button size="sm" disabled>
-            Hablar con el coach
-          </Button>
-          <Button size="sm" variant="outline" onClick={onStart}>
-            Ver mi día
-          </Button>
+        <div className="mt-[22px] flex gap-2.5">
+          <button
+            disabled
+            className="cursor-not-allowed px-[22px] py-3 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--faint)]"
+            style={{ background: ACC_DIM }}
+          >
+            HABLAR CON EL COACH
+          </button>
+          <button
+            onClick={onStart}
+            className="border-2 border-[var(--fg)] px-[22px] py-3 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--fg)]"
+          >
+            VER MI DÍA
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {CAPABILITIES.map((c) => {
-          const Icon = c.icon;
-          return (
-            <div key={c.title} className={`${CARD} flex flex-col gap-2 p-4`}>
-              <Icon className="text-primary size-5" />
-              <div className="text-sm font-medium">{c.title}</div>
-              <div className="text-muted-foreground text-xs leading-relaxed">{c.desc}</div>
-            </div>
-          );
-        })}
+      <div className="mt-[22px] grid grid-cols-2 border border-[var(--rule)]">
+        {CAPS.map((c, i) => (
+          <div
+            key={c.n}
+            className={`p-5 ${i % 2 === 0 ? "border-r border-[var(--rule)]" : ""} ${i < 2 ? "border-b border-[var(--rule)]" : ""}`}
+          >
+            <span className="font-mono text-[10px] text-[var(--faint2)]">{c.n}</span>
+            <div className="mt-2 text-[17px] font-bold text-[var(--fg)]">{c.t}</div>
+            <p className="mt-1.5 text-[12.5px] leading-[1.5] text-[var(--faint)]">{c.d}</p>
+          </div>
+        ))}
       </div>
 
-      <div className={`${CARD} flex items-center gap-2 p-2 pl-3`}>
-        <input
-          disabled
-          placeholder="Contale a tu coach qué querés lograr…"
-          className="text-muted-foreground placeholder:text-muted-foreground/60 flex-1 cursor-not-allowed bg-transparent text-sm outline-none"
-        />
-        <Button size="sm" disabled>
-          Enviar
-        </Button>
+      <div className="mt-[22px] flex items-center border border-[var(--rule2)]">
+        <span className="flex-1 px-4 py-[13px] text-[13.5px] text-[var(--faint2)]">
+          Contale a tu coach qué querés lograr…
+        </span>
+        <span
+          className="px-[22px] py-[13px] font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--faint)]"
+          style={{ background: ACC_DIM }}
+        >
+          ENVIAR
+        </span>
       </div>
     </div>
   );

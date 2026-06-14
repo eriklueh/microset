@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="{{ rootStyle }}">
+  <div style="display:flex;align-items:center;gap:9px;"><div style="{{ logoSq }}"></div><span style="{{ word }}">microset</span></div>
+  <div style="display:flex;align-items:center;gap:2px;">
+    <div style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;"><span style="{{ ctrlLine }}"></span></div>
+    <div style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;"><span style="{{ ctrlSq }}"></span></div>
+    <div style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="{{ ctrlStroke }}" stroke-width="1.5" stroke-linecap="round"><line x1="1.5" y1="1.5" x2="10.5" y2="10.5"></line><line x1="10.5" y1="1.5" x2="1.5" y2="10.5"></line></svg></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:940,&quot;height&quot;:40},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const light = this.props.theme === 'light';
+    const pal = light
+      ? { bg: '#e7e2d7', border: '#d6d1c6', fg: '#57544a', acc: '#6f9c00', ctrl: '#8a8678' }
+      : { bg: '#0a0a0a', border: 'rgba(255,255,255,0.1)', fg: '#8a8a85', acc: '#c4f82a', ctrl: '#8a8a85' };
+    return {
+      rootStyle: 'height:40px;width:100%;background:' + pal.bg + ';display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 14px;border-bottom:1px solid ' + pal.border + ';font-family:\'Geist\',sans-serif;box-sizing:border-box;',
+      logoSq: 'width:14px;height:14px;background:' + pal.acc + ';',
+      word: 'font-size:12.5px;color:' + pal.fg + ';',
+      ctrlLine: 'width:11px;height:1.5px;background:' + pal.ctrl + ';',
+      ctrlSq: 'width:10px;height:10px;border:1.5px solid ' + pal.ctrl + ';',
+      ctrlStroke: pal.ctrl
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -63,21 +63,6 @@ pub fn run() {
                 }
             }
 
-            // Native translucency on Windows 11: subtle mica for the Studio,
-            // acrylic for the floating panel. (Linux/Hyprland uses compositor blur.)
-            #[cfg(target_os = "windows")]
-            {
-                use window_vibrancy::apply_acrylic;
-                // App paints its own themed background; acrylic only adds a subtle
-                // blurred translucency on top, so it stays readable in any system theme.
-                if let Some(main) = app.get_webview_window("main") {
-                    let _ = apply_acrylic(&main, Some((16, 16, 20, 40)));
-                }
-                if let Some(panel) = app.get_webview_window("panel") {
-                    let _ = apply_acrylic(&panel, Some((16, 16, 20, 80)));
-                }
-            }
-
             Ok(())
         })
         // Closing a window hides it to the tray instead of quitting:

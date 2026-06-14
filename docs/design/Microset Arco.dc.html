@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#e7e8ea;}
+  @keyframes sunPulse{0%,100%{box-shadow:0 0 0 0 rgba(182,255,46,0.5),0 0 26px 4px rgba(182,255,46,0.7);}50%{box-shadow:0 0 0 10px rgba(182,255,46,0),0 0 26px 4px rgba(182,255,46,0.5);}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#e7e8ea;padding:56px 40px 110px;font-family:'Geist',-apple-system,sans-serif;color:#14151a;">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <!-- COVER -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;">
+      <div>
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.28em;color:#7b7d85;text-transform:uppercase;margin-bottom:14px;">microset · dirección elegida</div>
+        <h1 style="margin:0;font-size:46px;font-weight:800;letter-spacing:-0.03em;line-height:1;">microset</h1>
+      </div>
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;color:#9a9ca3;text-align:right;letter-spacing:0.04em;line-height:1.7;">DIRECCIÓN: ARCO<br>APP COMPLETA · 9 VISTAS<br>OSCURO · LIGHT PRÓXIMO</div>
+    </div>
+    <p style="margin:18px 0 0;max-width:660px;font-size:15px;line-height:1.6;color:#52555c;">Dirección elegida: <b>Arco</b> — el día como el arco del sol. Acá vive por separado para seguir puliéndola. Próximo paso: <b>light mode</b> en todas las pantallas.</p>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C1 · HOY</div>
+      <div style="font-size:13px;color:#7b7d85;margin-top:3px;">El sol marca el ahora sobre el arco del día. Las series son puntos en la trayectoria; el centro resume el progreso.</div>
+    </div>
+
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <div style="height:40px;background:#0b0f12;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 14px;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex;align-items:center;gap:9px;"><div style="width:14px;height:14px;border-radius:50%;background:#b6ff2e;"></div><span style="font-size:12.5px;color:#8a9298;">microset</span></div>
+        <div style="display:flex;align-items:center;gap:2px;"><div style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;"><span style="width:11px;height:1.5px;background:#828a8f;"></span></div><div style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;"><span style="width:10px;height:10px;border:1.5px solid #828a8f;border-radius:2px;"></span></div><div style="width:34px;height:30px;display:flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#828a8f" stroke-width="1.5" stroke-linecap="round"><line x1="1.5" y1="1.5" x2="10.5" y2="10.5"></line><line x1="10.5" y1="1.5" x2="1.5" y2="10.5"></line></svg></div></div>
+      </div>
+      <div style="display:flex;background:#070a0d;background-image:radial-gradient(700px 320px at 50% 128%,rgba(182,255,46,0.1),transparent 62%),radial-gradient(500px 400px at 50% -20%,rgba(70,90,140,0.12),transparent 60%);">
+        <dc-import name="SidebarC" active="hoy" hint-size="210px,640px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px 28px;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+            <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Hoy</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">EL ARCO DE TU DÍA · 09–18H</div></div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);"><span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.16em;color:#5c646a;">TIPO</span><span style="font-size:13px;font-weight:600;color:#eaf0f4;">Estándar</span></div>
+          </div>
+
+          <div style="display:flex;gap:24px;align-items:center;margin-top:4px;">
+            <div style="flex:none;">{{ arcC }}</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;">
+              <div style="border-radius:16px;background:rgba(255,255,255,0.025);box-shadow:inset 0 0 0 1px rgba(182,255,46,0.18);padding:18px 20px;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#b6ff2e,transparent);"></div>
+                <div style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.2em;color:#5c646a;">PRÓXIMO · 14:00 · EN 2 MIN</div>
+                <div style="font-size:25px;font-weight:700;letter-spacing:-0.02em;color:#eaf0f4;margin-top:8px;">Fondos</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#828a8f;margin-top:2px;">5 reps · Peso corporal</div>
+                <div style="display:flex;gap:9px;margin-top:16px;">
+                  <button style="display:flex;align-items:center;gap:7px;padding:10px 18px;border:none;border-radius:9px;background:#b6ff2e;color:#0a1600;font-family:'Geist',sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 0 18px rgba(182,255,46,0.3);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0a1600" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12 10,17 19,7"></polyline></svg>Hecho</button>
+                  <button style="padding:10px 16px;border:none;border-radius:9px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);color:#c4cbcf;font-family:'Geist',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Posponer</button>
+                  <button style="padding:10px 12px;border:none;background:transparent;color:#5c646a;font-family:'Geist',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Ahora no</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.18em;color:#5c646a;margin:2px 0 8px 2px;">DESPUÉS</div>
+                {{ restoC }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2 · COACH -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C2 · COACH</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">El placeholder del agente futuro, en clave nocturna.</div></div>
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <dc-import name="TitlebarC" hint-size="940px,40px" style="display:block;"></dc-import>
+      <div style="display:flex;background:#070a0d;background-image:radial-gradient(700px 320px at 50% 128%,rgba(182,255,46,0.06),transparent 62%);">
+        <dc-import name="SidebarC" active="coach" hint-size="210px,620px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px;display:flex;flex-direction:column;gap:16px;">
+          <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Coach</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">TU ENTRENADOR INTELIGENTE</div></div>
+          <div style="position:relative;border-radius:16px;overflow:hidden;background:rgba(255,255,255,0.025);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:24px;">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#b6ff2e,transparent);"></div>
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:7px;background:rgba(255,255,255,0.05);font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.18em;color:#9aa1a6;"><span style="width:13px;height:11px;border-radius:3px;box-shadow:inset 0 0 0 1.4px #9aa1a6;display:inline-block;"></span>PRÓXIMAMENTE</div>
+            <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;color:#eaf0f4;margin-top:16px;">Tu coach inteligente</div>
+            <p style="margin:10px 0 0;max-width:560px;font-size:14px;line-height:1.6;color:#9aa1a6;">Contale tus objetivos, tu dieta, tu equipo y tus horarios. El coach arma un calendario a tu medida; después microset lo reparte en tu día y te avisa cuando toca.</p>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+              <button style="padding:11px 18px;border:none;border-radius:9px;background:rgba(182,255,46,0.14);color:#7e9a4a;font-family:'Geist',sans-serif;font-size:13.5px;font-weight:600;cursor:not-allowed;white-space:nowrap;">Hablar con el coach</button>
+              <button style="padding:11px 18px;border-radius:9px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);color:#eaf0f4;font-family:'Geist',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Ver mi día</button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b6ff2e" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.4" fill="#b6ff2e"></circle></svg><div style="font-size:16px;font-weight:700;color:#eaf0f4;margin-top:12px;">Tus objetivos</div><p style="margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#828a8f;">Fuerza, tu primer muscle-up, bajar grasa: le decís a dónde querés llegar.</p></div>
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b6ff2e" stroke-width="1.7" stroke-linecap="round"><path d="M3 13h18a9 9 0 0 1-18 0z"></path><line x1="12" y1="3" x2="12" y2="9"></line><line x1="9" y1="6" x2="15" y2="6"></line></svg><div style="font-size:16px;font-weight:700;color:#eaf0f4;margin-top:12px;">Tu dieta</div><p style="margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#828a8f;">Considera cómo comés para ajustar volumen, frecuencia y descanso.</p></div>
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b6ff2e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"></line><line x1="8" y1="3" x2="8" y2="6"></line><line x1="16" y1="3" x2="16" y2="6"></line></svg><div style="font-size:16px;font-weight:700;color:#eaf0f4;margin-top:12px;">Tus días</div><p style="margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#828a8f;">Sabe qué días son home office y cuáles de oficina, y arma el plan acorde.</p></div>
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b6ff2e" stroke-width="1.7" stroke-linejoin="round"><polygon points="12,3 19,7.5 19,16.5 12,21 5,16.5 5,7.5"></polygon></svg><div style="font-size:16px;font-weight:700;color:#eaf0f4;margin-top:12px;">Tu equipo</div><p style="margin:6px 0 0;font-size:12.5px;line-height:1.5;color:#828a8f;">Recomienda ejercicios con lo que tenés en casa.</p></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:13px;background:rgba(255,255,255,0.02);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.07);">
+            <span style="flex:1;font-size:13.5px;color:#4e565c;">Contale a tu coach qué querés lograr…</span>
+            <span style="padding:8px 16px;border-radius:8px;background:rgba(182,255,46,0.14);color:#7e9a4a;font-size:12.5px;font-weight:600;">Enviar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C3 · RUTINA -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C3 · RUTINA</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">Metodología, feasibility con balance muscular, y la lista editable.</div></div>
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <dc-import name="TitlebarC" hint-size="940px,40px" style="display:block;"></dc-import>
+      <div style="display:flex;background:#070a0d;background-image:radial-gradient(700px 320px at 50% 128%,rgba(182,255,46,0.05),transparent 62%);">
+        <dc-import name="SidebarC" active="rutina" hint-size="210px,1080px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px;display:flex;flex-direction:column;gap:16px;">
+          <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Rutina</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">QUÉ ENTRENÁS EN CADA TIPO DE DÍA</div></div>
+          <div style="display:flex;align-items:center;gap:9px;">
+            <span style="padding:8px 16px;border-radius:10px;background:#b6ff2e;color:#0a1600;font-size:13.5px;font-weight:600;box-shadow:0 0 16px rgba(182,255,46,0.28);">Estándar</span>
+            <span style="padding:8px 14px;border-radius:10px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);color:#9aa1a6;font-size:13.5px;font-weight:500;">Empuje</span>
+            <span style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;color:#5c646a;font-size:13px;font-weight:500;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5c646a" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Tipo de día</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:14px;">
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;">METODOLOGÍA</span><div style="display:flex;align-items:center;gap:8px;padding:6px 11px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);"><span style="font-size:12px;color:#eaf0f4;font-weight:500;">Grease the Groove</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#828a8f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg></div></div>
+              <div style="font-size:16.5px;font-weight:700;letter-spacing:-0.015em;color:#eaf0f4;">Series submáximas, frecuentes y repartidas</div>
+              <p style="margin:8px 0 0;font-size:12.5px;line-height:1.55;color:#828a8f;">Muchas series cortas a lo largo del día, lejos del fallo. Gana fuerza y técnica sin fatigarte. Es el corazón de microset.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;display:flex;flex-direction:column;">
+              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;">RESUMEN DEL DÍA</span><span style="font-family:'Geist Mono',monospace;font-size:14px;color:#eaf0f4;font-weight:600;">8 <span style="color:#5c646a;font-size:11px;">SERIES</span></span></div>
+              <div style="display:flex;align-items:center;gap:7px;margin-top:14px;font-size:12px;color:#8fbf5a;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8fbf5a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"></polyline></svg>Entran las 8 series en tu horario (9–18h)</div>
+              <div style="display:flex;height:8px;border-radius:5px;overflow:hidden;margin-top:14px;"><div style="width:37.5%;background:#6cb6ff;"></div><div style="width:37.5%;background:#ffb27a;"></div><div style="width:25%;background:#c79bff;"></div></div>
+              <div style="display:flex;gap:14px;margin-top:11px;font-family:'Geist Mono',monospace;font-size:10px;color:#9aa1a6;"><span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;background:#6cb6ff;"></span>TIRÓN·3</span><span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;background:#ffb27a;"></span>EMPUJE·3</span><span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;background:#c79bff;"></span>CORE·2</span></div>
+            </div>
+          </div>
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin:6px 0 -4px 2px;">EJERCICIOS</div>
+          {{ exCardsC }}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0 2px;"><span style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;">AGREGAR EJERCICIO</span><span style="font-size:12.5px;font-weight:600;color:#b6ff2e;cursor:pointer;">+ Crear propio</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:13px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.07);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5c646a" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16" y1="16" x2="21" y2="21"></line></svg><span style="font-size:13.5px;color:#4e565c;">Buscar ejercicio…</span></div>
+          <div style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.16em;color:#4e565c;margin:4px 0 0 2px;">TIRÓN</div>
+          {{ catTironC }}
+          <div style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.16em;color:#4e565c;margin:4px 0 0 2px;">EMPUJE</div>
+          {{ catEmpujeC }}
+        </div>
+      </div>
+    </div>
+
+    <!-- C4 · SEMANA -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C4 · SEMANA</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">Tipo de día + contexto Casa/Oficina por día.</div></div>
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <dc-import name="TitlebarC" hint-size="940px,40px" style="display:block;"></dc-import>
+      <div style="display:flex;background:#070a0d;">
+        <dc-import name="SidebarC" active="semana" hint-size="210px,700px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px;display:flex;flex-direction:column;gap:16px;">
+          <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Semana</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">QUÉ HACÉS CADA DÍA DE LA SEMANA</div></div>
+          {{ semanaC }}
+        </div>
+      </div>
+    </div>
+
+    <!-- C5 · EQUIPO -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C5 · EQUIPO</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">Qué tenés en casa.</div></div>
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <dc-import name="TitlebarC" hint-size="940px,40px" style="display:block;"></dc-import>
+      <div style="display:flex;background:#070a0d;">
+        <dc-import name="SidebarC" active="equipo" hint-size="210px,560px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px;display:flex;flex-direction:column;gap:16px;">
+          <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Equipo</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">LO QUE TENÉS EN CASA</div></div>
+          {{ equipoC }}
+        </div>
+      </div>
+    </div>
+
+    <!-- C6 · PROGRESO -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C6 · PROGRESO</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">Métricas, eje de intensidad y volumen de 7 días.</div></div>
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <dc-import name="TitlebarC" hint-size="940px,40px" style="display:block;"></dc-import>
+      <div style="display:flex;background:#070a0d;background-image:radial-gradient(700px 320px at 50% 128%,rgba(182,255,46,0.05),transparent 62%);">
+        <dc-import name="SidebarC" active="progreso" hint-size="210px,640px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px;display:flex;flex-direction:column;gap:14px;">
+          <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Progreso</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">TU EVOLUCIÓN POR EJERCICIO</div></div>
+          {{ progSummaryC }}
+          {{ progCardsC }}
+        </div>
+      </div>
+    </div>
+
+    <!-- C7 · AJUSTES -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C7 · AJUSTES</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">Apariencia, panel, notificaciones, horario, demo y datos.</div></div>
+    <div style="width:940px;margin:0 auto;border-radius:13px;overflow:hidden;box-shadow:0 40px 90px -26px rgba(0,0,0,0.55),0 0 0 1px rgba(0,0,0,0.05);">
+      <dc-import name="TitlebarC" hint-size="940px,40px" style="display:block;"></dc-import>
+      <div style="display:flex;background:#070a0d;">
+        <dc-import name="SidebarC" active="hoy" hint-size="210px,800px" style="align-self:stretch;"></dc-import>
+        <div style="flex:1;min-width:0;padding:24px 30px;display:flex;flex-direction:column;gap:14px;">
+          <div><h2 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.025em;color:#eaf0f4;">Ajustes</h2><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-top:5px;">PREFERENCIAS DE LA APP</div></div>
+          <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;">
+            <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;">APARIENCIA</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;"><span style="font-size:14px;color:#d4dade;">Tema</span><div style="display:flex;gap:3px;padding:3px;border-radius:10px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);"><span style="padding:7px 16px;border-radius:8px;font-size:12.5px;color:#9aa1a6;">Claro</span><span style="padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;background:#b6ff2e;color:#0a1600;">Oscuro</span><span style="padding:7px 16px;border-radius:8px;font-size:12.5px;color:#9aa1a6;">Sistema</span></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);"><span style="font-size:14px;color:#d4dade;">Acento</span><div style="display:flex;gap:11px;"><span style="width:24px;height:24px;border-radius:50%;background:#b6ff2e;box-shadow:0 0 0 2px #070a0d,0 0 0 3.5px #b6ff2e;"></span><span style="width:24px;height:24px;border-radius:50%;background:#6cb6ff;"></span><span style="width:24px;height:24px;border-radius:50%;background:#c79bff;"></span><span style="width:24px;height:24px;border-radius:50%;background:#ffb27a;"></span><span style="width:24px;height:24px;border-radius:50%;background:#ff6b8a;"></span><span style="width:24px;height:24px;border-radius:50%;background:#5fe3d0;"></span></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;color:#d4dade;font-weight:600;">Panel flotante</div><div style="font-size:12px;color:#828a8f;margin-top:3px;">Mini-widget siempre encima</div></div><div style="width:42px;height:24px;border-radius:12px;background:#b6ff2e;position:relative;flex:none;box-shadow:0 0 14px rgba(182,255,46,0.35);"><div style="width:18px;height:18px;border-radius:50%;background:#070a0d;position:absolute;top:3px;left:21px;"></div></div></div>
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:14px;color:#d4dade;font-weight:600;">Notificaciones</div><div style="width:42px;height:24px;border-radius:12px;background:#b6ff2e;position:relative;flex:none;box-shadow:0 0 14px rgba(182,255,46,0.35);"><div style="width:18px;height:18px;border-radius:50%;background:#070a0d;position:absolute;top:3px;left:21px;"></div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,0.06);"><span style="font-size:13px;color:#9aa1a6;">Posponer</span><span style="font-family:'Geist Mono',monospace;font-size:13px;color:#eaf0f4;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);">30 min</span></div></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;">
+            <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;">HORARIO Y DESCANSO</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px;">
+              <div><div style="font-size:11px;color:#828a8f;margin-bottom:7px;">Inicio</div><div style="font-family:'Geist Mono',monospace;font-size:14px;color:#eaf0f4;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);text-align:center;">09:00</div></div>
+              <div><div style="font-size:11px;color:#828a8f;margin-bottom:7px;">Fin</div><div style="font-family:'Geist Mono',monospace;font-size:14px;color:#eaf0f4;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);text-align:center;">18:00</div></div>
+              <div><div style="font-size:11px;color:#828a8f;margin-bottom:7px;">Almuerzo</div><div style="font-family:'Geist Mono',monospace;font-size:14px;color:#eaf0f4;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);text-align:center;">13:00</div></div>
+              <div><div style="font-size:11px;color:#828a8f;margin-bottom:7px;">hasta</div><div style="font-family:'Geist Mono',monospace;font-size:14px;color:#eaf0f4;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);text-align:center;">14:00</div></div>
+              <div><div style="font-size:11px;color:#828a8f;margin-bottom:7px;">Descanso mín.</div><div style="font-family:'Geist Mono',monospace;font-size:14px;color:#eaf0f4;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,0.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);text-align:center;">45 min</div></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:14px;">
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;color:#d4dade;font-weight:600;">Modo demo</div><div style="font-size:12px;color:#828a8f;margin-top:3px;">Agenda todo “ahora”</div></div><div style="width:42px;height:24px;border-radius:12px;background:#22271e;position:relative;flex:none;"><div style="width:18px;height:18px;border-radius:50%;background:#070a0d;position:absolute;top:3px;left:3px;"></div></div></div>
+            <div style="background:rgba(255,255,255,0.025);border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);padding:18px 20px;"><div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.16em;color:#5c646a;margin-bottom:13px;">DATOS</div><div style="display:flex;gap:9px;"><span style="flex:1;text-align:center;padding:9px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);color:#c4cbcf;font-size:12.5px;font-weight:500;">Replanificar hoy</span><span style="flex:1;text-align:center;padding:9px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);color:#c4cbcf;font-size:12.5px;font-weight:500;">Restablecer</span><span style="flex:none;text-align:center;padding:9px 14px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(255,107,138,0.4);color:#ff6b8a;font-size:12.5px;font-weight:600;">Borrar todo</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C8 · PANEL -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C8 · PANEL FLOTANTE · 272×136</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">El sol entra en el panel: el “ahora” trae el astro en chiquito.</div></div>
+    <div style="border-radius:18px;padding:40px 34px;background:linear-gradient(135deg,#0e1216,#06090b);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);background-image:radial-gradient(circle at 50% 120%,rgba(182,255,46,0.08),transparent 45%);display:flex;gap:26px;flex-wrap:wrap;">
+      {{ panelsC }}
+    </div>
+
+    <!-- C9 · NOTIFICACIÓN -->
+    <div style="margin:54px 0 14px;"><div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.16em;color:#36373d;font-weight:600;">C9 · NOTIFICACIÓN DEL SO</div><div style="font-size:13px;color:#7b7d85;margin-top:3px;">Toast nativo con acciones inline.</div></div>
+    <div style="border-radius:18px;padding:40px 34px;background:linear-gradient(135deg,#0e1216,#06090b);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);display:flex;justify-content:flex-end;">
+      <div style="width:376px;border-radius:14px;overflow:hidden;background:rgba(8,12,14,0.94);backdrop-filter:blur(24px);box-shadow:0 26px 60px -16px rgba(0,0,0,0.7),inset 0 0 0 1px rgba(255,255,255,0.08);">
+        <div style="padding:14px 16px 4px;display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:16px;height:16px;border-radius:50%;background:#b6ff2e;"></div><span style="font-size:11.5px;color:#9aa1a6;">microset</span></div><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#5c646a" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"></line><line x1="10" y1="2" x2="2" y2="10"></line></svg></div>
+        <div style="padding:6px 16px 14px;"><div style="font-size:15px;font-weight:700;color:#eaf0f4;">Toca una serie</div><div style="font-size:13px;color:#9aa1a6;margin-top:4px;">Fondos · 5 reps — ¿la hacés ahora?</div><div style="display:flex;gap:8px;margin-top:14px;"><div style="flex:1;text-align:center;padding:9px;border-radius:8px;background:#b6ff2e;color:#0a1600;font-size:12.5px;font-weight:600;">Hecho</div><div style="flex:1;text-align:center;padding:9px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);color:#c4cbcf;font-size:12.5px;font-weight:500;">Posponer 30’</div><div style="flex:1;text-align:center;padding:9px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);color:#9aa1a6;font-size:12.5px;font-weight:500;">Ahora no</div></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const e = React.createElement;
+    const mins = (t) => { const p = t.split(':'); return (+p[0] * 60 + +p[1]) - 540; };
+    const sets = [
+      { t: '09:00', name: 'Dominadas', reps: '5', st: 'done' },
+      { t: '10:07', name: 'Fondos', reps: '5', st: 'done' },
+      { t: '11:14', name: 'L-sit', reps: '10–20s', st: 'done' },
+      { t: '12:21', name: 'Dominadas', reps: '5', st: 'skip' },
+      { t: '14:00', name: 'Fondos', reps: '5', st: 'next' },
+      { t: '15:07', name: 'L-sit', reps: '10–20s', st: 'todo' },
+      { t: '16:14', name: 'Dominadas', reps: '5', st: 'todo' },
+      { t: '17:21', name: 'Fondos', reps: '5', st: 'todo' }
+    ];
+
+    // ===== C — ARCO (solar dial) =====
+    const cx = 188, cy = 196, R = 150;
+    const ang = (f) => -125 + f * 250;
+    const pos = (f, r) => { const t = ang(f) * Math.PI / 180; return [cx + r * Math.sin(t), cy - r * Math.cos(t)]; };
+    const fnow = mins('13:58') / 540;
+    const kids = [];
+    // trajectory dots
+    const N = 76;
+    for (let i = 0; i <= N; i++) {
+      const f = i / N; const p = pos(f, R); const trav = f <= fnow;
+      kids.push(e('div', { key: 'tr' + i, style: { position: 'absolute', left: p[0] + 'px', top: p[1] + 'px', width: '3px', height: '3px', borderRadius: '50%', transform: 'translate(-50%,-50%)', background: trav ? 'rgba(182,255,46,0.6)' : 'rgba(182,255,46,0.12)' } }));
+    }
+    // hour labels
+    [['9', 0], ['12', 0.333], ['15', 0.667], ['18', 1]].forEach((h, i) => {
+      const p = pos(h[1], R + 28);
+      kids.push(e('div', { key: 'hl' + i, style: { position: 'absolute', left: p[0] + 'px', top: p[1] + 'px', transform: 'translate(-50%,-50%)', fontFamily: "'Geist Mono',monospace", fontSize: '11px', color: '#4e565c' } }, h[0]));
+    });
+    // set nodes
+    sets.forEach((s, i) => {
+      const f = mins(s.t) / 540; const p = pos(f, R);
+      let st;
+      if (s.st === 'done') st = { width: '13px', height: '13px', borderRadius: '50%', background: '#b6ff2e', boxShadow: '0 0 8px rgba(182,255,46,0.5)' };
+      else if (s.st === 'next') st = { width: '15px', height: '15px', borderRadius: '50%', background: '#070a0d', border: '2px solid #b6ff2e', boxShadow: '0 0 10px rgba(182,255,46,0.5)' };
+      else if (s.st === 'skip') st = { width: '10px', height: '10px', borderRadius: '50%', background: '#1a2016', border: '1.5px solid #2f3a2a' };
+      else st = { width: '10px', height: '10px', borderRadius: '50%', background: '#070a0d', border: '1.5px solid rgba(182,255,46,0.35)' };
+      kids.push(e('div', { key: 'nd' + i, style: Object.assign({ position: 'absolute', left: p[0] + 'px', top: p[1] + 'px', transform: 'translate(-50%,-50%)' }, st) }));
+    });
+    // sun at now
+    const sp = pos(fnow, R);
+    kids.push(e('div', { key: 'sun', style: { position: 'absolute', left: sp[0] + 'px', top: sp[1] + 'px', width: '24px', height: '24px', borderRadius: '50%', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle at 38% 32%,#e4ff8f,#b6ff2e)', animation: 'sunPulse 2.6s ease-in-out infinite' } }));
+    // center readout
+    kids.push(e('div', { key: 'center', style: { position: 'absolute', left: cx + 'px', top: (cy + 4) + 'px', transform: 'translate(-50%,-50%)', textAlign: 'center', width: '180px' } }, [
+      e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.16em', color: '#b6ff2e' } }, 'AHORA · 13:58'),
+      e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '46px', fontWeight: 600, color: '#eaf0f4', letterSpacing: '-0.02em', lineHeight: 1.05, marginTop: '2px' } }, ['3', e('span', { key: 's', style: { color: '#4e565c' } }, '/8')]),
+      e('div', { key: 3, style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.18em', color: '#5c646a', marginTop: '2px' } }, 'SERIES HECHAS')
+    ]));
+    // horizon
+    kids.push(e('div', { key: 'horizon', style: { position: 'absolute', left: '14px', right: '14px', top: (cy + R + 4) + 'px', height: '1px', background: 'linear-gradient(90deg,transparent,rgba(182,255,46,0.35),transparent)' } }));
+    const arcC = e('div', { style: { position: 'relative', width: '376px', height: '364px' } }, kids);
+
+    // resto del día (upcoming)
+    const upcoming = sets.filter((s) => s.st === 'next' || s.st === 'todo');
+    const restoC = e('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px' } }, upcoming.map((s, i) => {
+      const on = s.st === 'next';
+      return e('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '13px', padding: '9px 12px', borderRadius: '9px', background: on ? 'rgba(182,255,46,0.06)' : 'transparent', boxShadow: on ? 'inset 0 0 0 1px rgba(182,255,46,0.16)' : 'none' } }, [
+        e('span', { key: 'd', style: { width: '8px', height: '8px', borderRadius: '50%', flex: 'none', background: on ? '#b6ff2e' : 'transparent', border: on ? 'none' : '1.5px solid rgba(182,255,46,0.35)' } }),
+        e('span', { key: 't', style: { fontFamily: "'Geist Mono',monospace", fontSize: '12.5px', width: '44px', flex: 'none', color: on ? '#b6ff2e' : '#828a8f' } }, s.t),
+        e('span', { key: 'n', style: { flex: 1, fontSize: '14px', fontWeight: on ? 600 : 500, color: on ? '#eaf0f4' : '#c4cbcf' } }, s.name),
+        e('span', { key: 'r', style: { fontFamily: "'Geist Mono',monospace", fontSize: '12px', color: '#5c646a' } }, s.reps)
+      ]);
+    }));
+
+    // ===== D — MANIFIESTO (day rows) =====
+    const muscleOf = { 'Dominadas': 'TIRÓN', 'Fondos': 'EMPUJE', 'L-sit': 'CORE' };
+    const dayD = e('div', {}, sets.map((s, i) => {
+      const on = s.st === 'next';
+      const done = s.st === 'done', skip = s.st === 'skip';
+      const idx = '0' + (i + 1);
+      let statusTxt, statusColor;
+      if (done) { statusTxt = 'HECHO'; statusColor = '#5a5a55'; }
+      else if (skip) { statusTxt = 'SALTADO'; statusColor = '#5a5a55'; }
+      else if (on) { statusTxt = 'AHORA'; statusColor = '#c4f82a'; }
+      else { statusTxt = 'PENDIENTE'; statusColor = '#76766f'; }
+      const nameColor = done ? '#5a5a55' : skip ? '#5a5a55' : on ? '#ededea' : '#cfcfca';
+      return e('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '20px', padding: '15px 0 15px ' + (on ? '14px' : '0'), borderBottom: '1px solid #1f1f1c', position: 'relative', background: on ? 'rgba(196,248,42,0.05)' : 'transparent' } }, [
+        on ? e('div', { key: 'bar', style: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#c4f82a' } }) : null,
+        e('span', { key: 'idx', style: { fontFamily: "'Geist Mono',monospace", fontSize: '12px', color: on ? '#c4f82a' : '#54544f', width: '26px', flex: 'none' } }, idx),
+        e('span', { key: 't', style: { fontFamily: "'Geist Mono',monospace", fontSize: '21px', fontWeight: 500, letterSpacing: '-0.01em', color: done || skip ? '#54544f' : on ? '#c4f82a' : '#a9a9a3', width: '76px', flex: 'none' } }, s.t),
+        e('span', { key: 'n', style: { flex: 1, fontSize: '21px', fontWeight: 700, letterSpacing: '-0.02em', color: nameColor, textDecoration: skip ? 'line-through' : 'none' } }, s.name),
+        e('span', { key: 'm', style: { fontFamily: "'Geist Mono',monospace", fontSize: '10.5px', letterSpacing: '0.1em', color: '#54544f', width: '74px', flex: 'none' } }, muscleOf[s.name]),
+        e('span', { key: 'r', style: { fontFamily: "'Geist Mono',monospace", fontSize: '14px', color: done || skip ? '#54544f' : '#a9a9a3', width: '66px', flex: 'none', textAlign: 'right' } }, s.reps),
+        e('span', { key: 's', style: { fontFamily: "'Geist Mono',monospace", fontSize: '10.5px', letterSpacing: '0.1em', fontWeight: 600, color: statusColor, width: '86px', flex: 'none', textAlign: 'right' } }, statusTxt)
+      ]);
+    }));
+
+    // ================= C — secondary screens =================
+    const cardC = { background: 'rgba(255,255,255,0.025)', borderRadius: '16px', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)', padding: '17px 20px' };
+    const chevC = e('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: '#828a8f', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, e('polyline', { points: '6,9 12,15 18,9' }));
+    const trashC = e('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: '#828a8f', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, [e('polyline', { key: 1, points: '3,6 5,6 21,6' }), e('path', { key: 2, d: 'M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' })]);
+    const stepC = (ch) => e('div', { style: { width: '31px', height: '31px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)', color: '#c4cbcf', fontSize: '17px', cursor: 'pointer' } }, ch);
+    const exC = [
+      { name: 'Dominadas', muscle: 'Tirón', mc: '#6cb6ff', reps: '5', sets: '3×', level: 'Peso corporal' },
+      { name: 'Fondos', muscle: 'Empuje', mc: '#ffb27a', reps: '5', sets: '3×', level: 'Peso corporal' },
+      { name: 'L-sit', muscle: 'Core', mc: '#c79bff', reps: '10–20s', sets: '2×', level: 'L-sit completo' }
+    ];
+    const exCardC = (x) => e('div', { style: cardC }, [
+      e('div', { key: 't', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' } }, [
+        e('div', { key: 'l' }, [
+          e('div', { key: 1, style: { fontSize: '16px', fontWeight: 700, color: '#eaf0f4', letterSpacing: '-0.015em' } }, x.name),
+          e('div', { key: 2, style: { display: 'flex', alignItems: 'center', gap: '7px', marginTop: '5px' } }, [e('span', { key: 'd', style: { width: '7px', height: '7px', borderRadius: '50%', background: x.mc } }), e('span', { key: 's', style: { fontSize: '12px', color: '#828a8f' } }, x.muscle)])
+        ]),
+        e('div', { key: 'r', style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
+          e('div', { key: 'reps', style: { minWidth: '62px', padding: '8px 12px', borderRadius: '9px', background: 'rgba(255,255,255,0.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)', fontFamily: "'Geist Mono',monospace", fontSize: '13px', color: '#eaf0f4', textAlign: 'center' } }, x.reps),
+          e('div', { key: 'st', style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [stepC('−'), e('span', { key: 'n', style: { minWidth: '32px', textAlign: 'center', fontFamily: "'Geist Mono',monospace", fontSize: '14px', color: '#eaf0f4', fontWeight: 600 } }, x.sets), stepC('+')]),
+          e('div', { key: 'tr', style: { width: '34px', height: '34px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.07)', cursor: 'pointer' } }, trashC)
+        ])
+      ]),
+      e('div', { key: 'lv', style: { display: 'flex', alignItems: 'center', gap: '12px', marginTop: '13px', paddingTop: '13px', borderTop: '1px solid rgba(255,255,255,0.06)' } }, [
+        e('span', { key: 'lb', style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.14em', color: '#5c646a', minWidth: '42px' } }, 'NIVEL'),
+        e('div', { key: 'sel', style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 13px', borderRadius: '9px', background: 'rgba(255,255,255,0.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)' } }, [e('span', { key: 'v', style: { fontSize: '13px', color: '#eaf0f4' } }, x.level), chevC])
+      ])
+    ]);
+    const exCardsC = e('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } }, exC.map((x, i) => e('div', { key: i }, exCardC(x))));
+    const catC = (it) => e('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderRadius: '13px', background: 'rgba(255,255,255,0.02)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05)' } }, [
+      e('div', { key: 'l' }, [e('div', { key: 1, style: { fontSize: '14.5px', fontWeight: 600, color: '#d4dade', letterSpacing: '-0.01em' } }, it.name), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '11px', color: '#5c646a', marginTop: '3px' } }, it.reps)]),
+      e('div', { key: 'b', style: { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '9px', boxShadow: 'inset 0 0 0 1px rgba(182,255,46,0.3)', color: '#b6ff2e', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' } }, '+ Agregar')
+    ]);
+    const grpC = (items) => e('div', { style: { display: 'flex', flexDirection: 'column', gap: '9px' } }, items.map((it, i) => e('div', { key: i }, catC(it))));
+    const catTironC = grpC([{ name: 'Dominadas supinas', reps: '5' }, { name: 'Remo con banda', reps: '12' }, { name: 'Face pulls con banda', reps: '15' }]);
+    const catEmpujeC = grpC([{ name: 'Flexiones en paraletas', reps: '10' }, { name: 'Tuck planche', reps: '10–15s' }]);
+
+    const selpC = (val, extra) => e('div', { style: Object.assign({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 13px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)' }, extra || {}) }, [e('span', { key: 'v', style: { fontSize: '13.5px', color: val === '—' ? '#5c646a' : '#eaf0f4' } }, val), chevC]);
+    const daysC = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const semanaC = e('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } }, daysC.map((d, i) => {
+      const today = i === 2;
+      return e('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '14px', padding: '13px 18px', borderRadius: '14px', background: 'rgba(255,255,255,0.025)', boxShadow: today ? 'inset 0 0 0 1px rgba(182,255,46,0.4),0 0 22px -8px rgba(182,255,46,0.4)' : 'inset 0 0 0 1px rgba(255,255,255,0.06)' } }, [
+        e('div', { key: 'd', style: { width: '128px', flex: 'none', display: 'flex', alignItems: 'center', gap: '9px' } }, [e('span', { key: 'n', style: { fontSize: '15px', fontWeight: 700, color: '#eaf0f4' } }, d), today ? e('span', { key: 'b', style: { fontFamily: "'Geist Mono',monospace", fontSize: '8.5px', letterSpacing: '0.14em', color: '#0a1600', background: '#b6ff2e', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 } }, 'HOY') : null]),
+        e('div', { key: 's1', style: { flex: 1 } }, selpC('Estándar')),
+        selpC('—', { width: '132px', flex: 'none' })
+      ]);
+    }));
+
+    const swC = (on) => e('div', { style: { width: '42px', height: '24px', borderRadius: '12px', background: on ? '#b6ff2e' : '#22271e', position: 'relative', flex: 'none', boxShadow: on ? '0 0 14px rgba(182,255,46,0.35)' : 'none' } }, e('div', { style: { width: '18px', height: '18px', borderRadius: '50%', background: '#070a0d', position: 'absolute', top: '3px', left: on ? '21px' : '3px' } }));
+    const eqC = [{ name: 'Barra de dominadas', sub: '3 ejercicios · 1 en tus rutinas' }, { name: 'Barras de fondos', sub: '1 ejercicio · 1 en tus rutinas' }, { name: 'Paraletas', sub: '3 ejercicios · 1 en tus rutinas' }, { name: 'Bandas', sub: '3 ejercicios' }];
+    const equipoC = e('div', { style: { display: 'flex', flexDirection: 'column', gap: '11px' } }, eqC.map((it, i) => e('div', { key: i, style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderRadius: '14px', background: 'rgba(255,255,255,0.025)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' } }, [
+      e('div', { key: 'l' }, [e('div', { key: 1, style: { fontSize: '15.5px', fontWeight: 700, color: '#eaf0f4' } }, it.name), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '11px', color: '#5c646a', marginTop: '4px' } }, it.sub)]), swC(true)
+    ])));
+
+    const metC = [{ label: 'ESTA SEMANA', val: '34', delta: '↑ 6', unit: 'series' }, { label: 'RACHA', val: '5', delta: '', unit: 'días seguidos' }, { label: 'ACTIVOS', val: '3', delta: '', unit: 'ejercicios' }];
+    const progSummaryC = e('div', { style: { display: 'flex', background: 'rgba(255,255,255,0.025)', borderRadius: '16px', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)', padding: '20px 24px' } }, metC.map((m, i) => e('div', { key: i, style: { flex: 1, borderLeft: i ? '1px solid rgba(255,255,255,0.07)' : 'none', paddingLeft: i ? '26px' : 0 } }, [
+      e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.16em', color: '#5c646a' } }, m.label),
+      e('div', { key: 2, style: { display: 'flex', alignItems: 'baseline', gap: '9px', marginTop: '10px' } }, [e('span', { key: 'v', style: { fontFamily: "'Geist Mono',monospace", fontSize: '34px', fontWeight: 600, color: '#eaf0f4', letterSpacing: '-0.02em', lineHeight: 1 } }, m.val), m.delta ? e('span', { key: 'd', style: { fontFamily: "'Geist Mono',monospace", fontSize: '13px', color: '#b6ff2e' } }, m.delta) : null]),
+      e('div', { key: 3, style: { fontSize: '12px', color: '#828a8f', marginTop: '6px' } }, m.unit)
+    ])));
+    const progExC = [{ name: 'Dominadas', total: '24', levels: ['Banda', 'Peso corporal', 'Con peso', 'Lastre'], cur: 1, since: '14/6', next: 'Con peso', ready: true, bars: [2, 3, 0, 4, 3, 5, 6] }, { name: 'Fondos', total: '18', levels: ['Banda', 'Peso corporal', 'Con peso', 'Lastre'], cur: 2, since: '2/6', next: 'Lastre', ready: false, bars: [3, 4, 5, 3, 6, 5, 4] }];
+    const progCardC = (x) => {
+      const maxH = Math.max.apply(null, x.bars.concat([1]));
+      return e('div', { style: { background: 'rgba(255,255,255,0.025)', borderRadius: '16px', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)', padding: '18px 20px' } }, [
+        e('div', { key: 't', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } }, [e('span', { key: 'n', style: { fontSize: '17px', fontWeight: 700, color: '#eaf0f4' } }, x.name), e('span', { key: 's', style: { fontFamily: "'Geist Mono',monospace", fontSize: '12.5px', color: '#828a8f' } }, x.total + ' series')]),
+        e('div', { key: 'l', style: { display: 'flex', gap: '6px', marginTop: '16px' } }, x.levels.map((lv, i) => e('div', { key: i, style: { flex: 1 } }, [e('div', { key: 'b', style: { height: '7px', borderRadius: '4px', background: i < x.cur ? 'rgba(182,255,46,0.32)' : i === x.cur ? '#b6ff2e' : 'rgba(255,255,255,0.07)', boxShadow: i === x.cur ? '0 0 10px rgba(182,255,46,0.5)' : 'none' } }), e('div', { key: 'l', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', color: i === x.cur ? '#b6ff2e' : '#4e565c', marginTop: '6px', textAlign: 'center' } }, lv)]))),
+        e('div', { key: 'm', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '14px' } }, [e('span', { key: 's', style: { fontSize: '12.5px', color: '#9aa1a6' } }, ['Estás en ', e('span', { key: 'c', style: { color: '#d4dade', fontWeight: 600 } }, x.levels[x.cur]), ' · desde ' + x.since + ' · siguiente: ' + x.next]), x.ready ? e('span', { key: 'r', style: { fontSize: '11.5px', fontWeight: 600, color: '#0a1600', background: '#b6ff2e', padding: '5px 11px', borderRadius: '7px', whiteSpace: 'nowrap' } }, 'Listo para probar ' + x.next) : null]),
+        e('div', { key: 'd', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', marginBottom: '8px' } }, [e('span', { key: 'l', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.16em', color: '#5c646a' } }, 'ÚLTIMOS 7 DÍAS'), e('span', { key: 'v', style: { fontFamily: "'Geist Mono',monospace", fontSize: '11px', color: '#828a8f' } }, x.bars.reduce((a, b) => a + b, 0) + ' series')]),
+        e('div', { key: 'bars', style: { display: 'flex', alignItems: 'flex-end', gap: '7px', height: '54px' } }, x.bars.map((h, i) => e('div', { key: i, style: { flex: 1, height: (Math.max(h, 0.5) / maxH * 100) + '%', minHeight: '4px', borderRadius: '5px 5px 3px 3px', background: i === 6 ? '#b6ff2e' : 'rgba(182,255,46,0.18)', boxShadow: i === 6 ? '0 0 12px rgba(182,255,46,0.4)' : 'none' } })))
+      ]);
+    };
+    const progCardsC = e('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } }, progExC.map((x, i) => e('div', { key: i }, progCardC(x))));
+
+    // panels C
+    const gripC = e('span', { style: { display: 'grid', gridTemplateColumns: 'repeat(2,3px)', gridTemplateRows: 'repeat(3,3px)', gap: '2.5px' } }, [0, 1, 2, 3, 4, 5].map((k) => e('span', { key: k, style: { width: '3px', height: '3px', borderRadius: '50%', background: '#5c646a' } })));
+    const xC = e('svg', { width: 10, height: 10, viewBox: '0 0 12 12', fill: 'none', stroke: '#828a8f', strokeWidth: 1.5, strokeLinecap: 'round' }, [e('line', { key: 1, x1: 2, y1: 2, x2: 10, y2: 10 }), e('line', { key: 2, x1: 10, y1: 2, x2: 2, y2: 10 })]);
+    const checkC = (c, w) => e('svg', { width: w || 12, height: w || 12, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, e('polyline', { points: '5,12 10,17 19,7' }));
+    const pC = (label, opts) => {
+      const now = opts.now, empty = opts.empty;
+      const head = e('div', { key: 'h', style: { height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', borderBottom: now ? '1px solid rgba(182,255,46,0.14)' : '1px solid rgba(255,255,255,0.05)' } }, [e('div', { key: 'l', style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [gripC, e('span', { key: 't', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.18em', color: now ? '#b6ff2e' : '#5c646a' } }, 'MICROSET')]), xC]);
+      let body;
+      if (empty) body = e('div', { key: 'b', style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '9px' } }, [e('span', { key: 'c', style: { width: '30px', height: '30px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.12)' } }, checkC('#828a8f', 15)), e('span', { key: 't', style: { fontSize: '13px', color: '#828a8f' } }, 'Sin series pendientes')]);
+      else {
+        let cd;
+        if (opts.kind === 'far') cd = e('div', { style: { textAlign: 'right' } }, [e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '26px', fontWeight: 600, color: '#c4cbcf', lineHeight: 1 } }, '09:00'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', letterSpacing: '0.2em', color: '#5c646a', marginTop: '3px' } }, 'HS')]);
+        else if (opts.kind === 'soon') cd = e('div', { style: { textAlign: 'right' } }, [e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '30px', fontWeight: 600, color: '#eaf0f4', lineHeight: 1 } }, '45'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', letterSpacing: '0.2em', color: '#5c646a', marginTop: '3px' } }, 'MIN')]);
+        else cd = e('div', { style: { display: 'flex', alignItems: 'center', gap: '7px' } }, [e('span', { key: 's', style: { width: '16px', height: '16px', borderRadius: '50%', background: 'radial-gradient(circle at 38% 32%,#e4ff8f,#b6ff2e)', boxShadow: '0 0 12px rgba(182,255,46,0.8)' } }), e('span', { key: 't', style: { fontSize: '20px', fontWeight: 800, color: '#b6ff2e', letterSpacing: '-0.01em' } }, 'AHORA')]);
+        body = e('div', { key: 'b', style: { flex: 1, padding: '10px 14px 13px', display: 'flex', flexDirection: 'column' } }, [
+          e('div', { key: 'top', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' } }, [e('div', { key: 'n' }, [e('div', { key: 1, style: { fontSize: '18px', fontWeight: 700, color: '#eaf0f4', letterSpacing: '-0.02em' } }, 'Fondos'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10.5px', color: '#828a8f', marginTop: '3px' } }, '5 · Peso corporal')]), cd]),
+          e('div', { key: 'sp', style: { flex: 1 } }),
+          e('div', { key: 'btns', style: { display: 'flex', gap: '8px' } }, [e('div', { key: 1, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px', borderRadius: '9px', background: '#b6ff2e', color: '#0a1600', fontSize: '12.5px', fontWeight: 600 } }, [checkC('#0a1600', 12), 'Hecho']), e('div', { key: 2, style: { padding: '9px 14px', borderRadius: '9px', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12)', color: '#9aa1a6', fontSize: '12.5px', fontWeight: 500 } }, 'Ahora no')])
+        ]);
+      }
+      return e('div', { key: label }, [e('div', { key: 'cap', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.16em', color: now ? '#b6ff2e' : '#8a8d94', marginBottom: '9px' } }, label), e('div', { key: 'p', style: { width: '272px', height: '136px', borderRadius: '16px', overflow: 'hidden', background: 'rgba(8,12,14,0.85)', backdropFilter: 'blur(22px)', display: 'flex', flexDirection: 'column', boxShadow: now ? '0 22px 60px -12px rgba(0,0,0,0.7),inset 0 0 0 1px rgba(182,255,46,0.3)' : '0 22px 50px -14px rgba(0,0,0,0.7),inset 0 0 0 1px rgba(255,255,255,0.09)' } }, [head, body])]);
+    };
+    const panelsC = e(React.Fragment, {}, [pC('FALTA > 1H', { kind: 'far' }), pC('FALTA < 1H', { kind: 'soon' }), pC('AHORA', { kind: 'now', now: true }), pC('SIN PENDIENTES', { empty: true })]);
+
+    // ================= D — secondary screens (brutalist) =================
+    const lime = '#c4f82a', paper = '#ededea', pdim = '#a9a9a3', faint = '#76766f', faint2 = '#54544f', rule = '#1f1f1c', rule2 = '#2a2a27';
+    const chevD = e('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: faint, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, e('polyline', { points: '6,9 12,15 18,9' }));
+    const trashD = e('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: faint, strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, [e('polyline', { key: 1, points: '3,6 5,6 21,6' }), e('path', { key: 2, d: 'M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' })]);
+    const exDdata = [
+      { name: 'Dominadas', muscle: 'TIRÓN', reps: '5', sets: '3×', level: 'Peso corporal' },
+      { name: 'Fondos', muscle: 'EMPUJE', reps: '5', sets: '3×', level: 'Peso corporal' },
+      { name: 'L-sit', muscle: 'CORE', reps: '10–20s', sets: '2×', level: 'L-sit completo' }
+    ];
+    const exRowD = (x) => e('div', { style: { padding: '17px 0', borderTop: '1px solid ' + rule } }, [
+      e('div', { key: 'r', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' } }, [
+        e('div', { key: 'l' }, [e('div', { key: 1, style: { fontSize: '19px', fontWeight: 700, color: paper, letterSpacing: '-0.02em' } }, x.name), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10.5px', letterSpacing: '0.1em', color: faint, marginTop: '4px' } }, x.muscle)]),
+        e('div', { key: 'c', style: { display: 'flex', alignItems: 'center', gap: '10px' } }, [
+          e('div', { key: 'reps', style: { minWidth: '60px', padding: '8px 12px', border: '1px solid ' + rule2, fontFamily: "'Geist Mono',monospace", fontSize: '13px', color: paper, textAlign: 'center' } }, x.reps),
+          e('div', { key: 'st', style: { display: 'flex' } }, [
+            e('div', { key: 'm', style: { width: '32px', height: '34px', border: '1px solid ' + rule2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: pdim, fontSize: '17px' } }, '−'),
+            e('div', { key: 'n', style: { minWidth: '42px', height: '34px', borderTop: '1px solid ' + rule2, borderBottom: '1px solid ' + rule2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Geist Mono',monospace", fontSize: '14px', color: paper, fontWeight: 600 } }, x.sets),
+            e('div', { key: 'p', style: { width: '32px', height: '34px', border: '1px solid ' + rule2, display: 'flex', alignItems: 'center', justifyContent: 'center', color: pdim, fontSize: '16px' } }, '+')
+          ]),
+          e('div', { key: 'tr', style: { width: '34px', height: '34px', border: '1px solid ' + rule2, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, trashD)
+        ])
+      ]),
+      e('div', { key: 'lv', style: { display: 'flex', alignItems: 'center', gap: '14px', marginTop: '12px' } }, [
+        e('span', { key: 'lb', style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.14em', color: faint2 } }, 'NIVEL'),
+        e('div', { key: 'sel', style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 13px', border: '1px solid ' + rule2 } }, [e('span', { key: 'v', style: { fontSize: '13px', color: paper } }, x.level), chevD])
+      ])
+    ]);
+    const exRowsD = e('div', { style: { borderBottom: '1px solid ' + rule } }, exDdata.map((x, i) => e('div', { key: i }, exRowD(x))));
+    const catDrow = (it) => e('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 0', borderTop: '1px solid ' + rule } }, [
+      e('div', { key: 'l' }, [e('div', { key: 1, style: { fontSize: '16px', fontWeight: 700, color: paper, letterSpacing: '-0.015em' } }, it.name), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '11px', color: faint, marginTop: '3px' } }, it.reps)]),
+      e('div', { key: 'b', style: { padding: '9px 16px', border: '1px solid ' + lime, color: lime, fontFamily: "'Geist Mono',monospace", fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.06em', cursor: 'pointer' } }, '+ AGREGAR')
+    ]);
+    const grpD = (items) => e('div', {}, items.map((it, i) => e('div', { key: i }, catDrow(it))));
+    const catTironD = grpD([{ name: 'Dominadas supinas', reps: '5 REPS' }, { name: 'Remo con banda', reps: '12 REPS' }, { name: 'Face pulls con banda', reps: '15 REPS' }]);
+    const catEmpujeD = grpD([{ name: 'Flexiones en paraletas', reps: '10 REPS' }, { name: 'Tuck planche', reps: '10–15S' }]);
+
+    const selD = (val, extra) => e('div', { style: Object.assign({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', border: '1px solid ' + rule2 }, extra || {}) }, [e('span', { key: 'v', style: { fontFamily: "'Geist Mono',monospace", fontSize: '12.5px', letterSpacing: '0.04em', color: val === '—' ? faint2 : paper } }, val), chevD]);
+    const daysD = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO'];
+    const semanaD = e('div', { style: { borderBottom: '1px solid ' + rule } }, daysD.map((d, i) => {
+      const today = i === 2;
+      return e('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '18px', padding: '14px 0 14px ' + (today ? '14px' : '0'), borderTop: '1px solid ' + rule, position: 'relative', background: today ? 'rgba(196,248,42,0.05)' : 'transparent' } }, [
+        today ? e('div', { key: 'bar', style: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: lime } }) : null,
+        e('span', { key: 'd', style: { width: '132px', flex: 'none', fontFamily: "'Geist Mono',monospace", fontSize: '14px', fontWeight: 600, letterSpacing: '0.04em', color: today ? lime : paper } }, d),
+        e('div', { key: 's1', style: { flex: 1 } }, selD('ESTÁNDAR')),
+        selD('—', { width: '150px', flex: 'none' })
+      ]);
+    }));
+
+    const swD = (on) => e('div', { style: { width: '48px', height: '26px', border: '1px solid ' + (on ? lime : rule2), background: on ? lime : 'transparent', position: 'relative', flex: 'none' } }, e('div', { style: { width: '18px', height: '18px', background: on ? '#0a0a0a' : faint2, position: 'absolute', top: '3px', left: on ? '25px' : '3px' } }));
+    const eqD = [{ name: 'BARRA DE DOMINADAS', sub: '3 EJERCICIOS · 1 EN RUTINAS' }, { name: 'BARRAS DE FONDOS', sub: '1 EJERCICIO · 1 EN RUTINAS' }, { name: 'PARALETAS', sub: '3 EJERCICIOS · 1 EN RUTINAS' }, { name: 'BANDAS', sub: '3 EJERCICIOS' }];
+    const equipoD = e('div', { style: { borderBottom: '1px solid ' + rule } }, eqD.map((it, i) => e('div', { key: i, style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0', borderTop: '1px solid ' + rule } }, [
+      e('div', { key: 'l' }, [e('div', { key: 1, style: { fontSize: '17px', fontWeight: 700, color: paper, letterSpacing: '-0.01em' } }, it.name), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10.5px', letterSpacing: '0.08em', color: faint, marginTop: '5px' } }, it.sub)]), swD(true)
+    ])));
+
+    const metD = [{ val: '34', delta: '↑6', unit: 'SERIES · ESTA SEMANA' }, { val: '05', delta: '', unit: 'RACHA · DÍAS' }, { val: '03', delta: '', unit: 'EJERCICIOS · ACTIVOS' }];
+    const progMetricsD = e('div', { style: { display: 'flex' } }, metD.map((m, i) => e('div', { key: i, style: { flex: 1, paddingLeft: i ? '30px' : 0, borderLeft: i ? '1px solid ' + rule : 'none' } }, [
+      e('div', { key: 1, style: { display: 'flex', alignItems: 'baseline', gap: '10px' } }, [e('span', { key: 'v', style: { fontFamily: "'Geist Mono',monospace", fontSize: '50px', fontWeight: 600, color: paper, letterSpacing: '-0.03em', lineHeight: 0.9 } }, m.val), m.delta ? e('span', { key: 'd', style: { fontFamily: "'Geist Mono',monospace", fontSize: '15px', color: lime } }, m.delta) : null]),
+      e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.14em', color: faint, marginTop: '12px' } }, m.unit)
+    ])));
+    const progExD = [{ name: 'DOMINADAS', total: '24', levels: ['BANDA', 'P. CORPORAL', 'CON PESO', 'LASTRE'], cur: 1, since: '14/6', next: 'CON PESO', ready: true, bars: [2, 3, 0, 4, 3, 5, 6] }, { name: 'FONDOS', total: '18', levels: ['BANDA', 'P. CORPORAL', 'CON PESO', 'LASTRE'], cur: 2, since: '2/6', next: 'LASTRE', ready: false, bars: [3, 4, 5, 3, 6, 5, 4] }];
+    const progCardD = (x) => {
+      const maxH = Math.max.apply(null, x.bars.concat([1]));
+      return e('div', { style: { paddingTop: '22px', borderTop: '1px solid ' + rule } }, [
+        e('div', { key: 't', style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' } }, [e('span', { key: 'n', style: { fontSize: '24px', fontWeight: 800, color: paper, letterSpacing: '-0.03em' } }, x.name), e('span', { key: 's', style: { fontFamily: "'Geist Mono',monospace", fontSize: '12.5px', color: faint } }, x.total + ' SERIES')]),
+        e('div', { key: 'l', style: { display: 'flex', gap: '4px', marginTop: '16px' } }, x.levels.map((lv, i) => e('div', { key: i, style: { flex: 1 } }, [e('div', { key: 'b', style: { height: '8px', background: i < x.cur ? 'rgba(196,248,42,0.3)' : i === x.cur ? lime : '#1c1c1a' } }), e('div', { key: 'l', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', letterSpacing: '0.04em', color: i === x.cur ? lime : faint2, marginTop: '7px' } }, lv)]))),
+        e('div', { key: 'm', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '16px' } }, [e('span', { key: 's', style: { fontFamily: "'Geist Mono',monospace", fontSize: '11px', letterSpacing: '0.04em', color: faint } }, 'ESTÁS EN ' + x.levels[x.cur] + ' · DESDE ' + x.since + ' · SIGUIENTE ' + x.next), x.ready ? e('span', { key: 'r', style: { fontFamily: "'Geist Mono',monospace", fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.06em', color: '#0a0a0a', background: lime, padding: '6px 11px' } }, 'LISTO: ' + x.next) : null]),
+        e('div', { key: 'bars', style: { display: 'flex', alignItems: 'flex-end', gap: '6px', height: '52px', marginTop: '16px' } }, x.bars.map((h, i) => e('div', { key: i, style: { flex: 1, height: (Math.max(h, 0.5) / maxH * 100) + '%', minHeight: '4px', background: i === 6 ? lime : '#262622' } })))
+      ]);
+    };
+    const progCardsD = e('div', { style: { display: 'flex', flexDirection: 'column', gap: '24px' } }, progExD.map((x, i) => e('div', { key: i }, progCardD(x))));
+
+    // panels D (brutalist)
+    const gripD = e('span', { style: { display: 'grid', gridTemplateColumns: 'repeat(2,3px)', gridTemplateRows: 'repeat(3,3px)', gap: '2.5px' } }, [0, 1, 2, 3, 4, 5].map((k) => e('span', { key: k, style: { width: '3px', height: '3px', background: faint2 } })));
+    const xD = e('svg', { width: 10, height: 10, viewBox: '0 0 12 12', fill: 'none', stroke: faint, strokeWidth: 1.5, strokeLinecap: 'round' }, [e('line', { key: 1, x1: 2, y1: 2, x2: 10, y2: 10 }), e('line', { key: 2, x1: 10, y1: 2, x2: 2, y2: 10 })]);
+    const checkD = (c, w) => e('svg', { width: w || 12, height: w || 12, viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, e('polyline', { points: '5,12 10,17 19,7' }));
+    const pD = (label, opts) => {
+      const now = opts.now, empty = opts.empty;
+      const head = e('div', { key: 'h', style: { height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', borderBottom: '1px solid ' + (now ? 'rgba(196,248,42,0.3)' : rule2) } }, [e('div', { key: 'l', style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [gripD, e('span', { key: 't', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.18em', color: now ? lime : faint } }, 'MICROSET')]), xD]);
+      let body;
+      if (empty) body = e('div', { key: 'b', style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '9px' } }, [e('span', { key: 'c', style: { width: '28px', height: '28px', border: '1px solid ' + rule2, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, checkD(faint, 15)), e('span', { key: 't', style: { fontFamily: "'Geist Mono',monospace", fontSize: '11px', letterSpacing: '0.08em', color: faint } }, 'SIN PENDIENTES')]);
+      else {
+        let cd;
+        if (opts.kind === 'far') cd = e('div', { style: { textAlign: 'right' } }, [e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '26px', fontWeight: 600, color: pdim, lineHeight: 1 } }, '09:00'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', letterSpacing: '0.2em', color: faint2, marginTop: '3px' } }, 'HS')]);
+        else if (opts.kind === 'soon') cd = e('div', { style: { textAlign: 'right' } }, [e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '30px', fontWeight: 600, color: paper, lineHeight: 1 } }, '45'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', letterSpacing: '0.2em', color: faint2, marginTop: '3px' } }, 'MIN')]);
+        else cd = e('div', { style: { fontFamily: "'Geist Mono',monospace", fontSize: '20px', fontWeight: 600, color: '#0a0a0a', background: lime, padding: '4px 9px', letterSpacing: '0.04em' } }, 'AHORA');
+        body = e('div', { key: 'b', style: { flex: 1, padding: '11px 14px 13px', display: 'flex', flexDirection: 'column' } }, [
+          e('div', { key: 'top', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' } }, [e('div', { key: 'n' }, [e('div', { key: 1, style: { fontSize: '18px', fontWeight: 800, color: paper, letterSpacing: '-0.02em' } }, 'FONDOS'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.04em', color: faint, marginTop: '4px' } }, '5 · PESO CORPORAL')]), cd]),
+          e('div', { key: 'sp', style: { flex: 1 } }),
+          e('div', { key: 'btns', style: { display: 'flex', gap: '7px' } }, [e('div', { key: 1, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '9px', background: lime, color: '#0a0a0a', fontFamily: "'Geist Mono',monospace", fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em' } }, [checkD('#0a0a0a', 12), 'HECHO']), e('div', { key: 2, style: { padding: '9px 14px', border: '1px solid ' + rule2, color: pdim, fontFamily: "'Geist Mono',monospace", fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.04em' } }, 'AHORA NO')])
+        ]);
+      }
+      return e('div', { key: label }, [e('div', { key: 'cap', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.16em', color: now ? lime : '#8a8d94', marginBottom: '9px' } }, label), e('div', { key: 'p', style: { width: '272px', height: '136px', overflow: 'hidden', background: '#0c0c0c', display: 'flex', flexDirection: 'column', border: '1px solid ' + (now ? 'rgba(196,248,42,0.4)' : rule2), boxShadow: '0 22px 50px -16px rgba(0,0,0,0.8)' } }, [head, body])]);
+    };
+    const panelsD = e(React.Fragment, {}, [pD('FALTA > 1H', { kind: 'far' }), pD('FALTA < 1H', { kind: 'soon' }), pD('AHORA', { kind: 'now', now: true }), pD('SIN PENDIENTES', { empty: true })]);
+
+    return { arcC: arcC, restoC: restoC, dayD: dayD, exCardsC: exCardsC, catTironC: catTironC, catEmpujeC: catEmpujeC, semanaC: semanaC, equipoC: equipoC, progSummaryC: progSummaryC, progCardsC: progCardsC, panelsC: panelsC, exRowsD: exRowsD, catTironD: catTironD, catEmpujeD: catEmpujeD, semanaD: semanaD, equipoD: equipoD, progMetricsD: progMetricsD, progCardsD: progCardsD, panelsD: panelsD };
+  }
+}
+</script>
+</body>
+</html>

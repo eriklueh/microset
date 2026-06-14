@@ -83,7 +83,10 @@ cargo build                   # (in src-tauri/) compile Rust only
 - **Engine is framework-free.** Anything schedule/time-related goes in `src/lib/engine/`
   as pure functions with tests, not in components or Rust.
 - **shadcn for Studio UI**, trimmed components for the widget/floating panel.
-- **Theme & translucency:** light/dark/system + accent presets in `src/lib/theme.ts` (toggles `.dark` + `[data-accent]`, persisted in the store). Windows are transparent with native **mica** (main) / **acrylic** (panel) applied in `lib.rs` via `window-vibrancy` (Windows only; Linux/Hyprland uses compositor blur). Surfaces use `bg-card/60 backdrop-blur-xl`; numerals use `font-mono` (Geist Mono).
+- **Design language — "Manifiesto" (brutalist-editorial):** solid surfaces, no glass/cards/rounding (`--radius: 0`), thin 1px rules (`--rule`/`--rule2`), big uppercase mastheads, mono labels/numerals (Geist Mono), solid lime accent blocks. Tokens are CSS vars per theme in `src/index.css` (`--bg/--fg/--acc/--on/--dim/--faint/--faint2/--rule/--rule2/--bar0…`), also mapped onto shadcn var names for compat. Components reference them via arbitrary values like `bg-[var(--acc)]` / `text-[var(--fg)]`.
+- **Theme:** light/dark/system + accent presets in `src/lib/theme.ts` (toggles `.dark` + `[data-accent]`, persisted in the store). Accents: lime (default, no attr), sky, violet, amber, rose, teal.
+- **Windows are opaque** (no transparency/vibrancy). The main window uses `decorations: false` + a **custom titlebar** (`components/studio/Titlebar.tsx`: drag region + min/max/close→hide-to-tray). The floating panel is its own borderless window. `window-vibrancy` was removed.
+- **Shell layout:** `App.tsx` = `Titlebar` + (`Sidebar` numbered 01–07 + `<main>` scrollable). Each view owns its masthead via `components/studio/Masthead.tsx`.
 - Spanish is fine in user-facing copy (the user is a Spanish speaker); keep code/identifiers
   in English.
 - Keep `tauri.conf.json` identifier `com.microset.app`.

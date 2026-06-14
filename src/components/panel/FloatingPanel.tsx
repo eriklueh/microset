@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Check, GripHorizontal, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Button } from "@/components/ui/button";
 import { formatMinute } from "@/lib/engine";
 import { exerciseById, variantLabel } from "@/domain/seed";
 import { nowMinutes, useStore } from "@/store/useStore";
 
-/** Compact, translucent always-on-top widget: next set + countdown + quick actions. */
+/** Compact always-on-top widget (Manifiesto): next set + countdown + quick actions. */
 export function FloatingPanel() {
   const day = useStore((s) => s.day);
   const done = useStore((s) => s.done);
@@ -33,24 +32,23 @@ export function FloatingPanel() {
         .join(" · ")
     : "";
 
-  // Countdown when soon, scheduled time when far away.
+  const isNow = eta <= 0;
   const near = eta > 0 && eta < 60;
-  const counter = eta <= 0 ? "ahora" : near ? String(eta) : formatMinute(next!.time);
-  const counterUnit = eta <= 0 ? "" : near ? "min" : "hs";
+  const counter = near ? String(eta) : next ? formatMinute(next.time) : "";
+  const counterUnit = near ? "MIN" : "";
 
   return (
-    <div className="bg-card/70 flex h-screen w-screen flex-col overflow-hidden rounded-xl border backdrop-blur-2xl select-none">
+    <div className="flex h-screen w-screen flex-col overflow-hidden border border-[var(--rule2)] bg-[var(--bg)] text-[var(--fg)] select-none">
       <div
         data-tauri-drag-region
-        className="hover:bg-muted/40 flex h-6 cursor-grab items-center justify-between px-2 transition-colors active:cursor-grabbing"
+        className="flex h-[26px] flex-none cursor-grab items-center justify-between border-b border-[var(--rule2)] px-2.5 active:cursor-grabbing"
       >
-        <div className="text-muted-foreground/70 pointer-events-none flex items-center gap-1">
-          <GripHorizontal className="size-3.5" />
-          <span className="text-[10px] font-semibold tracking-widest uppercase">microset</span>
-        </div>
+        <span className="pointer-events-none font-mono text-[9px] font-bold tracking-[0.2em] text-[var(--faint)] uppercase">
+          microset
+        </span>
         <button
           onClick={() => void getCurrentWindow().hide()}
-          className="text-muted-foreground/60 hover:text-foreground"
+          className="text-[var(--faint2)] hover:text-[var(--fg)]"
           aria-label="Ocultar panel"
         >
           <X className="size-3" />
@@ -58,36 +56,56 @@ export function FloatingPanel() {
       </div>
 
       {next ? (
-        <div className="flex flex-1 flex-col justify-center gap-2 px-3 pb-3">
-          <div className="flex items-end justify-between gap-2">
+        <div className="flex flex-1 flex-col p-2.5">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="truncate text-[15px] leading-tight font-semibold">{next.name}</div>
-              <div className="text-muted-foreground truncate text-[11px]">{detail}</div>
-            </div>
-            <div className="shrink-0 text-right leading-none">
-              <div
-                className={`font-mono font-semibold tabular-nums ${eta <= 0 ? "text-primary text-base" : "text-lg"}`}
-              >
-                {counter}
-              </div>
-              {counterUnit && (
-                <div className="text-muted-foreground text-[9px] tracking-wider uppercase">
-                  {counterUnit}
-                </div>
+              {isNow ? (
+                <span className="inline-block bg-[var(--acc)] px-1.5 py-0.5 font-mono text-[8.5px] font-bold tracking-[0.16em] text-[var(--on)]">
+                  AHORA
+                </span>
+              ) : (
+                <span className="font-mono text-[8.5px] font-semibold tracking-[0.18em] text-[var(--faint)]">
+                  PRÓXIMA
+                </span>
               )}
+              <div className="mt-1 truncate text-[18px] leading-[0.95] font-extrabold tracking-[-0.02em] text-[var(--fg)] uppercase">
+                {next.name}
+              </div>
+              <div className="mt-1 truncate font-mono text-[9px] tracking-[0.04em] text-[var(--faint2)]">
+                {detail.toUpperCase()}
+              </div>
             </div>
+            {!isNow && (
+              <div className="flex-none text-right leading-none">
+                <div className="font-mono text-[20px] font-semibold tabular-nums text-[var(--fg)]">
+                  {counter}
+                </div>
+                {counterUnit && (
+                  <div className="mt-0.5 font-mono text-[8px] tracking-[0.12em] text-[var(--faint2)] uppercase">
+                    {counterUnit}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <div className="flex gap-1.5">
-            <Button size="xs" className="h-7 flex-1" onClick={() => done(next.id)}>
-              <Check className="size-3.5" /> Hecho
-            </Button>
-            <Button size="xs" variant="outline" className="h-7" onClick={() => decline(next.id)}>
-              Ahora no
-            </Button>
+
+          <div className="mt-auto flex gap-1.5">
+            <button
+              onClick={() => done(next.id)}
+              className="flex flex-1 items-center justify-center gap-1 bg-[var(--acc)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--on)]"
+            >
+              <Check className="size-3" strokeWidth={3} /> HECHO
+            </button>
+            <button
+              onClick={() => decline(next.id)}
+              className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+            >
+              AHORA NO
+            </button>
           </div>
         </div>
       ) : (
-        <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 pb-3 text-center text-[11px]">
+        <div className="flex flex-1 items-center justify-center px-3 text-center font-mono text-[10px] tracking-[0.08em] text-[var(--faint)] uppercase">
           Sin series pendientes
         </div>
       )}

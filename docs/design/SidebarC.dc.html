@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+<div style="{{ rootStyle }}">
+  <div style="display:flex;align-items:center;gap:11px;padding:20px 18px 26px;">
+    <div style="width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d6ff6e,#b6ff2e);box-shadow:0 0 18px rgba(182,255,46,0.5);"></div>
+    <span style="{{ wordStyle }}">microset</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:3px;padding:0 12px;">
+    <sc-for list="{{ items }}" as="item" hint-placeholder-count="6">
+      <div style="{{ item.rowStyle }}">
+        <span style="display:flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;">{{ item.iconEl }}</span>
+        <span style="{{ item.labelStyle }}">{{ item.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="flex:1;"></div>
+  <div style="display:flex;flex-direction:column;gap:3px;padding:0 12px 18px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;"><span style="display:flex;width:18px;height:18px;flex:none;">{{ ajustesIcon }}</span><span style="{{ bottomStyle }}">Ajustes</span></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;"><span style="display:flex;width:18px;height:18px;flex:none;">{{ themeIcon }}</span><span style="{{ bottomStyle }}">{{ themeLabel }}</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:210,&quot;height&quot;:640},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;coach&quot;,&quot;hoy&quot;,&quot;rutina&quot;,&quot;semana&quot;,&quot;equipo&quot;,&quot;progreso&quot;],&quot;default&quot;:&quot;hoy&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const light = this.props.theme === 'light';
+    const accent = '#3f9410';
+    const sunAccent = '#b6ff2e';
+    const pal = light
+      ? { bg: '#f4f6f8', border: '#e4e8ec', hi: '#16191c', mid: '#6b7178', dim: '#8a9096', actBg: 'rgba(63,148,16,0.1)', actRing: 'rgba(63,148,16,0.22)', acc: accent }
+      : { bg: '#080b0e', border: 'rgba(255,255,255,0.05)', hi: '#eaf0f4', mid: '#828a8f', dim: '#828a8f', actBg: 'rgba(182,255,46,0.09)', actRing: 'rgba(182,255,46,0.2)', acc: sunAccent };
+    const e = React.createElement;
+    const ic = (kids, s) => e('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: s, strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }, kids);
+    const glyph = {
+      coach: (s) => ic([e('path', { key: 1, d: 'M12 3.2l1.7 7.1 7.1 1.7-7.1 1.7L12 20.8l-1.7-7.1L3.2 12l7.1-1.7z' })], s),
+      hoy: (s) => ic([e('polyline', { key: 1, points: '3,12 7,12 9.5,5 14,19 16.5,12 21,12' })], s),
+      rutina: (s) => ic([e('line', { key: 1, x1: 9, y1: 6, x2: 20, y2: 6 }), e('line', { key: 2, x1: 9, y1: 12, x2: 20, y2: 12 }), e('line', { key: 3, x1: 9, y1: 18, x2: 20, y2: 18 }), e('polyline', { key: 4, points: '3,6 4.3,7.3 6.2,5' }), e('polyline', { key: 5, points: '3,12 4.3,13.3 6.2,11' }), e('polyline', { key: 6, points: '3,18 4.3,19.3 6.2,17' })], s),
+      semana: (s) => ic([e('rect', { key: 1, x: 3.5, y: 5, width: 17, height: 16, rx: 2.5 }), e('line', { key: 2, x1: 3.5, y1: 9.5, x2: 20.5, y2: 9.5 }), e('line', { key: 3, x1: 8, y1: 3, x2: 8, y2: 6 }), e('line', { key: 4, x1: 16, y1: 3, x2: 16, y2: 6 })], s),
+      equipo: (s) => ic([e('polygon', { key: 1, points: '12,3 19,7.5 19,16.5 12,21 5,16.5 5,7.5' })], s),
+      progreso: (s) => ic([e('polyline', { key: 1, points: '3,17 9,11 13,15 21,7' }), e('polyline', { key: 2, points: '15,7 21,7 21,13' })], s),
+      ajustes: (s) => ic([e('line', { key: 1, x1: 4, y1: 7, x2: 20, y2: 7 }), e('line', { key: 2, x1: 4, y1: 12, x2: 20, y2: 12 }), e('line', { key: 3, x1: 4, y1: 17, x2: 20, y2: 17 }), e('circle', { key: 4, cx: 15, cy: 7, r: 2.3, fill: pal.bg }), e('circle', { key: 5, cx: 9, cy: 12, r: 2.3, fill: pal.bg }), e('circle', { key: 6, cx: 14, cy: 17, r: 2.3, fill: pal.bg })], s),
+      theme: (s) => ic([e('circle', { key: 1, cx: 12, cy: 12, r: 4 }), e('line', { key: 2, x1: 12, y1: 3, x2: 12, y2: 5 }), e('line', { key: 3, x1: 12, y1: 19, x2: 12, y2: 21 }), e('line', { key: 4, x1: 3, y1: 12, x2: 5, y2: 12 }), e('line', { key: 5, x1: 19, y1: 12, x2: 21, y2: 12 }), e('line', { key: 6, x1: 5.6, y1: 5.6, x2: 7, y2: 7 }), e('line', { key: 7, x1: 17, y1: 17, x2: 18.4, y2: 18.4 })], s)
+    };
+    const active = this.props.active || 'hoy';
+    const defs = [['coach', 'Coach'], ['hoy', 'Hoy'], ['rutina', 'Rutina'], ['semana', 'Semana'], ['equipo', 'Equipo'], ['progreso', 'Progreso']];
+    const items = defs.map((d) => {
+      const on = d[0] === active;
+      return {
+        key: d[0], label: d[1],
+        rowStyle: on ? 'display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;background:' + pal.actBg + ';box-shadow:inset 0 0 0 1px ' + pal.actRing + ';cursor:pointer;' : 'display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;',
+        labelStyle: on ? 'color:' + pal.hi + ';font-size:14.5px;font-weight:600;' : 'color:' + pal.mid + ';font-size:14.5px;font-weight:500;',
+        iconEl: glyph[d[0]](on ? pal.acc : pal.mid)
+      };
+    });
+    return {
+      rootStyle: 'width:210px;height:100%;min-height:600px;display:flex;flex-direction:column;background:' + pal.bg + ';border-right:1px solid ' + pal.border + ';font-family:\'Geist\',-apple-system,sans-serif;box-sizing:border-box;',
+      wordStyle: 'color:' + pal.hi + ';font-weight:700;font-size:17px;letter-spacing:-0.02em;',
+      bottomStyle: 'color:' + pal.mid + ';font-size:14.5px;font-weight:500;',
+      themeLabel: light ? 'Tema oscuro' : 'Tema claro',
+      items: items,
+      ajustesIcon: glyph.ajustes(pal.mid),
+      themeIcon: glyph.theme(pal.mid)
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,13 +1,12 @@
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ACCENTS, THEME_MODES } from "@/lib/theme";
 import { useStore } from "@/store/useStore";
+import { Masthead } from "./Masthead";
+import { SquareSwitch } from "./EquipmentView";
 
-const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
 const toHour = (min: number) => Math.round(min / 60);
+const input = "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
+const dataBtn = "border border-[var(--rule2)] px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--fg)] hover:border-[var(--fg)]";
 
 export function SettingsView() {
   const settings = useStore((s) => s.settings);
@@ -29,23 +28,32 @@ export function SettingsView() {
   const lunch = settings.avoidWindows[0];
 
   return (
-    <div className="flex max-w-xl flex-col gap-3">
-      <Section title="Apariencia">
+    <div className="flex flex-col px-[34px] py-[30px]">
+      <Masthead title="AJUSTES" sub="CONFIGURACIÓN" />
+
+      <Section title="APARIENCIA">
         <Row label="Tema">
-          <div className="bg-muted/50 flex gap-1 rounded-lg p-1">
-            {THEME_MODES.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setThemeMode(m.id)}
-                className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                  theme.mode === m.id
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
+          <div className="flex">
+            {THEME_MODES.map((m, i) => {
+              const on = theme.mode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => setThemeMode(m.id)}
+                  className="border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
+                  style={{
+                    borderColor: on ? "var(--acc)" : "var(--rule2)",
+                    background: on ? "var(--acc)" : "transparent",
+                    color: on ? "var(--on)" : "var(--dim)",
+                    marginLeft: i ? -1 : 0,
+                    zIndex: on ? 1 : 0,
+                    position: "relative",
+                  }}
+                >
+                  {m.label.toUpperCase()}
+                </button>
+              );
+            })}
           </div>
         </Row>
         <Row label="Acento">
@@ -56,27 +64,29 @@ export function SettingsView() {
                 onClick={() => setAccent(a.id)}
                 aria-label={a.label}
                 title={a.label}
-                className={`size-6 rounded-full border transition-transform hover:scale-110 ${
-                  theme.accent === a.id
-                    ? "ring-ring ring-offset-background ring-2 ring-offset-2"
-                    : "border-border"
-                }`}
-                style={{ background: a.swatch }}
+                className="size-6 border-2"
+                style={{
+                  background: a.swatch,
+                  borderColor: theme.accent === a.id ? "var(--fg)" : "transparent",
+                }}
               />
             ))}
           </div>
         </Row>
       </Section>
 
-      <Section title="Panel flotante">
+      <Section title="PANEL FLOTANTE">
         <Row label="Mostrar panel" hint="Mini-ventana siempre visible con el próximo ejercicio.">
-          <Switch checked={panelEnabled} onCheckedChange={setPanelEnabled} />
+          <SquareSwitch on={panelEnabled} onClick={() => setPanelEnabled(!panelEnabled)} />
         </Row>
       </Section>
 
-      <Section title="Notificaciones">
+      <Section title="NOTIFICACIONES">
         <Row label="Avisos de microset" hint="Te avisa cuando toca una serie.">
-          <Switch checked={notificationsEnabled} onCheckedChange={setNotificationsEnabled} />
+          <SquareSwitch
+            on={notificationsEnabled}
+            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+          />
         </Row>
         <Row label="Tiempo de posponer">
           <div className="w-24">
@@ -85,7 +95,7 @@ export function SettingsView() {
         </Row>
       </Section>
 
-      <Section title="Horario laboral">
+      <Section title="HORARIO LABORAL">
         <div className="grid grid-cols-2 gap-3">
           <Field
             label="Inicio"
@@ -106,7 +116,7 @@ export function SettingsView() {
         </div>
       </Section>
 
-      <Section title="Almuerzo">
+      <Section title="ALMUERZO">
         <div className="grid grid-cols-2 gap-3">
           <Field
             label="Desde"
@@ -127,7 +137,7 @@ export function SettingsView() {
         </div>
       </Section>
 
-      <Section title="Descanso mínimo">
+      <Section title="DESCANSO MÍNIMO">
         <Field
           label="Entre series"
           suffix="min"
@@ -139,30 +149,31 @@ export function SettingsView() {
         />
       </Section>
 
-      <Section title="Modo demo">
-        <Row
-          label="Activar modo demo"
-          hint="Agenda series desde ahora, ignorando tu horario, para probar la app."
-        >
-          <Switch checked={demoMode} onCheckedChange={setDemoMode} />
+      <Section title="MODO DEMO">
+        <Row label="Activar modo demo" hint="Agenda series desde ahora, ignorando tu horario, para probar la app.">
+          <SquareSwitch on={demoMode} onClick={() => setDemoMode(!demoMode)} />
         </Row>
       </Section>
 
-      <Section title="Datos">
+      <Section title="DATOS">
         <Row label="Replanificar hoy" hint="Vuelve a repartir las series desde ahora.">
-          <Button size="sm" variant="outline" onClick={replan}>
-            Replanificar
-          </Button>
+          <button className={dataBtn} onClick={replan}>
+            REPLANIFICAR
+          </button>
         </Row>
         <Row label="Restablecer ajustes" hint="Horario, almuerzo y descanso a sus valores iniciales.">
-          <Button size="sm" variant="outline" onClick={resetSettings}>
-            Restablecer
-          </Button>
+          <button className={dataBtn} onClick={resetSettings}>
+            RESTABLECER
+          </button>
         </Row>
         <Row label="Restablecer todo" hint="Borra rutina, equipo y registros. Vuelve de fábrica.">
-          <Button size="sm" variant="destructive" onClick={resetAll}>
-            Restablecer todo
-          </Button>
+          <button
+            className="border px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.06em]"
+            style={{ borderColor: "var(--destructive)", color: "var(--destructive)" }}
+            onClick={resetAll}
+          >
+            RESTABLECER TODO
+          </button>
         </Row>
       </Section>
     </div>
@@ -171,29 +182,21 @@ export function SettingsView() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className={`${CARD} flex flex-col gap-3 p-4`}>
-      <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+    <section className="mt-3 border border-[var(--rule2)] p-4">
+      <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
         {title}
       </span>
-      {children}
+      <div className="mt-3 flex flex-col gap-3">{children}</div>
     </section>
   );
 }
 
-function Row({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
-        <div className="text-sm">{label}</div>
-        {hint && <div className="text-muted-foreground text-xs">{hint}</div>}
+        <div className="text-[13.5px] text-[var(--fg)]">{label}</div>
+        {hint && <div className="mt-0.5 text-[11.5px] leading-[1.4] text-[var(--faint)]">{hint}</div>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
@@ -219,7 +222,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-muted-foreground text-xs">{label}</Label>
+      <span className="font-mono text-[10px] tracking-[0.1em] text-[var(--faint)] uppercase">{label}</span>
       <NumberInput value={value} suffix={suffix} onChange={onChange} min={min} max={max} step={step} />
     </div>
   );
@@ -242,7 +245,7 @@ function NumberInput({
 }) {
   return (
     <div className="relative">
-      <Input
+      <input
         type="number"
         value={value}
         min={min}
@@ -252,10 +255,10 @@ function NumberInput({
           const n = Number(e.currentTarget.value);
           if (!Number.isNaN(n)) onChange(n);
         }}
-        className="w-full pr-8 font-mono"
+        className={`${input} h-9 w-full px-2.5 pr-9 font-mono text-[13px]`}
       />
       {suffix && (
-        <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-xs">
+        <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 font-mono text-[11px] text-[var(--faint2)]">
           {suffix}
         </span>
       )}

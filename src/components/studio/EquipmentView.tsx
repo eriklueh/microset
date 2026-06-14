@@ -1,9 +1,7 @@
-import { Switch } from "@/components/ui/switch";
+import { Masthead } from "./Masthead";
 import { EQUIPMENT } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
-
-const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
 
 export function EquipmentView() {
   const owned = useStore((s) => s.ownedEquipment);
@@ -11,40 +9,51 @@ export function EquipmentView() {
   const toggle = useStore((s) => s.toggleEquipment);
   const { all, byId } = useCatalog();
 
-  const usedExercises = new Set(
-    dayTypes.flatMap((d) => d.routine.map((r) => r.exerciseId)),
-  );
+  const used = new Set(dayTypes.flatMap((d) => d.routine.map((r) => r.exerciseId)));
 
   return (
-    <div className="flex max-w-2xl flex-col gap-2">
-      <p className="text-muted-foreground px-1 pb-1 text-xs">
-        Decinos qué tenés en casa: define qué ejercicios podés sumar a tus rutinas.
-      </p>
-      {EQUIPMENT.map((eq) => {
-        const enables = all.filter((e) => e.equipment.includes(eq.id)).length;
-        const used = [...usedExercises].filter((id) =>
-          byId(id)?.equipment.includes(eq.id),
-        ).length;
-        const isOwned = owned.includes(eq.id);
-        const orphaning = !isOwned && used > 0;
-        return (
-          <label
-            key={eq.id}
-            htmlFor={eq.id}
-            className={`${CARD} flex cursor-pointer items-center justify-between p-3`}
-          >
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{eq.name}</div>
-              <div className={`text-xs ${orphaning ? "text-amber-500" : "text-muted-foreground"}`}>
-                {enables} ejercicios
-                {used > 0 ? ` · ${used} en tus rutinas` : ""}
-                {orphaning ? " — quedan sin hacer" : ""}
+    <div className="flex flex-col px-[34px] py-[30px]">
+      <Masthead title="EQUIPO" sub="LO QUE TENÉS EN CASA" />
+      <div className="border-b border-[var(--rule)]">
+        {EQUIPMENT.map((eq) => {
+          const enables = all.filter((e) => e.equipment.includes(eq.id)).length;
+          const inRoutines = [...used].filter((id) => byId(id)?.equipment.includes(eq.id)).length;
+          const on = owned.includes(eq.id);
+          const sub = `${enables} EJERCICIO${enables === 1 ? "" : "S"}${inRoutines > 0 ? ` · ${inRoutines} EN RUTINAS` : ""}`;
+          return (
+            <div
+              key={eq.id}
+              className="flex items-center justify-between border-t border-[var(--rule)] py-5"
+            >
+              <div>
+                <div className="text-[17px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
+                  {eq.name}
+                </div>
+                <div className="mt-[5px] font-mono text-[10.5px] tracking-[0.08em] text-[var(--faint)]">
+                  {sub}
+                </div>
               </div>
+              <SquareSwitch on={on} onClick={() => toggle(eq.id)} />
             </div>
-            <Switch id={eq.id} checked={isOwned} onCheckedChange={() => toggle(eq.id)} />
-          </label>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
+  );
+}
+
+export function SquareSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={on}
+      className="relative h-[26px] w-[48px] flex-none border"
+      style={{ borderColor: on ? "var(--acc)" : "var(--rule2)", background: on ? "var(--acc)" : "transparent" }}
+    >
+      <span
+        className="absolute top-[3px] size-[18px]"
+        style={{ left: on ? "25px" : "3px", background: on ? "var(--on)" : "var(--faint2)" }}
+      />
+    </button>
   );
 }

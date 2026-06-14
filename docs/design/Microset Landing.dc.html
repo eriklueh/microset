@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:#0a0a0a;}
+  @keyframes msMarq{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  @keyframes msBlink{0%,90%,100%{opacity:1}93%,97%{opacity:0.2}}
+  @keyframes msGrain{0%{transform:translate(0,0)}25%{transform:translate(-3%,-4%)}50%{transform:translate(4%,-2%)}75%{transform:translate(-2%,3%)}100%{transform:translate(0,0)}}
+</style>
+</helmet>
+<div style="background:#0a0a0a;font-family:'Geist',-apple-system,sans-serif;color:#ededea;overflow:hidden;">
+
+  <!-- NAV -->
+  <div style="border-bottom:1px solid #1f1f1c;">
+    <div style="max-width:1180px;margin:0 auto;padding:18px 36px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div style="width:26px;height:26px;background:#c4f82a;display:flex;align-items:center;justify-content:center;"><span style="font-size:18px;font-weight:900;color:#0a0a0a;line-height:1;margin-top:-1px;">m</span></div>
+        <span style="font-size:18px;font-weight:800;letter-spacing:-0.03em;">microset</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:26px;">
+        <span style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.1em;color:#a9a9a3;cursor:pointer;">CÓMO FUNCIONA</span>
+        <span style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.1em;color:#a9a9a3;cursor:pointer;">OPEN SOURCE</span>
+        <span style="display:flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid #2a2a27;font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.04em;color:#ededea;cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="#c4f82a"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>2.4k</span>
+        <span style="padding:9px 18px;background:#c4f82a;color:#0a0a0a;font-family:'Geist Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:0.06em;cursor:pointer;">DESCARGAR</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="position:relative;border-bottom:1px solid #1f1f1c;overflow:hidden;">
+    <div style="position:absolute;top:-20%;right:-5%;width:55%;height:140%;background:radial-gradient(circle at 60% 40%,rgba(196,248,42,0.1),transparent 60%);pointer-events:none;"></div>
+    <div style="position:absolute;inset:0;opacity:0.05;mix-blend-mode:overlay;animation:msGrain 0.7s steps(3) infinite;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none;"></div>
+    <div style="position:relative;max-width:1180px;margin:0 auto;padding:72px 36px 80px;display:flex;align-items:center;gap:56px;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:28px;">
+          <span style="width:8px;height:8px;background:#c4f82a;animation:msBlink 3s steps(1) infinite;"></span>
+          <span style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;color:#c4f82a;">EJERCICIO EN CASA · CONTRA EL SEDENTARISMO</span>
+        </div>
+        <h1 style="margin:0;font-size:84px;font-weight:900;letter-spacing:-0.055em;line-height:0.88;text-transform:uppercase;">Entrená en<br>las <span style="background:#c4f82a;color:#0a0a0a;padding:0 14px;">pausas</span>.</h1>
+        <p style="margin:30px 0 0;max-width:470px;font-size:16.5px;line-height:1.6;color:#cfcfca;">microset te saca de la silla con micro-pausas de ejercicio repartidas en tu jornada de home office. Combatí el sedentarismo sin pensarlo: te avisa, te movés un minuto, seguís. <span style="color:#c4f82a;">Open source, nativo, sin nube.</span></p>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:36px;">
+          <span style="display:flex;align-items:center;gap:10px;padding:15px 26px;background:#c4f82a;color:#0a0a0a;font-family:'Geist Mono',monospace;font-size:13.5px;font-weight:600;letter-spacing:0.04em;cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="#0a0a0a"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"></path></svg>DESCARGAR GRATIS</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:15px 24px;border:2px solid #2a2a27;color:#ededea;font-family:'Geist Mono',monospace;font-size:13.5px;font-weight:600;letter-spacing:0.04em;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#ededea"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49v-1.7c-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05a9.4 9.4 0 015 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.26 10.26 0 0022 12.25C22 6.58 17.52 2 12 2z"></path></svg>VER EN GITHUB</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:18px;margin-top:30px;font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.06em;color:#54544f;">
+          <span>WINDOWS 11</span><span style="width:3px;height:3px;background:#54544f;"></span><span>LINUX</span><span style="width:3px;height:3px;background:#54544f;"></span><span>TAURI · RUST</span><span style="width:3px;height:3px;background:#54544f;"></span><span>MIT</span>
+        </div>
+      </div>
+      <div style="flex:none;">{{ heroApp }}</div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div style="background:#c4f82a;overflow:hidden;border-bottom:1px solid #1f1f1c;">
+    <div style="display:flex;width:200%;animation:msMarq 22s linear infinite;">
+      <div style="display:flex;align-items:center;gap:0;white-space:nowrap;width:50%;">{{ ticker }}</div>
+      <div style="display:flex;align-items:center;gap:0;white-space:nowrap;width:50%;">{{ ticker }}</div>
+    </div>
+  </div>
+
+  <!-- HOW -->
+  <div style="border-bottom:1px solid #1f1f1c;">
+    <div style="max-width:1180px;margin:0 auto;padding:80px 36px;">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:48px;">
+        <div>
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#c4f82a;">CÓMO FUNCIONA</div>
+          <h2 style="margin:14px 0 0;font-size:46px;font-weight:900;letter-spacing:-0.04em;line-height:0.95;text-transform:uppercase;">Configurás una vez.<br>Te movés todo el día.</h2>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #2a2a27;border-left:1px solid #2a2a27;">
+        {{ steps }}
+      </div>
+    </div>
+  </div>
+
+  <!-- METHOD -->
+  <div style="border-bottom:1px solid #1f1f1c;background:#0d0d0c;">
+    <div style="max-width:1180px;margin:0 auto;padding:80px 36px;display:flex;align-items:center;gap:60px;">
+      <div style="flex:1;">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#c4f82a;">CÓMO SE REPARTE</div>
+        <h2 style="margin:16px 0 0;font-size:52px;font-weight:900;letter-spacing:-0.045em;line-height:0.92;text-transform:uppercase;">Tu rutina,<br>repartida<br>en el día.</h2>
+        <p style="margin:22px 0 0;max-width:430px;font-size:15px;line-height:1.65;color:#a9a9a3;">microset toma tu rutina y la distribuye en pausas cortas a lo largo de tu jornada, respetando tu horario. El método y la intensidad los elegís vos; si te salteás una, reacomoda el resto del día.</p>
+      </div>
+      <div style="flex:none;display:flex;gap:0;border:1px solid #2a2a27;">
+        <div style="padding:32px 30px;border-right:1px solid #2a2a27;text-align:center;"><div style="font-family:'Geist Mono',monospace;font-size:46px;font-weight:600;color:#c4f82a;letter-spacing:-0.03em;line-height:1;">8×</div><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#76766f;margin-top:12px;">PAUSAS / DÍA</div></div>
+        <div style="padding:32px 30px;border-right:1px solid #2a2a27;text-align:center;"><div style="font-family:'Geist Mono',monospace;font-size:46px;font-weight:600;color:#ededea;letter-spacing:-0.03em;line-height:1;">~1'</div><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#76766f;margin-top:12px;">POR PAUSA</div></div>
+        <div style="padding:32px 30px;text-align:center;"><div style="font-family:'Geist Mono',monospace;font-size:46px;font-weight:600;color:#ededea;letter-spacing:-0.03em;line-height:1;">0</div><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#76766f;margin-top:12px;">EXCUSAS</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div style="border-bottom:1px solid #1f1f1c;">
+    <div style="max-width:1180px;margin:0 auto;padding:80px 36px;">
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#c4f82a;">TODO INCLUIDO</div>
+      <h2 style="margin:14px 0 44px;font-size:46px;font-weight:900;letter-spacing:-0.04em;line-height:0.95;text-transform:uppercase;">Una herramienta, no una app más.</h2>
+      {{ features }}
+    </div>
+  </div>
+
+  <!-- OPEN SOURCE -->
+  <div style="border-bottom:1px solid #1f1f1c;background:#0d0d0c;">
+    <div style="max-width:1180px;margin:0 auto;padding:80px 36px;display:flex;align-items:center;gap:56px;">
+      <div style="flex:1;">
+        <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#c4f82a;">CÓDIGO ABIERTO</div>
+        <h2 style="margin:16px 0 0;font-size:54px;font-weight:900;letter-spacing:-0.045em;line-height:0.9;text-transform:uppercase;">Abierto<br>de par<br>en par.</h2>
+        <p style="margin:22px 0 0;max-width:420px;font-size:15px;line-height:1.65;color:#a9a9a3;">Sin telemetría, sin cuenta, sin nube. El código vive en GitHub bajo licencia <span style="color:#ededea;">MIT</span> — auditalo, forkealo, hacelo tuyo. Construido con <span style="color:#ededea;">Tauri + Rust</span>: liviano, nativo y rápido.</p>
+        <div style="display:flex;gap:24px;margin-top:30px;">
+          <div><div style="font-family:'Geist Mono',monospace;font-size:26px;font-weight:600;color:#ededea;">2.4k</div><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#76766f;margin-top:5px;">STARS</div></div>
+          <div><div style="font-family:'Geist Mono',monospace;font-size:26px;font-weight:600;color:#ededea;">184</div><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#76766f;margin-top:5px;">FORKS</div></div>
+          <div><div style="font-family:'Geist Mono',monospace;font-size:26px;font-weight:600;color:#ededea;">~6MB</div><div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#76766f;margin-top:5px;">INSTALADOR</div></div>
+        </div>
+      </div>
+      <div style="flex:none;width:420px;">
+        <div style="border:1px solid #2a2a27;background:#0a0a0a;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #2a2a27;">
+            <div style="display:flex;align-items:center;gap:9px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="#a9a9a3"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49v-1.7c-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05a9.4 9.4 0 015 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.26 10.26 0 0022 12.25C22 6.58 17.52 2 12 2z"></path></svg><span style="font-family:'Geist Mono',monospace;font-size:13px;color:#ededea;">microset<span style="color:#54544f;">/</span>microset</span></div>
+            <span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.06em;color:#a9a9a3;border:1px solid #2a2a27;padding:3px 7px;">PUBLIC</span>
+          </div>
+          <div style="padding:16px 18px;">
+            <div style="font-size:13px;line-height:1.5;color:#a9a9a3;">Coach de pausas activas para home office. Movimiento repartido, automático.</div>
+            <div style="display:flex;align-items:center;gap:18px;margin-top:16px;font-family:'Geist Mono',monospace;font-size:11px;color:#76766f;">
+              <span style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:50%;background:#c4f82a;"></span>Rust</span>
+              <span style="display:flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="#76766f"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>2.4k</span>
+              <span>⑂ 184</span>
+              <span>MIT</span>
+            </div>
+          </div>
+          <div style="border-top:1px solid #2a2a27;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;background:#0d0d0c;">
+            <span style="font-family:'Geist Mono',monospace;font-size:12px;color:#ededea;"><span style="color:#c4f82a;">$</span> winget install microset</span>
+            <span style="font-family:'Geist Mono',monospace;font-size:9.5px;color:#54544f;letter-spacing:0.08em;">COPIAR</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-top:14px;padding:14px;background:#c4f82a;color:#0a0a0a;font-family:'Geist Mono',monospace;font-size:13px;font-weight:600;letter-spacing:0.04em;cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="#0a0a0a"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>STAR EN GITHUB</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND (lime invert) -->
+  <div style="background:#c4f82a;border-bottom:1px solid #1f1f1c;">
+    <div style="max-width:1180px;margin:0 auto;padding:64px 36px;display:flex;align-items:center;justify-content:space-between;gap:30px;">
+      <div style="display:flex;align-items:center;gap:0;"><span style="font-size:74px;font-weight:900;letter-spacing:-0.06em;color:#0a0a0a;line-height:0.9;">microset</span><span style="display:inline-block;width:22px;height:58px;background:#0a0a0a;margin-left:12px;"></span></div>
+      <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.14em;color:#0a0a0a;text-align:right;line-height:1.9;opacity:0.7;">OPEN SOURCE<br>MIT · TAURI · RUST<br>WINDOWS · LINUX</div>
+    </div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div style="position:relative;border-bottom:1px solid #1f1f1c;overflow:hidden;">
+    <div style="position:absolute;bottom:-40%;left:50%;transform:translateX(-50%);width:80%;height:120%;background:radial-gradient(ellipse at 50% 100%,rgba(196,248,42,0.12),transparent 62%);pointer-events:none;"></div>
+    <div style="position:relative;max-width:1180px;margin:0 auto;padding:96px 36px;text-align:center;">
+      <div style="display:inline-flex;width:40px;height:40px;background:#c4f82a;align-items:center;justify-content:center;margin-bottom:24px;"><span style="font-size:28px;font-weight:900;color:#0a0a0a;line-height:1;margin-top:-2px;">m</span></div>
+      <h2 style="margin:0;font-size:64px;font-weight:900;letter-spacing:-0.05em;line-height:0.9;text-transform:uppercase;">Tu próxima serie<br>es en un rato.</h2>
+      <p style="margin:22px auto 0;max-width:420px;font-size:16px;line-height:1.6;color:#a9a9a3;">Instalá microset y dejá que tu día te empuje a moverte.</p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:34px;">
+        <span style="display:flex;align-items:center;gap:10px;padding:16px 30px;background:#c4f82a;color:#0a0a0a;font-family:'Geist Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0.04em;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0a0a0a"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"></path></svg>DESCARGAR GRATIS</span>
+        <span style="padding:16px 26px;border:2px solid #2a2a27;color:#ededea;font-family:'Geist Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0.04em;cursor:pointer;">VER EN GITHUB →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="max-width:1180px;margin:0 auto;padding:44px 36px;display:flex;align-items:flex-start;justify-content:space-between;gap:30px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;"><div style="width:22px;height:22px;background:#c4f82a;display:flex;align-items:center;justify-content:center;"><span style="font-size:15px;font-weight:900;color:#0a0a0a;line-height:1;">m</span></div><span style="font-size:16px;font-weight:800;letter-spacing:-0.03em;">microset</span></div>
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.06em;color:#54544f;margin-top:14px;">© 2026 · MIT · HECHO PARA MOVERSE</div>
+    </div>
+    <div style="display:flex;gap:48px;">
+      <div style="display:flex;flex-direction:column;gap:10px;"><span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.14em;color:#54544f;">PRODUCTO</span><span style="font-size:13px;color:#a9a9a3;">Descargar</span><span style="font-size:13px;color:#a9a9a3;">Cómo funciona</span><span style="font-size:13px;color:#a9a9a3;">Changelog</span></div>
+      <div style="display:flex;flex-direction:column;gap:10px;"><span style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:0.14em;color:#54544f;">OPEN SOURCE</span><span style="font-size:13px;color:#a9a9a3;">GitHub</span><span style="font-size:13px;color:#a9a9a3;">Licencia MIT</span><span style="font-size:13px;color:#a9a9a3;">Contribuir</span></div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const e = React.createElement;
+    const acc = '#c4f82a', ink = '#0a0a0a', paper = '#ededea', faint = '#76766f', faint2 = '#54544f', dim = '#a9a9a3', rule = '#2a2a27';
+
+    // ---- hero app mock (D Hoy) ----
+    const rows = [
+      { idx: '01', t: '09:00', n: 'Dominadas', st: 'done' },
+      { idx: '02', t: '10:07', n: 'Fondos', st: 'done' },
+      { idx: '05', t: '14:00', n: 'Fondos', st: 'now' },
+      { idx: '06', t: '15:07', n: 'L-sit', st: 'todo' }
+    ];
+    const rowEls = rows.map((r, i) => {
+      const on = r.st === 'now', done = r.st === 'done';
+      const status = done ? 'HECHO' : on ? 'AHORA' : 'PENDIENTE';
+      return e('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 0 11px ' + (on ? '10px' : '0'), borderBottom: '1px solid #1f1f1c', position: 'relative', background: on ? 'rgba(196,248,42,0.05)' : 'transparent' } }, [
+        on ? e('div', { key: 'b', style: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: acc } }) : null,
+        e('span', { key: 'i', style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', color: on ? acc : faint2, width: '18px', flex: 'none' } }, r.idx),
+        e('span', { key: 't', style: { fontFamily: "'Geist Mono',monospace", fontSize: '14px', fontWeight: 500, color: done ? faint2 : on ? acc : dim, width: '52px', flex: 'none' } }, r.t),
+        e('span', { key: 'n', style: { flex: 1, fontSize: '15px', fontWeight: 700, letterSpacing: '-0.015em', color: done ? faint2 : on ? paper : '#cfcfca' } }, r.n),
+        e('span', { key: 's', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', letterSpacing: '0.08em', fontWeight: 600, color: on ? acc : faint2 } }, status)
+      ]);
+    });
+    const heroApp = e('div', { style: { width: '440px', border: '1px solid ' + rule, background: ink, boxShadow: '0 50px 100px -30px rgba(0,0,0,0.8)' } }, [
+      e('div', { key: 'bar', style: { height: '38px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 14px', borderBottom: '1px solid ' + rule } }, [
+        e('div', { key: 1, style: { width: '13px', height: '13px', background: acc } }),
+        e('span', { key: 2, style: { fontSize: '12px', color: faint } }, 'microset')
+      ]),
+      e('div', { key: 'body', style: { padding: '22px 24px 24px' } }, [
+        e('div', { key: 'mast', style: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' } }, [
+          e('div', { key: 'h', style: { fontSize: '38px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.85, textTransform: 'uppercase' } }, 'Hoy'),
+          e('div', { key: 'p', style: { fontFamily: "'Geist Mono',monospace", fontSize: '24px', fontWeight: 600, color: paper, letterSpacing: '-0.02em' } }, ['03', e('span', { key: 's', style: { color: faint2 } }, '/08')])
+        ]),
+        e('div', { key: 'rule', style: { height: '2px', background: paper, margin: '14px 0 0' } }),
+        e('div', { key: 'pr', style: { display: 'flex', height: '4px', marginBottom: '18px' } }, [e('div', { key: 1, style: { width: '37.5%', background: acc } }), e('div', { key: 2, style: { flex: 1, background: '#1c1c1a' } })]),
+        e('div', { key: 'now', style: { background: acc, color: ink, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' } }, [
+          e('div', { key: 'l' }, [
+            e('div', { key: 1, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.16em', fontWeight: 600 } }, 'AHORA — 14:00'),
+            e('div', { key: 2, style: { fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95, marginTop: '5px' } }, 'FONDOS'),
+            e('div', { key: 3, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.04em', marginTop: '6px', opacity: 0.72 } }, '5 REPS · PESO CORPORAL')
+          ]),
+          e('div', { key: 'b', style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px 16px', background: ink, color: acc, fontFamily: "'Geist Mono',monospace", fontSize: '12px', fontWeight: 600, letterSpacing: '0.06em', flex: 'none' } }, '✓ HECHO')
+        ]),
+        e('div', { key: 'lbl', style: { fontFamily: "'Geist Mono',monospace", fontSize: '9.5px', letterSpacing: '0.16em', color: faint, margin: '22px 0 4px' } }, 'EL DÍA — 8 SERIES'),
+        e('div', { key: 'rows' }, rowEls)
+      ])
+    ]);
+
+    // ---- ticker ----
+    const phrases = ['MICRO-PAUSAS DE MOVIMIENTO', '8 PAUSAS AL DÍA', 'CONTRA EL SEDENTARISMO', 'EJERCICIO DESDE CASA', 'OPEN SOURCE · MIT', 'NATIVO · SIN NUBE'];
+    const tickerKids = [];
+    phrases.forEach((p, i) => {
+      tickerKids.push(e('span', { key: 'p' + i, style: { fontFamily: "'Geist Mono',monospace", fontSize: '13px', fontWeight: 600, letterSpacing: '0.08em', color: ink, padding: '12px 0' } }, p));
+      tickerKids.push(e('span', { key: 'd' + i, style: { width: '8px', height: '8px', background: ink, transform: 'rotate(45deg)', margin: '0 22px', flex: 'none' } }));
+    });
+    const ticker = e(React.Fragment, {}, tickerKids);
+
+    // ---- steps ----
+    const stepData = [
+      { n: '01', t: 'Decí qué tenés', d: 'Barra, paraletas, bandas. Solo ejercicios que podés hacer en casa.' },
+      { n: '02', t: 'Armá tu rutina', d: 'Elegí qué hacer por tipo de día. El método y la intensidad, los ponés vos.' },
+      { n: '03', t: 'Se reparte solo', d: 'Distribuye las series en tu horario, respetando almuerzo y descansos.' },
+      { n: '04', t: 'Te avisa y se adapta', d: 'Llega el aviso. Hacés, posponés o decís “ahora no” y reacomoda.' }
+    ];
+    const steps = e(React.Fragment, {}, stepData.map((s, i) => e('div', { key: i, style: { padding: '28px 24px 32px', borderRight: '1px solid #2a2a27', borderBottom: '1px solid #2a2a27' } }, [
+      e('div', { key: 'n', style: { fontFamily: "'Geist Mono',monospace", fontSize: '13px', color: acc, fontWeight: 500 } }, s.n),
+      e('div', { key: 't', style: { fontSize: '19px', fontWeight: 800, letterSpacing: '-0.02em', marginTop: '18px', textTransform: 'uppercase' } }, s.t),
+      e('div', { key: 'd', style: { fontSize: '13px', lineHeight: 1.55, color: faint, marginTop: '10px' } }, s.d)
+    ])));
+
+    // ---- features bento ----
+    const cell = (style, kids) => e('div', { style: Object.assign({ border: '1px solid ' + rule, padding: '26px 26px 28px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }, style) }, kids);
+    const fLabel = (t) => e('div', { style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.14em', color: acc } }, t);
+    const fTitle = (t) => e('div', { style: { fontSize: '21px', fontWeight: 800, letterSpacing: '-0.025em', marginTop: '12px', textTransform: 'uppercase' } }, t);
+    const fDesc = (t) => e('div', { style: { fontSize: '13px', lineHeight: 1.55, color: faint, marginTop: '8px' } }, t);
+    // mini panel viz
+    const miniPanel = e('div', { style: { marginTop: '20px', width: '100%', border: '1px solid ' + rule, background: '#0c0c0c', padding: '11px 13px' } }, [
+      e('div', { key: 'r', style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } }, [
+        e('div', { key: 'l' }, [e('div', { key: 1, style: { fontSize: '15px', fontWeight: 800, textTransform: 'uppercase' } }, 'FONDOS'), e('div', { key: 2, style: { fontFamily: "'Geist Mono',monospace", fontSize: '9px', color: faint, marginTop: '2px' } }, '5 · PESO CORPORAL')]),
+        e('div', { key: 'a', style: { fontFamily: "'Geist Mono',monospace", fontSize: '15px', fontWeight: 600, color: ink, background: acc, padding: '3px 7px' } }, 'AHORA')
+      ]),
+      e('div', { key: 'b', style: { display: 'flex', gap: '6px', marginTop: '11px' } }, [e('div', { key: 1, style: { flex: 1, textAlign: 'center', padding: '7px', background: acc, color: ink, fontFamily: "'Geist Mono',monospace", fontSize: '10px', fontWeight: 600 } }, '✓ HECHO'), e('div', { key: 2, style: { padding: '7px 12px', border: '1px solid ' + rule, color: dim, fontFamily: "'Geist Mono',monospace", fontSize: '10px' } }, 'NO')])
+    ]);
+    const miniLadder = e('div', { style: { display: 'flex', gap: '4px', marginTop: '22px' } }, ['BANDA', 'P.CORP', 'PESO', 'LASTRE'].map((lv, i) => e('div', { key: i, style: { flex: 1 } }, [e('div', { key: 'b', style: { height: '9px', background: i < 1 ? 'rgba(196,248,42,0.3)' : i === 1 ? acc : '#1c1c1a' } }), e('div', { key: 'l', style: { fontFamily: "'Geist Mono',monospace", fontSize: '8px', color: i === 1 ? acc : faint2, marginTop: '7px', textAlign: 'center' } }, lv)])));
+    const miniThemes = e('div', { style: { display: 'flex', gap: '10px', marginTop: '20px' } }, [
+      e('div', { key: 1, style: { flex: 1, height: '58px', background: ink, border: '1px solid ' + rule, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, e('div', { style: { width: '22px', height: '22px', background: acc } })),
+      e('div', { key: 2, style: { flex: 1, height: '58px', background: '#efece4', border: '1px solid #d8d3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, e('div', { style: { width: '22px', height: '22px', background: '#6f9c00' } }))
+    ]);
+    const miniChips = e('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '7px', marginTop: '20px' } }, ['BARRA', 'PARALETAS', 'BANDAS', 'ANILLAS'].map((t, i) => e('span', { key: i, style: { fontFamily: "'Geist Mono',monospace", fontSize: '10px', letterSpacing: '0.04em', color: dim, border: '1px solid ' + rule, padding: '6px 10px' } }, t)));
+
+    const miniSed = e('div', { style: { display: 'flex', gap: '4px', marginTop: '22px' } }, [0, 1, 2, 3, 4, 5, 6, 7].map((i) => e('div', { key: i, style: { flex: 1, height: '30px', background: (i === 1 || i === 4 || i === 6) ? acc : '#1c1c1a' } })));
+    const features = e('div', { style: { display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gridAutoRows: 'minmax(220px,auto)', marginTop: '4px' } }, [
+      cell({ gridRow: 'span 1', gridColumn: 'span 1' }, [fLabel('SIEMPRE ENCIMA'), fTitle('Panel flotante'), fDesc('Un widget chiquito, always-on-top, con tu próxima serie y la cuenta regresiva.'), miniPanel]),
+      cell({}, [fLabel('PROGRESÁ'), fTitle('Niveles'), fDesc('De asistido con banda a lastrado.'), miniLadder]),
+      cell({}, [fLabel('CONTRA EL SEDENTARISMO'), fTitle('Salí de la silla'), fDesc('Cortás las horas sentado con pausas cortas repartidas en tu jornada.'), miniSed]),
+      cell({}, [fLabel('AVISOS'), fTitle('Que respetan'), fDesc('Notificaciones nativas, submáximas, sin culpa. Posponé o saltá.')]),
+      cell({ gridColumn: 'span 2', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, [
+        e('div', { key: 't' }, [fLabel('CON LO QUE TENÉS'), fTitle('Tu equipo, tus ejercicios'), fDesc('Decís qué tenés en casa y microset arma la rutina con eso. Nada de membresías.')]),
+        e('div', { key: 'c', style: { flex: 'none', marginLeft: '24px', width: '230px' } }, miniChips)
+      ])
+    ]);
+
+    return { heroApp: heroApp, ticker: ticker, steps: steps, features: features };
+  }
+}
+</script>
+</body>
+</html>

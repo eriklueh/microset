@@ -1,204 +1,246 @@
-import { Bell, Check, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
-import type { Block } from "@/lib/engine";
-import { exerciseById, variantLabel } from "@/domain/seed";
-import { ensureNotificationSetup, notifyBlock } from "@/lib/notify";
+import type { Block, Settings } from "@/lib/engine";
+import { variantLabel } from "@/domain/seed";
+import { MUSCLE_LABEL } from "@/domain/types";
+import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
 
-const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
-
-function repsOf(block: Block): string {
-  return block.target ?? exerciseById(block.exerciseId)?.defaultReps ?? "";
-}
+const DOW = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"];
+const pad = (n: number) => String(n).padStart(2, "0");
+const hh = (min: number) => pad(Math.round(min / 60));
+const NEXT_BG = "color-mix(in oklch, var(--acc) 5%, transparent)";
 
 export function TodayView() {
   const day = useStore((s) => s.day);
+  const settings = useStore((s) => s.settings);
   const done = useStore((s) => s.done);
   const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
+  const { byId } = useCatalog();
 
   if (!day) return null;
+  const weekday = DOW[(new Date().getDay() + 6) % 7];
 
   if (day.rest) {
     return (
-      <div className={`${CARD} flex flex-col items-center gap-1 p-10 text-center`}>
-        <span className="text-lg font-semibold">Día de descanso</span>
-        <span className="text-muted-foreground text-sm">
-          Hoy toca recuperar. Mañana seguimos.
-        </span>
+      <div className="flex flex-col px-[34px] py-[30px]">
+        <Mast weekday={weekday} dayType="DESCANSO" settings={settings} done={0} total={0} pct={0} />
+        <div className="mt-2 border border-[var(--rule2)] p-10 text-center">
+          <div className="text-[34px] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
+            Día de descanso
+          </div>
+          <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)] uppercase">
+            Hoy toca recuperar · mañana seguimos
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (day.blocks.length === 0) {
-    return (
-      <div className={`${CARD} text-muted-foreground p-6 text-center text-sm`}>
-        No hay ejercicios para hoy. Andá a{" "}
-        <strong className="text-foreground">Rutina</strong> para armar tu día.
-      </div>
-    );
-  }
-
-  const doneCount = day.blocks.filter((b) => b.status === "done").length;
   const total = day.blocks.length;
-  const pct = total ? Math.round((doneCount / total) * 100) : 0;
-  const overflow = day.blocks.filter((b) => b.time < 0 && b.status !== "skipped");
+  const doneCount = day.blocks.filter((b) => b.status === "done").length;
+  const pct = total ? (doneCount / total) * 100 : 0;
   const next = day.blocks
     .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
     .sort((a, b) => a.time - b.time)[0];
-  const testBlock =
-    next ??
-    day.blocks.find((b) => b.status === "pending" || b.status === "snoozed") ??
-    day.blocks[0];
+
+  const muscleOf = (b: Block) => {
+    const ex = byId(b.exerciseId);
+    return ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : "";
+  };
+  const repsOf = (b: Block) => b.target ?? byId(b.exerciseId)?.defaultReps ?? "";
 
   return (
-    <div className="flex flex-col gap-3">
-      {day.dayTypeName && (
-        <div className="text-muted-foreground px-0.5 text-xs">
-          Tipo de día: <span className="text-foreground font-medium">{day.dayTypeName}</span>
-        </div>
-      )}
-
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
-              Progreso de hoy
-            </span>
-            <span className="font-mono text-xs tabular-nums">
-              {doneCount}/{total}
-            </span>
-          </div>
-          <div className="bg-muted/60 h-1.5 overflow-hidden rounded-full">
-            <div
-              className="bg-primary h-full rounded-full transition-all duration-500"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        </div>
-        <Button
-          size="icon-sm"
-          variant="outline"
-          aria-label="Probar aviso"
-          onClick={async () => {
-            await ensureNotificationSetup();
-            if (testBlock) notifyBlock(testBlock);
-          }}
-        >
-          <Bell className="size-4" />
-        </Button>
-      </div>
+    <div className="flex flex-col px-[34px] py-[30px]">
+      <Mast
+        weekday={weekday}
+        dayType={(day.dayTypeName ?? "").toUpperCase()}
+        settings={settings}
+        done={doneCount}
+        total={total}
+        pct={pct}
+      />
 
       {next ? (
-        <div className={`${CARD} relative overflow-hidden p-4`}>
-          <div className="bg-primary absolute inset-x-0 top-0 h-0.5" />
-          <div className="text-muted-foreground mb-2 flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
-            <Clock className="size-3" /> Próximo ·{" "}
-            <span className="font-mono">{formatMinute(next.time)}</span>
+        <div className="flex items-center justify-between gap-6 bg-[var(--acc)] px-[26px] py-[22px] text-[var(--on)]">
+          <div className="min-w-0">
+            <div className="font-mono text-[11px] font-semibold tracking-[0.2em]">
+              AHORA — {formatMinute(next.time)}
+            </div>
+            <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
+              {next.name}
+            </div>
+            <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">
+              {[`${repsOf(next)} REPS`, variantLabel(next.exerciseId, next.variantId).toUpperCase()]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
           </div>
-          <div className="text-xl font-semibold tracking-tight">{next.name}</div>
-          <div className="text-muted-foreground text-sm">
-            {[repsOf(next), variantLabel(next.exerciseId, next.variantId)]
-              .filter(Boolean)
-              .join(" · ")}
-          </div>
-          <div className="mt-3 flex gap-2">
-            <Button size="sm" className="flex-1" onClick={() => done(next.id)}>
-              <Check className="size-4" /> Hecho
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => snooze(next.id, 30)}>
-              Posponer
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => decline(next.id)}>
-              Ahora no
-            </Button>
+          <div className="flex flex-none flex-col gap-2">
+            <button
+              onClick={() => done(next.id)}
+              className="flex items-center justify-center gap-2 bg-[var(--on)] px-[26px] py-[13px] font-mono text-[13px] font-semibold tracking-[0.08em] text-[var(--acc)]"
+            >
+              <Check className="size-4" strokeWidth={3} /> HECHO
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => snooze(next.id, 30)}
+                className="flex-1 border-2 border-[var(--on)] px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
+              >
+                POSPONER
+              </button>
+              <button
+                onClick={() => decline(next.id)}
+                className="flex-1 border-2 px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
+                style={{ borderColor: "rgba(10,10,10,0.35)" }}
+              >
+                AHORA NO
+              </button>
+            </div>
           </div>
         </div>
       ) : (
-        <div className={`${CARD} text-muted-foreground p-4 text-sm`}>
-          {overflow.length > 0
-            ? "No hay más series para hoy (fuera de tu horario laboral). Mañana se reparten de nuevo."
-            : "Todo listo por hoy."}
+        <div className="border border-[var(--rule2)] p-5 font-mono text-[12px] tracking-[0.04em] text-[var(--faint)]">
+          {total > 0
+            ? "FUERA DE HORARIO · MAÑANA SE REPARTEN DE NUEVO"
+            : "SIN EJERCICIOS — ARMÁ TU RUTINA"}
         </div>
       )}
 
-      <div className="flex flex-col gap-1 pt-1">
-        <span className="text-muted-foreground px-1 pb-1 text-[11px] font-medium tracking-wider uppercase">
-          Línea del día
+      <div className="mt-[26px] flex items-center justify-between">
+        <span className="font-mono text-[11px] font-semibold tracking-[0.18em] text-[var(--faint)]">
+          EL DÍA — {total} SERIES
         </span>
-        {day.blocks.map((b) => (
-          <Row
-            key={b.id}
-            block={b}
-            isNext={b.id === next?.id}
-            onDone={() => done(b.id)}
-          />
-        ))}
       </div>
+      <div className="mt-3 h-px bg-[var(--rule2)]" />
+      {day.blocks.map((b, i) => (
+        <DayRow
+          key={b.id}
+          block={b}
+          idx={i + 1}
+          isNext={b.id === next?.id}
+          muscle={muscleOf(b)}
+          reps={repsOf(b)}
+        />
+      ))}
     </div>
   );
 }
 
-function StatusDot({ block, isNext }: { block: Block; isNext: boolean }) {
-  if (block.status === "done")
-    return <span className="bg-primary size-1.5 shrink-0 rounded-full" />;
-  if (block.status === "skipped")
-    return <span className="bg-muted-foreground/40 size-1.5 shrink-0 rounded-full" />;
-  if (block.time < 0)
-    return <span className="bg-destructive/60 size-1.5 shrink-0 rounded-full" />;
+function Mast({
+  weekday,
+  dayType,
+  settings,
+  done,
+  total,
+  pct,
+}: {
+  weekday: string;
+  dayType: string;
+  settings: Settings;
+  done: number;
+  total: number;
+  pct: number;
+}) {
   return (
-    <span
-      className={`size-1.5 shrink-0 rounded-full ${
-        isNext ? "bg-primary ring-primary/30 ring-4" : "bg-muted-foreground/30"
-      }`}
-    />
+    <>
+      <div className="flex items-end justify-between gap-5">
+        <div>
+          <h2 className="text-[68px] leading-[0.82] font-extrabold tracking-[-0.05em] text-[var(--fg)]">
+            HOY
+          </h2>
+          <div className="mt-3.5 font-mono text-[10.5px] tracking-[0.12em] text-[var(--faint)]">
+            {[weekday, dayType, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-mono text-[52px] leading-[0.8] font-semibold tracking-[-0.02em] text-[var(--fg)]">
+            {pad(done)}
+            <span className="text-[var(--faint2)]">/{pad(total)}</span>
+          </div>
+          <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
+            SERIES HECHAS
+          </div>
+        </div>
+      </div>
+      <div className="mt-5 h-[3px] bg-[var(--fg)]" />
+      <div className="mb-[22px] flex h-[5px]">
+        <div className="bg-[var(--acc)]" style={{ width: `${pct}%` }} />
+        <div className="flex-1 bg-[var(--bar0)]" />
+      </div>
+    </>
   );
 }
 
-function Row({
+function DayRow({
   block,
+  idx,
   isNext,
-  onDone,
+  muscle,
+  reps,
 }: {
   block: Block;
+  idx: number;
   isNext: boolean;
-  onDone: () => void;
+  muscle: string;
+  reps: string;
 }) {
-  const unscheduled = block.time < 0;
   const isDone = block.status === "done";
-  const actionable =
-    (block.status === "pending" || block.status === "snoozed") && !unscheduled;
+  const skip = block.status === "skipped";
+  const unsched = block.time < 0;
+  let status = "PENDIENTE";
+  let statusColor = "var(--faint)";
+  if (isDone) [status, statusColor] = ["HECHO", "var(--faint2)"];
+  else if (skip) [status, statusColor] = ["SALTADO", "var(--faint2)"];
+  else if (isNext) [status, statusColor] = ["AHORA", "var(--acc)"];
+  else if (unsched) [status, statusColor] = ["NO ENTRA", "var(--faint2)"];
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
-        isNext
-          ? "border-primary/40 bg-primary/5"
-          : "hover:bg-muted/40 border-transparent hover:border-border"
-      }`}
+      className="relative flex items-center gap-5 border-b border-[var(--rule)] py-[15px]"
+      style={{ paddingLeft: isNext ? "14px" : 0, background: isNext ? NEXT_BG : "transparent" }}
     >
-      <StatusDot block={block} isNext={isNext} />
-      <span className="text-muted-foreground w-11 shrink-0 font-mono text-xs tabular-nums">
-        {unscheduled ? "—" : formatMinute(block.time)}
+      {isNext && <div className="absolute inset-y-0 left-0 w-1 bg-[var(--acc)]" />}
+      <span
+        className="w-[26px] flex-none font-mono text-[12px]"
+        style={{ color: isNext ? "var(--acc)" : "var(--faint2)" }}
+      >
+        {pad(idx)}
       </span>
-      <span className={`flex-1 truncate ${isDone ? "text-muted-foreground line-through" : ""}`}>
+      <span
+        className="w-[76px] flex-none font-mono text-[21px] font-medium tracking-[-0.01em]"
+        style={{ color: isDone || skip ? "var(--faint2)" : isNext ? "var(--acc)" : "var(--dim)" }}
+      >
+        {unsched ? "—" : formatMinute(block.time)}
+      </span>
+      <span
+        className="flex-1 truncate text-[21px] font-bold tracking-[-0.02em] uppercase"
+        style={{
+          color: isDone || skip ? "var(--faint2)" : isNext ? "var(--fg)" : "var(--fg2)",
+          textDecoration: skip ? "line-through" : "none",
+        }}
+      >
         {block.name}
       </span>
-      <span className="text-muted-foreground shrink-0 font-mono text-xs">
-        {repsOf(block)}
+      <span className="w-[74px] flex-none font-mono text-[10.5px] tracking-[0.1em] text-[var(--faint2)]">
+        {muscle}
       </span>
-      {actionable && (
-        <Button
-          size="icon-xs"
-          variant="ghost"
-          className="opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={onDone}
-          aria-label="Marcar hecho"
-        >
-          <Check className="size-3.5" />
-        </Button>
-      )}
+      <span
+        className="w-[60px] flex-none text-right font-mono text-[14px]"
+        style={{ color: isDone || skip ? "var(--faint2)" : "var(--dim)" }}
+      >
+        {reps}
+      </span>
+      <span
+        className="w-[86px] flex-none text-right font-mono text-[10.5px] font-semibold tracking-[0.1em]"
+        style={{ color: statusColor }}
+      >
+        {status}
+      </span>
     </div>
   );
 }

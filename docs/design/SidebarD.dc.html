@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</helmet>
+<div style="{{ rootStyle }}">
+  <div style="{{ logoRow }}">
+    <div style="{{ logoSq }}">m</div>
+    <span style="{{ wordStyle }}">microset</span>
+  </div>
+  <div style="display:flex;flex-direction:column;">
+    <sc-for list="{{ items }}" as="item" hint-placeholder-count="6">
+      <div style="{{ item.rowStyle }}">
+        <span style="font-family:'Geist Mono',monospace;font-size:10px;{{ item.idColor }}">{{ item.idx }}</span>
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px;letter-spacing:0.08em;font-weight:600;">{{ item.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="flex:1;"></div>
+  <div style="{{ bottomWrap }}">
+    <div style="{{ botRow }}"><span style="font-family:'Geist Mono',monospace;font-size:10px;{{ idDim }}">07</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;letter-spacing:0.08em;font-weight:600;">AJUSTES</span></div>
+    <div style="{{ botRow2 }}"><span style="font-family:'Geist Mono',monospace;font-size:10px;{{ idDim }}">◐</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;letter-spacing:0.08em;font-weight:600;">{{ themeLabel }}</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:210,&quot;height&quot;:640},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;coach&quot;,&quot;hoy&quot;,&quot;rutina&quot;,&quot;semana&quot;,&quot;equipo&quot;,&quot;progreso&quot;],&quot;default&quot;:&quot;hoy&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const light = this.props.theme === 'light';
+    const pal = light
+      ? { bg: '#efece4', border: '#d6d1c6', fg: '#16150f', dim: '#57544a', idx: '#b0ac9f', acc: '#6f9c00', on: '#0a0a0a', rule: '#ddd8cc' }
+      : { bg: '#0a0a0a', border: 'rgba(255,255,255,0.1)', fg: '#ededea', dim: '#8a8a85', idx: '#54544f', acc: '#c4f82a', on: '#0a0a0a', rule: 'rgba(255,255,255,0.07)' };
+    const active = this.props.active || 'hoy';
+    const defs = [['coach', 'COACH'], ['hoy', 'HOY'], ['rutina', 'RUTINA'], ['semana', 'SEMANA'], ['equipo', 'EQUIPO'], ['progreso', 'PROGRESO']];
+    const items = defs.map((d, i) => {
+      const on = d[0] === active;
+      return {
+        key: d[0], label: d[1], idx: '0' + (i + 1),
+        rowStyle: on
+          ? 'display:flex;align-items:center;gap:12px;padding:13px 18px;background:' + pal.acc + ';color:' + pal.on + ';cursor:pointer;border-top:1px solid ' + pal.rule + ';'
+          : 'display:flex;align-items:center;gap:12px;padding:13px 18px;color:' + pal.dim + ';cursor:pointer;border-top:1px solid ' + pal.rule + ';',
+        idColor: on ? 'color:' + pal.on + ';opacity:0.6;' : 'color:' + pal.idx + ';'
+      };
+    });
+    return {
+      rootStyle: 'width:210px;height:100%;min-height:600px;display:flex;flex-direction:column;background:' + pal.bg + ';border-right:1px solid ' + pal.border + ';font-family:\'Geist\',-apple-system,sans-serif;box-sizing:border-box;',
+      logoRow: 'display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid ' + pal.border + ';',
+      logoSq: 'width:26px;height:26px;background:' + pal.acc + ';color:' + pal.on + ';font-weight:800;display:flex;align-items:center;justify-content:center;font-size:16px;',
+      wordStyle: 'color:' + pal.fg + ';font-weight:800;font-size:16px;letter-spacing:-0.03em;',
+      items: items,
+      bottomWrap: 'display:flex;flex-direction:column;border-top:1px solid ' + pal.border + ';',
+      botRow: 'display:flex;align-items:center;gap:12px;padding:13px 18px;color:' + pal.dim + ';cursor:pointer;',
+      botRow2: 'display:flex;align-items:center;gap:12px;padding:13px 18px;color:' + pal.dim + ';cursor:pointer;border-top:1px solid ' + pal.rule + ';',
+      idDim: 'color:' + pal.idx + ';',
+      themeLabel: light ? 'TEMA OSCURO' : 'TEMA CLARO'
+    };
+  }
+}
+</script>
+</body>
+</html>
