@@ -76,7 +76,8 @@ etc. — the data the assist/load variants and the agent need.
   (no overlap); finishes Fase 1's value. Do alongside / just after Fase 2.
 - **Progreso v2b (nudges)** ⬜ — "ready to level up" suggestions. Overlaps with Fase 2
   (methodology defines readiness) and M6 (agent), so it's folded into those, not standalone.
-- **Fase 2** ⬜ — Methodology presets parametrizing prescriptions.
+- **Fase 2** ✅ — Methodology presets (apply sets + rest across the routine) + a simple
+  "ready to level up" nudge in Progreso (v2b lite).
 - **Fase 3** ⬜ — DayType + WeekPlan (split, rest days, home/office).
 - **Fase 4** ⬜ — Catalog UX (search/group/detail, custom exercises) + Equipment onboarding.
 - **M6** ⬜ — AI coach sits on top: consumes methodologies, variants/logs, week + goals/diet.

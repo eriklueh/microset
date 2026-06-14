@@ -5,6 +5,8 @@ import { useStore } from "@/store/useStore";
 
 const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
 const DAY = 86_400_000;
+/** Sets at the current level (last 14 days) needed to suggest the next level. */
+const LEVEL_UP_THRESHOLD = 8;
 
 function isoAgo(daysAgo: number, now: number): string {
   return new Date(now - daysAgo * DAY).toISOString().slice(0, 10);
@@ -39,7 +41,6 @@ export function ProgressView() {
   const lastWeek = logs.filter(inPrev7).length;
   const activeExercises = new Set(logs.map((l) => l.exerciseId)).size;
 
-  // Streak: consecutive days with activity, allowing "today not done yet".
   const activeDays = new Set(logs.map((l) => l.at.slice(0, 10)));
   let streak = 0;
   for (let i = 0; i < 366; i++) {
@@ -101,12 +102,16 @@ function ExerciseProgress({
   const currentLabel = ex.axis[currentIdx]?.label ?? "";
   const nextLabel = ex.axis[currentIdx + 1]?.label;
 
-  // Date the current level was reached: start of its most recent contiguous run.
   let reachedAt: string | undefined;
   for (let i = sorted.length - 1; i >= 0; i--) {
     if (sorted[i].variantId === currentVariantId) reachedAt = sorted[i].at;
     else break;
   }
+
+  const recentAtCurrent = logs.filter(
+    (l) => l.variantId === currentVariantId && Date.parse(l.at) >= now - 14 * DAY,
+  ).length;
+  const readyToLevel = !!nextLabel && recentAtCurrent >= LEVEL_UP_THRESHOLD;
 
   const days = Array.from({ length: 7 }, (_, i) => isoAgo(6 - i, now));
   const counts = days.map((d) => logs.filter((l) => l.at.slice(0, 10) === d).length);
@@ -148,6 +153,11 @@ function ExerciseProgress({
               {nextLabel ? ` · siguiente: ${nextLabel}` : " · nivel máximo"}
             </span>
           </div>
+          {readyToLevel && (
+            <span className="bg-primary/15 text-primary inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium">
+              Listo para probar {nextLabel}
+            </span>
+          )}
         </div>
       )}
 

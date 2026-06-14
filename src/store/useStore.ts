@@ -15,10 +15,12 @@ import {
   exerciseById,
   isAvailable,
 } from "@/domain/seed";
+import { methodologyById } from "@/domain/methodologies";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { setPanelVisible } from "@/lib/windows";
 
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
+const DEFAULT_METHODOLOGY = "gtg";
 
 /** Local date key (YYYY-M-D) used to detect day rollover. */
 function todayKey(): string {
@@ -44,6 +46,7 @@ interface State {
   day: DayPlan | null;
   theme: ThemeConfig;
   logs: LogEntry[];
+  methodologyId: string;
 
   // preferences
   panelEnabled: boolean;
@@ -59,6 +62,7 @@ interface State {
   setRoutineTarget: (exerciseId: string, target: string) => void;
   setRoutineVariant: (exerciseId: string, variantId: string) => void;
   removeFromRoutine: (exerciseId: string) => void;
+  applyMethodology: (id: string) => void;
 
   // theme
   setThemeMode: (mode: ThemeMode) => void;
@@ -111,6 +115,7 @@ export const useStore = create<State>()(
       day: null,
       theme: DEFAULT_THEME,
       logs: [],
+      methodologyId: DEFAULT_METHODOLOGY,
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -172,6 +177,21 @@ export const useStore = create<State>()(
         get().replan();
       },
 
+      applyMethodology: (id) => {
+        const m = methodologyById(id);
+        // "Libre" (sets 0) only records the choice; presets apply sets + rest.
+        if (!m || m.sets === 0) {
+          set({ methodologyId: id });
+        } else {
+          set((s) => ({
+            methodologyId: id,
+            routine: s.routine.map((r) => ({ ...r, sets: m.sets })),
+            settings: { ...s.settings, minRest: m.minRest },
+          }));
+        }
+        get().replan();
+      },
+
       setThemeMode: (mode) => {
         set((s) => ({ theme: { ...s.theme, mode } }));
         const t = get().theme;
@@ -211,6 +231,7 @@ export const useStore = create<State>()(
           settings: DEFAULT_SETTINGS,
           theme: DEFAULT_THEME,
           logs: [],
+          methodologyId: DEFAULT_METHODOLOGY,
           panelEnabled: true,
           notificationsEnabled: true,
           snoozeMinutes: 30,
@@ -244,7 +265,6 @@ export const useStore = create<State>()(
         const { day, settings, demoMode } = get();
         if (!day) return;
         const block = day.blocks.find((b) => b.id === blockId);
-        // In demo, mark done in place (don't reschedule siblings to real settings).
         const blocks = demoMode
           ? day.blocks.map((b) =>
               b.id === blockId ? { ...b, status: "done" as const, time: nowMinutes() } : b,
@@ -296,6 +316,7 @@ export const useStore = create<State>()(
         day: s.day,
         theme: s.theme,
         logs: s.logs,
+        methodologyId: s.methodologyId,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,

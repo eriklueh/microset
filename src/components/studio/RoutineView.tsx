@@ -2,6 +2,7 @@ import { AlertTriangle, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createDayPlan } from "@/lib/engine";
 import { EXERCISES, defaultVariantId, exerciseById, isAvailable } from "@/domain/seed";
+import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
 import { MUSCLE_LABEL, type MuscleGroup } from "@/domain/types";
 import { useStore } from "@/store/useStore";
 
@@ -19,11 +20,15 @@ export function RoutineView() {
   const routine = useStore((s) => s.routine);
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
+  const methodologyId = useStore((s) => s.methodologyId);
+  const applyMethodology = useStore((s) => s.applyMethodology);
   const setRoutineSets = useStore((s) => s.setRoutineSets);
   const setRoutineTarget = useStore((s) => s.setRoutineTarget);
   const setRoutineVariant = useStore((s) => s.setRoutineVariant);
   const removeFromRoutine = useStore((s) => s.removeFromRoutine);
   const addToRoutine = useStore((s) => s.addToRoutine);
+
+  const method = methodologyById(methodologyId) ?? METHODOLOGIES[0];
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
   const available = EXERCISES.filter((e) => isAvailable(e, owned) && !inRoutine.has(e.id));
@@ -45,6 +50,33 @@ export function RoutineView() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
+      <div className={`${CARD} flex flex-col gap-2 p-4`}>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+            Metodología
+          </span>
+          <select
+            value={methodologyId}
+            onChange={(e) => applyMethodology(e.currentTarget.value)}
+            aria-label="Metodología"
+            className="border-input bg-background/40 text-foreground focus:border-ring h-7 rounded-md border px-2 text-xs outline-none"
+          >
+            {METHODOLOGIES.map((m) => (
+              <option key={m.id} value={m.id} className="bg-popover text-popover-foreground">
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="text-sm font-medium">{method.tagline}</p>
+        <p className="text-muted-foreground text-xs leading-relaxed">{method.description}</p>
+        {method.sets > 0 && (
+          <p className="text-muted-foreground text-[11px]">
+            Elegirla ajusta series y descanso de toda la rutina; afiná por ejercicio abajo.
+          </p>
+        )}
+      </div>
+
       <div className={`${CARD} flex flex-col gap-3 p-4`}>
         <div className="flex items-baseline justify-between">
           <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
