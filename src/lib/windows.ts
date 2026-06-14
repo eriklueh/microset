@@ -45,3 +45,12 @@ export async function openConfigFolder(): Promise<void> {
     // Not running inside Tauri — ignore.
   }
 }
+
+/** Launch a Claude Code session as the coach, in the config workspace. */
+export async function openCoach(): Promise<void> {
+  try {
+    await invoke("open_coach");
+  } catch {
+    // Not running inside Tauri — ignore.
+  }
+}

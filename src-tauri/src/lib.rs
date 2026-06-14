@@ -74,7 +74,12 @@ pub fn run() {
                 api.prevent_close();
             }
         })
-        .invoke_handler(tauri::generate_handler![greet, show_toast, hide_toast])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            show_toast,
+            hide_toast,
+            open_coach
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -129,4 +134,40 @@ fn hide_toast(app: tauri::AppHandle) {
     if let Some(toast) = app.get_webview_window("toast") {
         let _ = toast.hide();
     }
+}
+
+/// Open a terminal running Claude Code in the config folder (the coach workspace).
+#[tauri::command]
+fn open_coach(app: tauri::AppHandle) -> Result<(), String> {
+    let dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| e.to_string())?
+        .to_string_lossy()
+        .to_string();
+
+    #[cfg(target_os = "windows")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("cmd");
+        c.args([
+            "/C",
+            "start",
+            "",
+            "cmd",
+            "/K",
+            &format!("cd /d \"{dir}\" && claude"),
+        ]);
+        c
+    };
+
+    #[cfg(not(target_os = "windows"))]
+    let mut cmd = {
+        let term = std::env::var("TERMINAL").unwrap_or_else(|_| "xterm".to_string());
+        let mut c = std::process::Command::new(term);
+        c.args(["-e", "sh", "-c", &format!("cd '{dir}'; claude; exec $SHELL")]);
+        c
+    };
+
+    cmd.spawn().map_err(|e| e.to_string())?;
+    Ok(())
 }

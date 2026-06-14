@@ -1,6 +1,8 @@
 import { appConfigDir, join } from "@tauri-apps/api/path";
 import { exists, mkdir, readTextFile, watchImmediate, writeTextFile } from "@tauri-apps/plugin-fs";
 import { applyTheme } from "@/lib/theme";
+import { buildCoachContext } from "@/coach/context";
+import { COACH_CLAUDE_MD } from "@/coach/workspace";
 import { useStore } from "./useStore";
 
 /**
@@ -54,11 +56,13 @@ function groups(s: State): Record<string, unknown> {
 
 async function writeAll(): Promise<void> {
   const g = groups(useStore.getState());
-  await Promise.all(
-    Object.entries(g).map(async ([file, data]) =>
+  await Promise.all([
+    ...Object.entries(g).map(async ([file, data]) =>
       writeTextFile(await join(dir, file), JSON.stringify(data, null, 2)),
     ),
-  );
+    // read-only snapshot for the coach (Claude Code reads this); not a config file
+    writeTextFile(await join(dir, "context.json"), JSON.stringify(buildCoachContext(), null, 2)),
+  ]);
   lastWrite = Date.now();
   writePending = false;
 }
@@ -140,6 +144,9 @@ export async function setupFileSync(): Promise<void> {
   try {
     dir = await appConfigDir();
     if (!(await exists(dir))) await mkdir(dir, { recursive: true });
+
+    // Brief Claude Code run in this folder as the coach (focused workspace).
+    await writeTextFile(await join(dir, "CLAUDE.md"), COACH_CLAUDE_MD);
 
     if (await exists(await join(dir, FILES.settings))) {
       await loadIntoStore(); // files win on startup

@@ -1,7 +1,7 @@
 import { Masthead } from "./Masthead";
+import { openCoach } from "@/lib/windows";
 import { useStore } from "@/store/useStore";
 
-const ACC_DIM = "color-mix(in oklch, var(--acc) 18%, transparent)";
 const field =
   "w-full resize-none border border-[var(--rule2)] bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.5] text-[var(--fg)] outline-none focus:border-[var(--acc)] placeholder:text-[var(--faint2)]";
 
@@ -11,29 +11,29 @@ export function CoachView({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="COACH" sub="AGENTE IA · PRÓXIMAMENTE" />
+      <Masthead title="COACH" sub="AGENTE IA · VÍA CLAUDE CODE" />
 
       <div className="relative border border-[var(--rule2)] p-[26px]">
         <div className="absolute top-0 left-0 h-1 w-[60px] bg-[var(--acc)]" />
         <div className="font-mono text-[10px] font-semibold tracking-[0.18em] text-[var(--acc)]">
-          ▢ PRÓXIMAMENTE
+          ▢ DISPONIBLE VÍA CLAUDE CODE
         </div>
         <div className="mt-3.5 text-[38px] leading-[0.95] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
           Tu coach
           <br />
           inteligente
         </div>
-        <p className="mt-4 max-w-[520px] text-[13.5px] leading-[1.6] text-[var(--dim)]">
-          Va a leer tu equipo, tu progreso y el perfil de abajo para armar y ajustar tu rutina y tu
-          semana. Vos aprobás los cambios antes de que se apliquen.
+        <p className="mt-4 max-w-[540px] text-[13.5px] leading-[1.6] text-[var(--dim)]">
+          Abrí el coach en Claude Code y hablale en la terminal: lee tu equipo, tu progreso y el
+          perfil de abajo, y ajusta tu rutina y tu semana — los cambios se aplican acá en vivo. El
+          chat dentro de la app (API / local) llega después.
         </p>
         <div className="mt-[22px] flex gap-2.5">
           <button
-            disabled
-            className="cursor-not-allowed px-[22px] py-3 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--faint)]"
-            style={{ background: ACC_DIM }}
+            onClick={() => void openCoach()}
+            className="bg-[var(--acc)] px-[22px] py-3 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--on)]"
           >
-            HABLAR CON EL COACH
+            ABRIR COACH (CLAUDE CODE)
           </button>
           <button
             onClick={onStart}

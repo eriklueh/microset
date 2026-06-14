@@ -120,4 +120,22 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 - ✅ **M4** — Floating panel (2nd always-on-top window; cross-window sync via Tauri events)
 - ✅ **Fases 0–4** — full UX/product backlog (editable prescriptions, variants/progression, methodologies, weekly day-types, catalog + custom exercises). See [docs/MODEL.md](docs/MODEL.md).
 - 🛠️ **M5** — Stats ✅ (Progreso view) · autostart + installer ⬜
-- ⬜ **M6** — AI coach (Claude API, optional)
+- 🛠️ **M6** — AI coach: provider-agnostic contract ✅ · Claude Code mode ✅ · in-app API/local chat ⬜
+
+## Coach mode (M6) — running Claude Code in this repo
+
+A Claude Code session in this repo (or in the config folder) can act as the **microset coach**.
+The contract — persona, principles, context schema, tool catalog, hard rules — is the single
+source of truth in [docs/agent/coach.md](docs/agent/coach.md); read it first.
+
+- **Provider-agnostic core** in `src/coach/`: `tools.ts` (action catalog = the same store actions
+  the UI uses), `context.ts` (`buildCoachContext()` snapshot), `analysis.ts` (feasibility + balance).
+  API/local providers drive these; **Claude Code edits the config files directly**.
+- **The user's live config** is JSON in the OS config dir (`%APPDATA%/com.microset.app/` on
+  Windows, `~/.config/com.microset.app/` on Linux): `routine.json`, `equipment.json`,
+  `exercises.json`, `settings.json`, `profile.json` (+ read-only `context.json` and `logs.json`).
+  Edit those files and the running app applies changes within ~2s (no restart) via its watcher.
+- **Direct mode** (power user): no in-app review — explain what you changed. Never edit `logs.json`
+  or the live day plan; the engine reschedules on its own.
+- The app also writes a focused `CLAUDE.md` into that config folder, so CC run *there* (via the
+  "Abrir coach" button) is auto-briefed without needing the repo.
