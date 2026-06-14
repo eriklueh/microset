@@ -78,7 +78,8 @@ pub fn run() {
             greet,
             show_toast,
             hide_toast,
-            open_coach
+            open_coach,
+            coach_complete
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -134,6 +135,45 @@ fn hide_toast(app: tauri::AppHandle) {
     if let Some(toast) = app.get_webview_window("toast") {
         let _ = toast.hide();
     }
+}
+
+/// Call the Anthropic Messages API (tool-use) from Rust so the API key stays out
+/// of the webview and there's no CORS. Returns the raw JSON response as a string.
+#[tauri::command]
+async fn coach_complete(
+    model: String,
+    system: String,
+    messages: serde_json::Value,
+    tools: serde_json::Value,
+) -> Result<String, String> {
+    let key = std::env::var("ANTHROPIC_API_KEY")
+        .map_err(|_| "ANTHROPIC_API_KEY no está seteada en el entorno".to_string())?;
+
+    let body = serde_json::json!({
+        "model": model,
+        "max_tokens": 2048,
+        "system": system,
+        "messages": messages,
+        "tools": tools,
+    });
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    if !status.is_success() {
+        return Err(format!("API {status}: {text}"));
+    }
+    Ok(text)
 }
 
 /// Open a terminal running Claude Code in the config folder (the coach workspace).
