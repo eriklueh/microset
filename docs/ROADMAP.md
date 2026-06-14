@@ -94,11 +94,14 @@ Pure TS in `src/lib/engine/`: types (`Block`, `Settings`, `RoutineItem`),
 warnings, exercise interleaving), and action helpers `markDone` / `decline` / `snooze` /
 `skip`. 9 Vitest unit tests. Pure & deterministic (`now` is injected, no `Date.now()`).
 
-### ⬜ M2 — Studio ← next
-Exercise + equipment library and routine builder (shadcn forms/dialogs/tables) persisted to
-SQLite (`tauri-plugin-sql`). Seed exercise library.
+### ✅ M2 — Studio (done 2026-06-13)
+Studio UI (React + shadcn tabs): **Hoy** (engine-driven timeline + Hecho/Posponer/Ahora no),
+**Rutina** (builder with set steppers + add from catalog), **Equipo** (toggles that gate the
+catalog), **Ajustes** (work hours/lunch/minRest). Domain model + seed (`src/domain/`) and a
+Zustand store with localStorage persistence wired to the M1 engine (`src/store/`).
+Persistence is JSON for now — SQLite (`tauri-plugin-sql`) deferred to M5.
 
-### ⬜ M3 — Notification loop
+### ⬜ M3 — Notification loop ← next
 Timer fires due blocks → native notification with actions **Sí / Posponer / Ahora no** →
 feeds back into the engine to recompute.
 
@@ -109,10 +112,16 @@ windowrules.
 ### ⬜ M5 — Stats + polish
 Weekly completion stats, autostart on boot (`tauri-plugin-autostart`), polish.
 
-### ⬜ M6 — AI coach (optional)
-Claude API agent that recommends/builds routines from your equipment + goals. Online,
-opt-in. The engine then schedules whatever the coach produces. Pick the model at build time
-(Sonnet is a good cost/quality default for a recommender).
+### ⬜ M6 — AI coach (optional, expanded vision)
+A Claude API agent the user briefs with **physical goals, diet, available equipment, work
+hours, and which days are home-office vs office**; it then builds a **multi-day
+calendar/routine** (not just a single day), which the rule-based engine schedules within
+each day. Online, opt-in. Pick the model at build time (Sonnet is a good cost/quality
+default for a recommender).
+
+> Design implication: the data model should stay compatible with this from the start —
+> per-day routines, a day-type flag (home/office), and a goals/diet profile. The engine
+> already works per-day; M2's schema should not assume a single fixed daily routine.
 
 ---
 

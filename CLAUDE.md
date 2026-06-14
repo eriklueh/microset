@@ -45,9 +45,12 @@ business logic out of components.
 ```
 microset/
 ├── src/                      # React frontend
-│   ├── lib/engine/           # 🧠 scheduling engine (pure TS + tests) — TBD
+│   ├── lib/engine/           # 🧠 scheduling engine (pure TS + Vitest)
 │   ├── lib/utils.ts          # cn() helper (shadcn)
-│   ├── components/ui/         # shadcn components
+│   ├── domain/               # exercise/equipment model + seed data
+│   ├── store/                # Zustand store (state + JSON persistence)
+│   ├── components/studio/    # Studio views (Hoy/Rutina/Equipo/Ajustes)
+│   ├── components/ui/        # shadcn components
 │   ├── App.tsx
 │   └── index.css             # Tailwind + shadcn theme (oklch, light/dark)
 ├── src-tauri/                # Rust shell
@@ -102,8 +105,8 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 
 - ✅ **M0** — Scaffold (Tauri + React + Tailwind + shadcn, tray, close-to-tray)
 - ✅ **M1** — Scheduling engine (`src/lib/engine/`, pure TS + Vitest, 9 tests)
-- ⬜ **M2** — Studio: exercise/equipment library + routine builder ← **next**
-- ⬜ **M3** — Notification loop (Sí / Posponer / Ahora no → recalc)
+- ✅ **M2** — Studio (tabs Hoy/Rutina/Equipo/Ajustes; Zustand store, JSON persistence)
+- ⬜ **M3** — Notification loop (Sí / Posponer / Ahora no → recalc) ← **next**
 - ⬜ **M4** — Floating panel (next set + countdown; Hyprland rules)
 - ⬜ **M5** — Stats + autostart + polish
 - ⬜ **M6** — AI coach (Claude API, optional)
