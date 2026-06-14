@@ -18,6 +18,15 @@ import {
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { setPanelVisible } from "@/lib/windows";
 
+/** Demo mode: schedule from "now", ignoring the work window, with short rest. */
+const DEMO_SETTINGS: Settings = {
+  workWindow: { start: 0, end: 24 * 60 },
+  minRest: 2,
+  avoidWindows: [],
+};
+
+const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
+
 /** Local date key (YYYY-M-D) used to detect day rollover. */
 function todayKey(): string {
   const d = new Date();
@@ -47,6 +56,7 @@ interface State {
   panelEnabled: boolean;
   notificationsEnabled: boolean;
   snoozeMinutes: number;
+  demoMode: boolean;
 
   // editing
   toggleEquipment: (id: EquipmentId) => void;
@@ -65,6 +75,11 @@ interface State {
   setPanelEnabled: (value: boolean) => void;
   setNotificationsEnabled: (value: boolean) => void;
   setSnoozeMinutes: (minutes: number) => void;
+  setDemoMode: (value: boolean) => void;
+
+  // data
+  resetSettings: () => void;
+  resetAll: () => void;
 
   // today / engine
   ensureToday: () => void;
@@ -81,11 +96,12 @@ export const useStore = create<State>()(
       routine: DEFAULT_ROUTINE,
       settings: DEFAULT_SETTINGS,
       day: null,
-      theme: { mode: "dark", accent: "lime" },
+      theme: DEFAULT_THEME,
       logs: [],
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
+      demoMode: false,
 
       toggleEquipment: (id) => {
         set((s) => ({
@@ -165,18 +181,46 @@ export const useStore = create<State>()(
       setSnoozeMinutes: (minutes) =>
         set({ snoozeMinutes: Math.max(5, Math.min(180, minutes)) }),
 
+      setDemoMode: (value) => {
+        set({ demoMode: value });
+        get().replan();
+      },
+
+      resetSettings: () => {
+        set({ settings: DEFAULT_SETTINGS, demoMode: false });
+        get().replan();
+      },
+
+      resetAll: () => {
+        set({
+          ownedEquipment: DEFAULT_OWNED,
+          routine: DEFAULT_ROUTINE,
+          settings: DEFAULT_SETTINGS,
+          theme: DEFAULT_THEME,
+          logs: [],
+          panelEnabled: true,
+          notificationsEnabled: true,
+          snoozeMinutes: 30,
+          demoMode: false,
+        });
+        applyTheme(DEFAULT_THEME.mode, DEFAULT_THEME.accent);
+        get().replan();
+        void setPanelVisible(true);
+      },
+
       ensureToday: () => {
         const { day } = get();
         if (!day || day.date !== todayKey()) get().replan();
       },
 
       replan: () => {
-        const { routine, settings, ownedEquipment } = get();
+        const { routine, settings, ownedEquipment, demoMode } = get();
         const doable = routine.filter((r) => {
           const ex = exerciseById(r.exerciseId);
           return ex ? isAvailable(ex, ownedEquipment) : true;
         });
-        const { blocks } = createDayPlan(doable, settings, nowMinutes());
+        const base = demoMode ? DEMO_SETTINGS : settings;
+        const { blocks } = createDayPlan(doable, base, nowMinutes());
         set({ day: { date: todayKey(), blocks } });
       },
 
@@ -226,6 +270,7 @@ export const useStore = create<State>()(
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,
+        demoMode: s.demoMode,
       }),
     },
   ),

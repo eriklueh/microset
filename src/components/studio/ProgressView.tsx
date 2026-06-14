@@ -84,14 +84,14 @@ export function ProgressView() {
                 </span>
                 <span className="font-mono text-xs tabular-nums">{last7} series</span>
               </div>
-              <div className="flex h-10 items-end gap-1">
+              <div className="flex h-12 items-end gap-1">
                 {counts.map((c, i) => (
                   <div
                     key={i}
-                    className="bg-muted/50 flex flex-1 items-end overflow-hidden rounded-sm"
+                    className="bg-muted/40 relative h-full flex-1 overflow-hidden rounded-sm"
                   >
                     <div
-                      className="bg-primary w-full rounded-sm transition-all"
+                      className="bg-primary absolute inset-x-0 bottom-0 rounded-sm transition-all"
                       style={{ height: `${(c / max) * 100}%` }}
                     />
                   </div>

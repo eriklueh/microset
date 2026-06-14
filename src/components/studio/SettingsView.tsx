@@ -21,7 +21,11 @@ export function SettingsView() {
   const setNotificationsEnabled = useStore((s) => s.setNotificationsEnabled);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const setSnoozeMinutes = useStore((s) => s.setSnoozeMinutes);
+  const demoMode = useStore((s) => s.demoMode);
+  const setDemoMode = useStore((s) => s.setDemoMode);
   const replan = useStore((s) => s.replan);
+  const resetSettings = useStore((s) => s.resetSettings);
+  const resetAll = useStore((s) => s.resetAll);
   const lunch = settings.avoidWindows[0];
 
   return (
@@ -65,10 +69,7 @@ export function SettingsView() {
       </Section>
 
       <Section title="Panel flotante">
-        <Row
-          label="Mostrar panel"
-          hint="Mini-ventana siempre visible con el próximo ejercicio."
-        >
+        <Row label="Mostrar panel" hint="Mini-ventana siempre visible con el próximo ejercicio.">
           <Switch checked={panelEnabled} onCheckedChange={setPanelEnabled} />
         </Row>
       </Section>
@@ -79,14 +80,7 @@ export function SettingsView() {
         </Row>
         <Row label="Tiempo de posponer">
           <div className="w-24">
-            <NumberInput
-              value={snoozeMinutes}
-              suffix="min"
-              min={5}
-              max={120}
-              step={5}
-              onChange={setSnoozeMinutes}
-            />
+            <NumberInput value={snoozeMinutes} suffix="min" min={5} max={120} step={5} onChange={setSnoozeMinutes} />
           </div>
         </Row>
       </Section>
@@ -145,10 +139,29 @@ export function SettingsView() {
         />
       </Section>
 
+      <Section title="Modo demo">
+        <Row
+          label="Activar modo demo"
+          hint="Agenda series desde ahora, ignorando tu horario, para probar la app."
+        >
+          <Switch checked={demoMode} onCheckedChange={setDemoMode} />
+        </Row>
+      </Section>
+
       <Section title="Datos">
         <Row label="Replanificar hoy" hint="Vuelve a repartir las series desde ahora.">
           <Button size="sm" variant="outline" onClick={replan}>
             Replanificar
+          </Button>
+        </Row>
+        <Row label="Restablecer ajustes" hint="Horario, almuerzo y descanso a sus valores iniciales.">
+          <Button size="sm" variant="outline" onClick={resetSettings}>
+            Restablecer
+          </Button>
+        </Row>
+        <Row label="Restablecer todo" hint="Borra rutina, equipo y registros. Vuelve de fábrica.">
+          <Button size="sm" variant="destructive" onClick={resetAll}>
+            Restablecer todo
           </Button>
         </Row>
       </Section>
