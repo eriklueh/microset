@@ -34,7 +34,7 @@ function App() {
       <div className="flex min-h-0 flex-1">
         <Sidebar active={section} onSelect={setSection} />
         <main className="min-h-0 flex-1 overflow-y-auto">
-          {section === "coach" && <CoachView onStart={() => setSection("today")} />}
+          {section === "coach" && <CoachView onSettings={() => setSection("settings")} />}
           {section === "today" && <TodayView />}
           {section === "routine" && <RoutineView />}
           {section === "week" && <SemanaView />}

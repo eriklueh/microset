@@ -24,6 +24,10 @@ export function SettingsView() {
   const setSnoozeMinutes = useStore((s) => s.setSnoozeMinutes);
   const demoMode = useStore((s) => s.demoMode);
   const setDemoMode = useStore((s) => s.setDemoMode);
+  const coach = useStore((s) => s.coach);
+  const setCoachConfig = useStore((s) => s.setCoachConfig);
+  const profile = useStore((s) => s.profile);
+  const setProfile = useStore((s) => s.setProfile);
   const replan = useStore((s) => s.replan);
   const resetSettings = useStore((s) => s.resetSettings);
   const resetAll = useStore((s) => s.resetAll);
@@ -151,6 +155,54 @@ export function SettingsView() {
         />
       </Section>
 
+      <Section title="COACH">
+        <Row label="Proveedor">
+          <div className="flex">
+            {(["anthropic", "local"] as const).map((p, i) => {
+              const on = coach.provider === p;
+              return (
+                <button
+                  key={p}
+                  onClick={() => setCoachConfig({ provider: p })}
+                  className="border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
+                  style={{
+                    borderColor: on ? "var(--acc)" : "var(--rule2)",
+                    background: on ? "var(--acc)" : "transparent",
+                    color: on ? "var(--on)" : "var(--dim)",
+                    marginLeft: i ? -1 : 0,
+                    position: "relative",
+                    zIndex: on ? 1 : 0,
+                  }}
+                >
+                  {p === "anthropic" ? "API" : "LOCAL"}
+                </button>
+              );
+            })}
+          </div>
+        </Row>
+        <Row label="Modelo" hint={coach.provider === "local" ? undefined : "Necesita ANTHROPIC_API_KEY en el entorno."}>
+          <input
+            value={coach.model}
+            onChange={(e) => setCoachConfig({ model: e.currentTarget.value })}
+            aria-label="Modelo"
+            className={`${input} h-9 w-[200px] px-2.5 font-mono text-[12px]`}
+          />
+        </Row>
+        {coach.provider === "local" && (
+          <Row label="Endpoint" hint="OpenAI-compatible (Ollama / LM Studio).">
+            <input
+              value={coach.endpoint}
+              onChange={(e) => setCoachConfig({ endpoint: e.currentTarget.value })}
+              aria-label="Endpoint"
+              className={`${input} h-9 w-[230px] px-2.5 font-mono text-[12px]`}
+            />
+          </Row>
+        )}
+        <ProfileField label="OBJETIVOS" value={profile.goals} onChange={(v) => setProfile({ goals: v })} placeholder="Ej: mi primer muscle-up, 12 dominadas, bajar grasa…" />
+        <ProfileField label="DIETA" value={profile.diet} onChange={(v) => setProfile({ diet: v })} placeholder="Ej: superávit leve, ~140 g de proteína…" />
+        <ProfileField label="RESTRICCIONES" value={profile.constraints} onChange={(v) => setProfile({ constraints: v })} placeholder="Ej: molestia en hombro derecho, sin saltos…" />
+      </Section>
+
       <Section title="MODO DEMO">
         <Row label="Activar modo demo" hint="Agenda series desde ahora, ignorando tu horario, para probar la app.">
           <SquareSwitch on={demoMode} onClick={() => setDemoMode(!demoMode)} />
@@ -188,6 +240,31 @@ export function SettingsView() {
           </button>
         </Row>
       </Section>
+    </div>
+  );
+}
+
+function ProfileField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="font-mono text-[10px] tracking-[0.1em] text-[var(--faint)]">{label}</span>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        rows={2}
+        placeholder={placeholder}
+        className={`${input} resize-none px-3 py-2 text-[13px] leading-[1.5] placeholder:text-[var(--faint2)]`}
+      />
     </div>
   );
 }
