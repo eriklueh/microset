@@ -18,13 +18,6 @@ import {
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { setPanelVisible } from "@/lib/windows";
 
-/** Demo mode: schedule from "now", ignoring the work window, with short rest. */
-const DEMO_SETTINGS: Settings = {
-  workWindow: { start: 0, end: 24 * 60 },
-  minRest: 2,
-  avoidWindows: [],
-};
-
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 
 /** Local date key (YYYY-M-D) used to detect day rollover. */
@@ -87,6 +80,26 @@ interface State {
   done: (blockId: string) => void;
   decline: (blockId: string) => void;
   snooze: (blockId: string, minutes: number) => void;
+}
+
+/** Demo plan: every set is due "now" so you can click through the whole flow instantly. */
+function demoBlocks(routine: RoutineItem[], owned: EquipmentId[], now: Minute): Block[] {
+  const doable = routine.filter((r) => {
+    const ex = exerciseById(r.exerciseId);
+    return ex ? isAvailable(ex, owned) : true;
+  });
+  return doable.flatMap((r) =>
+    Array.from({ length: r.sets }, (_, s) => ({
+      id: `${r.exerciseId}#${s + 1}`,
+      exerciseId: r.exerciseId,
+      name: r.name,
+      sets: 1,
+      target: r.target,
+      variantId: r.variantId,
+      time: now,
+      status: "pending" as const,
+    })),
+  );
 }
 
 export const useStore = create<State>()(
@@ -215,20 +228,28 @@ export const useStore = create<State>()(
 
       replan: () => {
         const { routine, settings, ownedEquipment, demoMode } = get();
+        if (demoMode) {
+          set({ day: { date: todayKey(), blocks: demoBlocks(routine, ownedEquipment, nowMinutes()) } });
+          return;
+        }
         const doable = routine.filter((r) => {
           const ex = exerciseById(r.exerciseId);
           return ex ? isAvailable(ex, ownedEquipment) : true;
         });
-        const base = demoMode ? DEMO_SETTINGS : settings;
-        const { blocks } = createDayPlan(doable, base, nowMinutes());
+        const { blocks } = createDayPlan(doable, settings, nowMinutes());
         set({ day: { date: todayKey(), blocks } });
       },
 
       done: (blockId) => {
-        const { day, settings } = get();
+        const { day, settings, demoMode } = get();
         if (!day) return;
         const block = day.blocks.find((b) => b.id === blockId);
-        const { blocks } = markDone(day.blocks, blockId, settings, nowMinutes());
+        // In demo, mark done in place (don't reschedule siblings to real settings).
+        const blocks = demoMode
+          ? day.blocks.map((b) =>
+              b.id === blockId ? { ...b, status: "done" as const, time: nowMinutes() } : b,
+            )
+          : markDone(day.blocks, blockId, settings, nowMinutes()).blocks;
         set((s) => ({
           day: { ...day, blocks },
           logs: block
@@ -245,16 +266,24 @@ export const useStore = create<State>()(
       },
 
       decline: (blockId) => {
-        const { day, settings } = get();
+        const { day, settings, demoMode } = get();
         if (!day) return;
-        const { blocks } = engineDecline(day.blocks, blockId, settings, nowMinutes());
+        const blocks = demoMode
+          ? day.blocks.map((b) =>
+              b.id === blockId ? { ...b, status: "skipped" as const, time: nowMinutes() } : b,
+            )
+          : engineDecline(day.blocks, blockId, settings, nowMinutes()).blocks;
         set({ day: { ...day, blocks } });
       },
 
       snooze: (blockId, minutes) => {
-        const { day, settings } = get();
+        const { day, settings, demoMode } = get();
         if (!day) return;
-        const { blocks } = engineSnooze(day.blocks, blockId, minutes, settings, nowMinutes());
+        const blocks = demoMode
+          ? day.blocks.map((b) =>
+              b.id === blockId ? { ...b, status: "skipped" as const, time: nowMinutes() } : b,
+            )
+          : engineSnooze(day.blocks, blockId, minutes, settings, nowMinutes()).blocks;
         set({ day: { ...day, blocks } });
       },
     }),

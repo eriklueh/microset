@@ -70,6 +70,12 @@ etc. — the data the assist/load variants and the agent need.
   feasibility in the editor, push/pull/core balance.
 - **Fase 1** ✅ — Variants + intensity axis + optional logging + per-exercise progression
   (band levels modeled as variant rungs).
+- **Progreso v2a** ⬜ — Make the progress view show a *trajectory*, not a snapshot: weekly
+  summary (vs last week + streak), a "you are here → next" level marker with the date it was
+  reached (derived from logs), and a real volume trend. Self-contained polish on Fase 1 data
+  (no overlap); finishes Fase 1's value. Do alongside / just after Fase 2.
+- **Progreso v2b (nudges)** ⬜ — "ready to level up" suggestions. Overlaps with Fase 2
+  (methodology defines readiness) and M6 (agent), so it's folded into those, not standalone.
 - **Fase 2** ⬜ — Methodology presets parametrizing prescriptions.
 - **Fase 3** ⬜ — DayType + WeekPlan (split, rest days, home/office).
 - **Fase 4** ⬜ — Catalog UX (search/group/detail, custom exercises) + Equipment onboarding.
