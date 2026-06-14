@@ -1,15 +1,14 @@
 import { Masthead } from "./Masthead";
+import { useStore } from "@/store/useStore";
 
 const ACC_DIM = "color-mix(in oklch, var(--acc) 18%, transparent)";
-
-const CAPS = [
-  { n: "01", t: "Tus objetivos", d: "Fuerza, tu primer muscle-up, bajar grasa: a dónde querés llegar." },
-  { n: "02", t: "Tu dieta", d: "Cómo comés para ajustar volumen, frecuencia y descanso." },
-  { n: "03", t: "Tus días", d: "Qué días son home office y cuáles de oficina." },
-  { n: "04", t: "Tu equipo", d: "Recomienda ejercicios con lo que tenés en casa." },
-];
+const field =
+  "w-full resize-none border border-[var(--rule2)] bg-transparent px-3 py-2.5 text-[13.5px] leading-[1.5] text-[var(--fg)] outline-none focus:border-[var(--acc)] placeholder:text-[var(--faint2)]";
 
 export function CoachView({ onStart }: { onStart: () => void }) {
+  const profile = useStore((s) => s.profile);
+  const setProfile = useStore((s) => s.setProfile);
+
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
       <Masthead title="COACH" sub="AGENTE IA · PRÓXIMAMENTE" />
@@ -25,8 +24,8 @@ export function CoachView({ onStart }: { onStart: () => void }) {
           inteligente
         </div>
         <p className="mt-4 max-w-[520px] text-[13.5px] leading-[1.6] text-[var(--dim)]">
-          Contale tus objetivos, tu dieta, tu equipo y tus horarios. El coach arma un calendario
-          a tu medida; microset lo reparte y te avisa cuando toca.
+          Va a leer tu equipo, tu progreso y el perfil de abajo para armar y ajustar tu rutina y tu
+          semana. Vos aprobás los cambios antes de que se apliquen.
         </p>
         <div className="mt-[22px] flex gap-2.5">
           <button
@@ -45,30 +44,61 @@ export function CoachView({ onStart }: { onStart: () => void }) {
         </div>
       </div>
 
-      <div className="mt-[22px] grid grid-cols-2 border border-[var(--rule)]">
-        {CAPS.map((c, i) => (
-          <div
-            key={c.n}
-            className={`p-5 ${i % 2 === 0 ? "border-r border-[var(--rule)]" : ""} ${i < 2 ? "border-b border-[var(--rule)]" : ""}`}
-          >
-            <span className="font-mono text-[10px] text-[var(--faint2)]">{c.n}</span>
-            <div className="mt-2 text-[17px] font-bold text-[var(--fg)]">{c.t}</div>
-            <p className="mt-1.5 text-[12.5px] leading-[1.5] text-[var(--faint)]">{c.d}</p>
-          </div>
-        ))}
+      <div className="mt-6 flex items-center justify-between">
+        <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
+          TU PERFIL
+        </span>
+        <span className="font-mono text-[9.5px] tracking-[0.1em] text-[var(--faint2)]">SE GUARDA SOLO</span>
       </div>
+      <p className="mt-2 text-[12.5px] leading-[1.5] text-[var(--faint)]">
+        Mientras llega el coach, dejá tu info acá — la va a usar como punto de partida.
+      </p>
 
-      <div className="mt-[22px] flex items-center border border-[var(--rule2)]">
-        <span className="flex-1 px-4 py-[13px] text-[13.5px] text-[var(--faint2)]">
-          Contale a tu coach qué querés lograr…
-        </span>
-        <span
-          className="px-[22px] py-[13px] font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--faint)]"
-          style={{ background: ACC_DIM }}
-        >
-          ENVIAR
-        </span>
+      <div className="mt-3 flex flex-col gap-4">
+        <Field
+          label="OBJETIVOS"
+          value={profile.goals}
+          onChange={(v) => setProfile({ goals: v })}
+          placeholder="Ej: mi primer muscle-up, 12 dominadas seguidas, bajar grasa…"
+        />
+        <Field
+          label="DIETA"
+          value={profile.diet}
+          onChange={(v) => setProfile({ diet: v })}
+          placeholder="Ej: superávit leve, ~140 g de proteína, ayuno hasta el mediodía…"
+        />
+        <Field
+          label="RESTRICCIONES Y NOTAS"
+          value={profile.constraints}
+          onChange={(v) => setProfile({ constraints: v })}
+          placeholder="Ej: molestia en hombro derecho, sin saltos por los vecinos…"
+        />
       </div>
     </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="font-mono text-[10px] tracking-[0.1em] text-[var(--faint)]">{label}</span>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.value)}
+        placeholder={placeholder}
+        rows={2}
+        className={field}
+      />
+    </label>
   );
 }

@@ -1,6 +1,6 @@
 import { at } from "@/lib/engine";
 import type { RoutineItem, Settings } from "@/lib/engine";
-import type { Equipment, EquipmentId, Exercise, Variant } from "./types";
+import type { Equipment, EquipmentId, Exercise, ExerciseContext, Variant } from "./types";
 
 export const EQUIPMENT: Equipment[] = [
   { id: "pullup-bar", name: "Barra de dominadas" },
@@ -8,6 +8,11 @@ export const EQUIPMENT: Equipment[] = [
   { id: "parallettes", name: "Paraletas" },
   { id: "bands", name: "Bandas" },
 ];
+
+/** An exercise's context, defaulting to "needs space" when unset. */
+export function exerciseContext(ex: Exercise): ExerciseContext {
+  return ex.context ?? "space";
+}
 
 // Reusable axes (ordered easiest → hardest).
 const BAND_ASSIST_TO_LOAD: Variant[] = [

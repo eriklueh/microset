@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { AlertTriangle, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { createDayPlan } from "@/lib/engine";
-import { EQUIPMENT, defaultVariantId, isAvailable } from "@/domain/seed";
+import { defaultVariantId, exerciseContext, isAvailable } from "@/domain/seed";
 import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
-import { MUSCLE_LABEL, type EquipmentId, type Measure, type MuscleGroup } from "@/domain/types";
+import {
+  CONTEXT_LABEL,
+  MUSCLE_LABEL,
+  type EquipmentId,
+  type ExerciseContext,
+  type Measure,
+  type MuscleGroup,
+} from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
@@ -77,6 +84,7 @@ export function RoutineView() {
     muscle: MuscleGroup;
     equipment: EquipmentId[];
     measure: Measure;
+    context: ExerciseContext;
     defaultReps: string;
   }) => {
     const ex = addCustomExercise(i);
@@ -220,6 +228,7 @@ export function RoutineView() {
                   </div>
                   <div className="mt-0.5 font-mono text-[10.5px] tracking-[0.08em] text-[var(--faint2)]">
                     {ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : ""}
+                    {ex && exerciseContext(ex) === "desk" ? " · ESCRITORIO" : ""}
                     {orphan ? " · FALTA EQUIPO" : ""}
                   </div>
                 </div>
@@ -366,6 +375,7 @@ function CreateExerciseForm({
     muscle: MuscleGroup;
     equipment: EquipmentId[];
     measure: Measure;
+    context: ExerciseContext;
     defaultReps: string;
   }) => void;
 }) {
@@ -374,6 +384,8 @@ function CreateExerciseForm({
   const [measure, setMeasure] = useState<Measure>("reps");
   const [reps, setReps] = useState("8");
   const [equipment, setEquipment] = useState<EquipmentId[]>([]);
+  const [context, setContext] = useState<ExerciseContext>("space");
+  const { allEquipment } = useCatalog();
 
   const toggleEq = (id: EquipmentId) =>
     setEquipment((eq) => (eq.includes(id) ? eq.filter((e) => e !== id) : [...eq, id]));
@@ -417,7 +429,7 @@ function CreateExerciseForm({
         />
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {EQUIPMENT.map((eq) => {
+        {allEquipment.map((eq) => {
           const on = equipment.includes(eq.id);
           return (
             <button
@@ -434,6 +446,24 @@ function CreateExerciseForm({
           );
         })}
       </div>
+      <div className="flex gap-1.5">
+        {(["space", "desk"] as ExerciseContext[]).map((c) => {
+          const on = context === c;
+          return (
+            <button
+              key={c}
+              onClick={() => setContext(c)}
+              className="flex-1 border px-2.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.04em]"
+              style={{
+                borderColor: on ? "var(--acc)" : "var(--rule2)",
+                color: on ? "var(--acc)" : "var(--faint)",
+              }}
+            >
+              {CONTEXT_LABEL[c].toUpperCase()}
+            </button>
+          );
+        })}
+      </div>
       <button
         disabled={!name.trim()}
         onClick={() =>
@@ -442,6 +472,7 @@ function CreateExerciseForm({
             muscle,
             equipment,
             measure,
+            context,
             defaultReps: reps.trim() || (measure === "hold" ? "20s" : "8"),
           })
         }

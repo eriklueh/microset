@@ -137,6 +137,18 @@ default for a recommender).
 > per-day routines, a day-type flag (home/office), and a goals/diet profile. The engine
 > already works per-day; M2's schema should not assume a single fixed daily routine.
 
+**Groundwork (done):** custom equipment (`customEquipment` + add/remove in the Equipo view;
+`EquipmentId` opened to any string) and a free-text **coach profile** (`profile`:
+goals/diet/constraints, captured in the Coach view). Per-day routines + day-types + weekly
+plan already exist (Fase 3).
+
+**Agent design:** the coach has **no private backdoor** — it operates the *same store actions
+the UI uses*, exposed as Claude tools (`add_equipment`, `add_exercise`, `edit_routine`,
+`set_week`, `set_methodology`, `set_settings`). It reads a context snapshot (equipment,
+day-types/routines, weekly plan, **logs/progress**, profile) and **proposes a diff the user
+approves before it's applied** (review-and-apply), keeping the rule engine the source of
+truth and every change reversible.
+
 ---
 
 ## Linux / Hyprland deployment notes

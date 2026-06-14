@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
-import { variantLabel } from "@/domain/seed";
+import { exerciseContext, variantLabel } from "@/domain/seed";
 import { MUSCLE_LABEL } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
@@ -44,10 +44,11 @@ export function Toast() {
   if (!block) return <div className="h-screen w-screen bg-[var(--bg)]" />;
 
   const ex = byId(block.exerciseId);
+  const desk = ex ? exerciseContext(ex) === "desk" : false;
   const muscle = ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : "";
   const reps = block.target ?? ex?.defaultReps ?? "";
   const meta = [
-    muscle,
+    desk ? "ESCRITORIO" : muscle,
     reps ? `${reps} REPS` : "",
     variantLabel(block.exerciseId, block.variantId).toUpperCase(),
   ]

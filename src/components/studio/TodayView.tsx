@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import type { Block, Settings } from "@/lib/engine";
-import { variantLabel } from "@/domain/seed";
+import { exerciseContext, variantLabel } from "@/domain/seed";
 import { MUSCLE_LABEL } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { nowMinutes, useStore } from "@/store/useStore";
@@ -67,6 +67,16 @@ export function TodayView() {
   const heroM = Math.max(eta, 0) % 60;
   const heroNum = eta < 60 ? String(Math.max(eta, 0)) : `${heroH}:${String(heroM).padStart(2, "0")}`;
   const heroUnit = eta < 60 ? "MIN" : "H";
+  const nextEx = next ? byId(next.exerciseId) : undefined;
+  const nextMeta = next
+    ? [
+        nextEx && exerciseContext(nextEx) === "desk" ? "DE ESCRITORIO" : "",
+        `${repsOf(next)} REPS`,
+        variantLabel(next.exerciseId, next.variantId).toUpperCase(),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
@@ -90,9 +100,7 @@ export function TodayView() {
                 {next.name}
               </div>
               <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">
-                {[`${repsOf(next)} REPS`, variantLabel(next.exerciseId, next.variantId).toUpperCase()]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {nextMeta}
               </div>
             </div>
             <div className="flex flex-none flex-col gap-2">
@@ -132,9 +140,7 @@ export function TodayView() {
                 {next.name}
               </div>
               <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] text-[var(--faint)]">
-                {[`${repsOf(next)} REPS`, variantLabel(next.exerciseId, next.variantId).toUpperCase()]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {nextMeta}
               </div>
             </div>
             <div className="flex-none text-right">

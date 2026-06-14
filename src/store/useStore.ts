@@ -7,7 +7,16 @@ import {
   snooze as engineSnooze,
 } from "@/lib/engine";
 import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
-import type { EquipmentId, Exercise, LogEntry, Measure, MuscleGroup } from "@/domain/types";
+import type {
+  Equipment,
+  EquipmentId,
+  Exercise,
+  ExerciseContext,
+  LogEntry,
+  Measure,
+  MuscleGroup,
+  UserProfile,
+} from "@/domain/types";
 import {
   DEFAULT_OWNED,
   DEFAULT_ROUTINE,
@@ -35,11 +44,13 @@ export interface CustomExerciseInput {
   muscle: MuscleGroup;
   equipment: EquipmentId[];
   measure: Measure;
+  context: ExerciseContext;
   defaultReps: string;
 }
 
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 const DEFAULT_METHODOLOGY = "gtg";
+const DEFAULT_PROFILE: UserProfile = { goals: "", diet: "", constraints: "" };
 const DEFAULT_DAYTYPE_ID = "default";
 const DEFAULT_DAYTYPES: DayType[] = [
   { id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine: DEFAULT_ROUTINE },
@@ -92,12 +103,14 @@ interface State {
   week: string[]; // length 7, Mon-first: dayTypeId or REST
   dayKind: (WeekKind | null)[]; // length 7, Mon-first
   customExercises: Exercise[];
+  customEquipment: Equipment[];
   settings: Settings;
   day: DayPlan | null;
   theme: ThemeConfig;
   logs: LogEntry[];
   methodologyId: string;
   toastBlockId: string | null; // block currently shown in the toast window
+  profile: UserProfile; // goals/diet/constraints for the future AI coach
 
   // preferences
   panelEnabled: boolean;
@@ -121,6 +134,13 @@ interface State {
   // custom exercises
   addCustomExercise: (input: CustomExerciseInput) => Exercise;
   removeCustomExercise: (id: string) => void;
+
+  // custom equipment
+  addCustomEquipment: (name: string) => Equipment;
+  removeCustomEquipment: (id: string) => void;
+
+  // coach profile
+  setProfile: (patch: Partial<UserProfile>) => void;
 
   // week
   setWeekDay: (index: number, slot: string) => void;
@@ -183,12 +203,14 @@ export const useStore = create<State>()(
       week: DEFAULT_WEEK,
       dayKind: DEFAULT_DAYKIND,
       customExercises: [],
+      customEquipment: [],
       settings: DEFAULT_SETTINGS,
       day: null,
       theme: DEFAULT_THEME,
       logs: [],
       methodologyId: DEFAULT_METHODOLOGY,
       toastBlockId: null,
+      profile: DEFAULT_PROFILE,
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -283,6 +305,7 @@ export const useStore = create<State>()(
           equipment: input.equipment,
           muscle: input.muscle,
           measure: input.measure,
+          context: input.context,
           defaultSets: 3,
           defaultReps: input.defaultReps,
           axis: [{ id: "bw", label: "Peso corporal", kind: "bodyweight" }],
@@ -301,6 +324,29 @@ export const useStore = create<State>()(
         }));
         get().replan();
       },
+
+      addCustomEquipment: (name) => {
+        const eq: Equipment = { id: newId(), name: name.trim() };
+        set((s) => ({
+          customEquipment: [...s.customEquipment, eq],
+          ownedEquipment: [...s.ownedEquipment, eq.id], // you own what you add
+        }));
+        return eq;
+      },
+
+      removeCustomEquipment: (id) => {
+        set((s) => ({
+          customEquipment: s.customEquipment.filter((e) => e.id !== id),
+          ownedEquipment: s.ownedEquipment.filter((e) => e !== id),
+          customExercises: s.customExercises.map((ex) => ({
+            ...ex,
+            equipment: ex.equipment.filter((eq) => eq !== id),
+          })),
+        }));
+        get().replan();
+      },
+
+      setProfile: (patch) => set((s) => ({ profile: { ...s.profile, ...patch } })),
 
       setWeekDay: (index, slot) => {
         set((s) => ({ week: s.week.map((v, i) => (i === index ? slot : v)) }));
@@ -363,11 +409,13 @@ export const useStore = create<State>()(
           week: DEFAULT_WEEK,
           dayKind: DEFAULT_DAYKIND,
           customExercises: [],
+          customEquipment: [],
           settings: DEFAULT_SETTINGS,
           theme: DEFAULT_THEME,
           logs: [],
           methodologyId: DEFAULT_METHODOLOGY,
           toastBlockId: null,
+          profile: DEFAULT_PROFILE,
           panelEnabled: true,
           notificationsEnabled: true,
           snoozeMinutes: 30,
@@ -482,12 +530,14 @@ export const useStore = create<State>()(
         week: s.week,
         dayKind: s.dayKind,
         customExercises: s.customExercises,
+        customEquipment: s.customEquipment,
         settings: s.settings,
         day: s.day,
         theme: s.theme,
         logs: s.logs,
         methodologyId: s.methodologyId,
         toastBlockId: s.toastBlockId,
+        profile: s.profile,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,
