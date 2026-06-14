@@ -101,8 +101,8 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 ## Roadmap (status)
 
 - ✅ **M0** — Scaffold (Tauri + React + Tailwind + shadcn, tray, close-to-tray)
-- ⬜ **M1** — Scheduling engine (pure TS + tests) ← **next**
-- ⬜ **M2** — Studio: exercise/equipment library + routine builder
+- ✅ **M1** — Scheduling engine (`src/lib/engine/`, pure TS + Vitest, 9 tests)
+- ⬜ **M2** — Studio: exercise/equipment library + routine builder ← **next**
 - ⬜ **M3** — Notification loop (Sí / Posponer / Ahora no → recalc)
 - ⬜ **M4** — Floating panel (next set + countdown; Hyprland rules)
 - ⬜ **M5** — Stats + autostart + polish

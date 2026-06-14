@@ -88,11 +88,13 @@ Tauri v2 + React 19 + TS + Vite; Tailwind v4 + shadcn (radix-nova, neutral); sys
 (Abrir/Salir) with **close-to-tray**; window 960×720; identifier `com.microset.app`.
 Verified: Rust compiles (MSVC) and the app runs.
 
-### ⬜ M1 — Scheduling engine ← next
-Pure TS in `src/lib/engine/`: types (`Exercise`, `Block`, `Settings`), `schedule()`, and
-the redistribution logic, with unit tests. No UI.
+### ✅ M1 — Scheduling engine (done 2026-06-13)
+Pure TS in `src/lib/engine/`: types (`Block`, `Settings`, `RoutineItem`),
+`createDayPlan()` / `reschedule()` (even distribution, `minRest`, avoid windows, overflow
+warnings, exercise interleaving), and action helpers `markDone` / `decline` / `snooze` /
+`skip`. 9 Vitest unit tests. Pure & deterministic (`now` is injected, no `Date.now()`).
 
-### ⬜ M2 — Studio
+### ⬜ M2 — Studio ← next
 Exercise + equipment library and routine builder (shadcn forms/dialogs/tables) persisted to
 SQLite (`tauri-plugin-sql`). Seed exercise library.
 
