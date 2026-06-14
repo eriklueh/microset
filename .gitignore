@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code — keep shared settings.json, ignore local overrides
+.claude/settings.local.json

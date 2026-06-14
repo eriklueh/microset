@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm:*)",
+      "Bash(npx shadcn:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git fetch:*)",
+      "PowerShell(pnpm:*)",
+      "PowerShell(npx shadcn:*)",
+      "PowerShell(cargo build:*)",
+      "PowerShell(cargo run:*)",
+      "PowerShell(cargo check:*)",
+      "PowerShell(cargo test:*)",
+      "PowerShell(cargo clippy:*)",
+      "PowerShell(cargo fmt:*)",
+      "PowerShell(git status:*)",
+      "PowerShell(git diff:*)",
+      "PowerShell(git log:*)",
+      "PowerShell(git show:*)",
+      "PowerShell(git branch:*)",
+      "PowerShell(git add:*)",
+      "PowerShell(git fetch:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "PowerShell(git push:*)"
+    ],
+    "deny": []
+  }
+}

@@ -1,0 +1,14 @@
+# Normalize line endings: store as LF in the repo, so Windows <-> Linux (CachyOS)
+# don't churn the diff. Text files are auto-detected.
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.png  binary
+*.ico  binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.svg  text
