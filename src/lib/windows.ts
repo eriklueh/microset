@@ -46,11 +46,28 @@ export async function openConfigFolder(): Promise<void> {
   }
 }
 
-/** Launch a Claude Code session as the coach, in the config workspace. */
-export async function openCoach(): Promise<void> {
+/** Launch a Claude Code session as the coach, in the config workspace. With an
+ * id, resumes that session (claude --resume). */
+export async function openCoach(session?: string): Promise<void> {
   try {
-    await invoke("open_coach");
+    await invoke("open_coach", session ? { session } : {});
   } catch {
     // Not running inside Tauri — ignore.
+  }
+}
+
+export interface CoachSession {
+  id: string;
+  title: string;
+  updatedAt: string;
+  messageCount: number;
+}
+
+/** Read-only list of Claude Code sessions run in the config workspace. */
+export async function listCoachSessions(): Promise<CoachSession[]> {
+  try {
+    return await invoke<CoachSession[]>("list_coach_sessions");
+  } catch {
+    return [];
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Check, Plus, Trash2 } from "lucide-react";
-import { openCoach } from "@/lib/windows";
+import { listCoachSessions, openCoach } from "@/lib/windows";
 import { useStore } from "@/store/useStore";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
@@ -32,6 +32,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
   const snap = useMemo(() => coachSnapshot(), [dayTypes, week, logs, settings, owned]);
 
   const [convos, setConvos] = useState<ConversationMeta[]>([]);
+  const [ccSessions, setCcSessions] = useState<ConversationMeta[]>([]);
   const [conv, setConv] = useState<Conversation | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,8 +40,25 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
   const [pending, setPending] = useState<ProposedChange[] | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const refresh = () => void listConversations().then(setConvos);
+  const refresh = () => {
+    void listConversations().then(setConvos);
+    void listCoachSessions().then((cc) =>
+      setCcSessions(
+        cc.map((s) => ({
+          id: s.id,
+          title: s.title,
+          updatedAt: s.updatedAt,
+          messageCount: s.messageCount,
+          source: "claude-code" as const,
+        })),
+      ),
+    );
+  };
   useEffect(refresh, []);
+  const threads = useMemo(
+    () => [...convos, ...ccSessions].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
+    [convos, ccSessions],
+  );
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [conv?.messages.length, pending, busy]);
@@ -210,18 +228,20 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
             <Plus className="size-3.5" /> NUEVA
           </button>
           <div className="flex flex-1 flex-col overflow-y-auto">
-            {convos.length === 0 && (
+            {threads.length === 0 && (
               <div className="px-3 py-3 font-mono text-[10px] leading-[1.5] tracking-[0.04em] text-[var(--faint2)]">
                 SIN CHARLAS TODAVÍA
               </div>
             )}
-            {convos.map((c) => {
-              const active = conv?.id === c.id;
+            {threads.map((c) => {
+              const isCC = c.source === "claude-code";
+              const active = !isCC && conv?.id === c.id;
               return (
                 <button
-                  key={c.id}
-                  onClick={() => void openConv(c.id)}
-                  className="group flex items-center gap-1 border-b border-[var(--rule)] px-3 py-2.5 text-left"
+                  key={`${c.source}-${c.id}`}
+                  onClick={() => (isCC ? void openCoach(c.id) : void openConv(c.id))}
+                  title={isCC ? "Retomar en Claude Code" : undefined}
+                  className="group flex items-center gap-1.5 border-b border-[var(--rule)] px-3 py-2.5 text-left"
                   style={{ background: active ? "var(--bar0)" : "transparent" }}
                 >
                   <span
@@ -230,10 +250,16 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                   >
                     {c.title}
                   </span>
-                  <Trash2
-                    onClick={(e) => void removeConv(c.id, e)}
-                    className="size-3.5 flex-none text-[var(--faint2)] opacity-0 group-hover:opacity-100 hover:text-[var(--destructive)]"
-                  />
+                  {isCC ? (
+                    <span className="flex-none font-mono text-[8px] font-bold tracking-[0.12em] text-[var(--faint2)]">
+                      CC
+                    </span>
+                  ) : (
+                    <Trash2
+                      onClick={(e) => void removeConv(c.id, e)}
+                      className="size-3.5 flex-none text-[var(--faint2)] opacity-0 group-hover:opacity-100 hover:text-[var(--destructive)]"
+                    />
+                  )}
                 </button>
               );
             })}
