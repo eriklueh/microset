@@ -9,7 +9,7 @@ import { useStore } from "@/store/useStore";
 const CARD = "rounded-xl border bg-card/60 backdrop-blur-xl";
 
 function repsOf(block: Block): string {
-  return exerciseById(block.exerciseId)?.defaultReps ?? "";
+  return block.target ?? exerciseById(block.exerciseId)?.defaultReps ?? "";
 }
 
 export function TodayView() {

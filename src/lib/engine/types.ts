@@ -16,6 +16,8 @@ export interface Block {
   name: string;
   /** Sets performed in this block (default 1). */
   sets: number;
+  /** Prescription for display: reps or duration, e.g. "5" or "10-20s". */
+  target?: string;
   /** Scheduled time, minutes since midnight. -1 means unscheduled (didn't fit). */
   time: Minute;
   status: BlockStatus;
@@ -34,12 +36,14 @@ export interface Settings {
   avoidWindows: TimeWindow[];
 }
 
-/** One exercise's target for the day. */
+/** One exercise's target for the day (a prescription). */
 export interface RoutineItem {
   exerciseId: string;
   name: string;
   /** Total sets to spread across the day (one block per set for now). */
   sets: number;
+  /** Reps or duration per set, e.g. "5" or "10-20s". Overrides the catalog default. */
+  target?: string;
   /** Higher = scheduled first when the day is tight. Default 0. */
   priority?: number;
 }

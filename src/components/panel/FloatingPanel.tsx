@@ -24,7 +24,7 @@ export function FloatingPanel() {
     .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
     .sort((a, b) => a.time - b.time)[0];
   const eta = next ? next.time - now : 0;
-  const reps = next ? (exerciseById(next.exerciseId)?.defaultReps ?? "") : "";
+  const reps = next ? (next.target ?? exerciseById(next.exerciseId)?.defaultReps ?? "") : "";
 
   return (
     <div className="bg-card/70 flex h-screen w-screen flex-col overflow-hidden rounded-xl border backdrop-blur-2xl select-none">

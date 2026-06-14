@@ -139,6 +139,7 @@ export function createDayPlan(
         exerciseId: item.exerciseId,
         name: item.name,
         sets: 1,
+        target: item.target,
         time: -1,
         status: "pending",
         priority: item.priority ?? 0,

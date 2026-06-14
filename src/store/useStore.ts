@@ -8,7 +8,13 @@ import {
 } from "@/lib/engine";
 import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
 import type { EquipmentId } from "@/domain/types";
-import { DEFAULT_OWNED, DEFAULT_ROUTINE, DEFAULT_SETTINGS } from "@/domain/seed";
+import {
+  DEFAULT_OWNED,
+  DEFAULT_ROUTINE,
+  DEFAULT_SETTINGS,
+  exerciseById,
+  isAvailable,
+} from "@/domain/seed";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { setPanelVisible } from "@/lib/windows";
 
@@ -46,6 +52,7 @@ interface State {
   setSettings: (patch: Partial<Settings>) => void;
   addToRoutine: (item: RoutineItem) => void;
   setRoutineSets: (exerciseId: string, sets: number) => void;
+  setRoutineTarget: (exerciseId: string, target: string) => void;
   removeFromRoutine: (exerciseId: string) => void;
 
   // theme
@@ -77,12 +84,14 @@ export const useStore = create<State>()(
       notificationsEnabled: true,
       snoozeMinutes: 30,
 
-      toggleEquipment: (id) =>
+      toggleEquipment: (id) => {
         set((s) => ({
           ownedEquipment: s.ownedEquipment.includes(id)
             ? s.ownedEquipment.filter((e) => e !== id)
             : [...s.ownedEquipment, id],
-        })),
+        }));
+        get().replan();
+      },
 
       setSettings: (patch) => {
         set((s) => ({ settings: { ...s.settings, ...patch } }));
@@ -105,6 +114,14 @@ export const useStore = create<State>()(
           ),
         }));
         get().replan();
+      },
+
+      setRoutineTarget: (exerciseId, target) => {
+        set((s) => ({
+          routine: s.routine.map((r) =>
+            r.exerciseId === exerciseId ? { ...r, target } : r,
+          ),
+        }));
       },
 
       removeFromRoutine: (exerciseId) => {
@@ -142,8 +159,13 @@ export const useStore = create<State>()(
       },
 
       replan: () => {
-        const { routine, settings } = get();
-        const { blocks } = createDayPlan(routine, settings, nowMinutes());
+        const { routine, settings, ownedEquipment } = get();
+        // Only schedule exercises you can actually do with your current equipment.
+        const doable = routine.filter((r) => {
+          const ex = exerciseById(r.exerciseId);
+          return ex ? isAvailable(ex, ownedEquipment) : true;
+        });
+        const { blocks } = createDayPlan(doable, settings, nowMinutes());
         set({ day: { date: todayKey(), blocks } });
       },
 
