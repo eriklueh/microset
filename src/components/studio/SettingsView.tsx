@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { ACCENTS, THEME_MODES } from "@/lib/theme";
+import { openConfigFolder } from "@/lib/windows";
+import { reloadFromFiles } from "@/store/files";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
 import { SquareSwitch } from "./EquipmentView";
@@ -156,6 +158,16 @@ export function SettingsView() {
       </Section>
 
       <Section title="DATOS">
+        <Row label="Carpeta de config" hint="Tus JSON editables: rutina, equipo, perfil, logs.">
+          <button className={dataBtn} onClick={() => void openConfigFolder()}>
+            ABRIR CARPETA
+          </button>
+        </Row>
+        <Row label="Recargar desde archivos" hint="Re-lee la config de los archivos al instante.">
+          <button className={dataBtn} onClick={() => void reloadFromFiles()}>
+            RECARGAR
+          </button>
+        </Row>
         <Row label="Replanificar hoy" hint="Vuelve a repartir las series desde ahora.">
           <button className={dataBtn} onClick={replan}>
             REPLANIFICAR

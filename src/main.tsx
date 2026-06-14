@@ -5,6 +5,7 @@ import App from "./App";
 import { FloatingPanel } from "./components/panel/FloatingPanel";
 import { Toast } from "./components/toast/Toast";
 import { setupCrossWindowSync } from "./store/sync";
+import { setupFileSync } from "./store/files";
 import { useStore } from "./store/useStore";
 import { applyTheme, watchSystemTheme } from "./lib/theme";
 import "./index.css";
@@ -26,6 +27,9 @@ watchSystemTheme(
   () => useStore.getState().theme.mode,
   () => useStore.getState().theme.accent,
 );
+
+// Only the main window owns the file-backed config (load/save/watch).
+if (!isPanel && !isToast) void setupFileSync();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

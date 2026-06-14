@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
+import { appConfigDir } from "@tauri-apps/api/path";
 import { Window } from "@tauri-apps/api/window";
+import { openPath } from "@tauri-apps/plugin-opener";
 
 /** Show or hide the floating panel window (no-op outside Tauri). */
 export async function setPanelVisible(visible: boolean): Promise<void> {
@@ -30,6 +32,15 @@ export async function openToastWindow(): Promise<void> {
 export async function closeToastWindow(): Promise<void> {
   try {
     await invoke("hide_toast");
+  } catch {
+    // Not running inside Tauri — ignore.
+  }
+}
+
+/** Open the OS config folder (where the editable JSON config lives). */
+export async function openConfigFolder(): Promise<void> {
+  try {
+    await openPath(await appConfigDir());
   } catch {
     // Not running inside Tauri — ignore.
   }

@@ -15,6 +15,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // --- System tray ---
             let show_item = MenuItem::with_id(app, "show", "Abrir microset", true, None::<&str>)?;
