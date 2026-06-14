@@ -1,15 +1,18 @@
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import type { Block, Settings } from "@/lib/engine";
 import { variantLabel } from "@/domain/seed";
 import { MUSCLE_LABEL } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
-import { useStore } from "@/store/useStore";
+import { nowMinutes, useStore } from "@/store/useStore";
 
 const DOW = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const hh = (min: number) => pad(Math.round(min / 60));
 const NEXT_BG = "color-mix(in oklch, var(--acc) 5%, transparent)";
+/** Show the quick actions only when the set is due or this many minutes away. */
+const ACTION_THRESHOLD_MIN = 5;
 
 export function TodayView() {
   const day = useStore((s) => s.day);
@@ -18,6 +21,12 @@ export function TodayView() {
   const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
   const { byId } = useCatalog();
+  const [now, setNow] = useState(nowMinutes());
+
+  useEffect(() => {
+    const handle = setInterval(() => setNow(nowMinutes()), 20_000);
+    return () => clearInterval(handle);
+  }, []);
 
   if (!day) return null;
   const weekday = DOW[(new Date().getDay() + 6) % 7];
@@ -51,6 +60,14 @@ export function TodayView() {
   };
   const repsOf = (b: Block) => b.target ?? byId(b.exerciseId)?.defaultReps ?? "";
 
+  const eta = next ? next.time - now : 0;
+  const isDue = eta <= 0;
+  const showActions = !!next && eta <= ACTION_THRESHOLD_MIN;
+  const heroH = Math.floor(Math.max(eta, 0) / 60);
+  const heroM = Math.max(eta, 0) % 60;
+  const heroNum = eta < 60 ? String(Math.max(eta, 0)) : `${heroH}:${String(heroM).padStart(2, "0")}`;
+  const heroUnit = eta < 60 ? "MIN" : "H";
+
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
       <Mast
@@ -63,44 +80,73 @@ export function TodayView() {
       />
 
       {next ? (
-        <div className="flex items-center justify-between gap-6 bg-[var(--acc)] px-[26px] py-[22px] text-[var(--on)]">
-          <div className="min-w-0">
-            <div className="font-mono text-[11px] font-semibold tracking-[0.2em]">
-              AHORA — {formatMinute(next.time)}
+        showActions ? (
+          <div className="flex items-center justify-between gap-6 bg-[var(--acc)] px-[26px] py-[22px] text-[var(--on)]">
+            <div className="min-w-0">
+              <div className="font-mono text-[11px] font-semibold tracking-[0.2em]">
+                {isDue ? "AHORA" : `EN ${eta} MIN`} — {formatMinute(next.time)}
+              </div>
+              <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
+                {next.name}
+              </div>
+              <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">
+                {[`${repsOf(next)} REPS`, variantLabel(next.exerciseId, next.variantId).toUpperCase()]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </div>
             </div>
-            <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
-              {next.name}
-            </div>
-            <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">
-              {[`${repsOf(next)} REPS`, variantLabel(next.exerciseId, next.variantId).toUpperCase()]
-                .filter(Boolean)
-                .join(" · ")}
+            <div className="flex flex-none flex-col gap-2">
+              <button
+                onClick={() => done(next.id)}
+                className="flex items-center justify-center gap-2 bg-[var(--on)] px-[26px] py-[13px] font-mono text-[13px] font-semibold tracking-[0.08em] text-[var(--acc)]"
+              >
+                <Check className="size-4" strokeWidth={3} /> HECHO
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => snooze(next.id, 30)}
+                  className="flex-1 border-2 border-[var(--on)] px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
+                >
+                  POSPONER
+                </button>
+                <button
+                  onClick={() => decline(next.id)}
+                  className="flex-1 border-2 px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
+                  style={{ borderColor: "rgba(10,10,10,0.35)" }}
+                >
+                  AHORA NO
+                </button>
+              </div>
             </div>
           </div>
-          <div className="flex flex-none flex-col gap-2">
-            <button
-              onClick={() => done(next.id)}
-              className="flex items-center justify-center gap-2 bg-[var(--on)] px-[26px] py-[13px] font-mono text-[13px] font-semibold tracking-[0.08em] text-[var(--acc)]"
-            >
-              <Check className="size-4" strokeWidth={3} /> HECHO
-            </button>
-            <div className="flex gap-2">
-              <button
-                onClick={() => snooze(next.id, 30)}
-                className="flex-1 border-2 border-[var(--on)] px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
-              >
-                POSPONER
-              </button>
-              <button
-                onClick={() => decline(next.id)}
-                className="flex-1 border-2 px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
-                style={{ borderColor: "rgba(10,10,10,0.35)" }}
-              >
-                AHORA NO
-              </button>
+        ) : (
+          <div
+            className="flex items-center justify-between gap-6 border border-[var(--rule2)] px-[26px] py-[22px]"
+            style={{ borderLeft: "3px solid var(--acc)" }}
+          >
+            <div className="min-w-0">
+              <div className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[var(--faint)]">
+                PRÓXIMA — {formatMinute(next.time)}
+              </div>
+              <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
+                {next.name}
+              </div>
+              <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] text-[var(--faint)]">
+                {[`${repsOf(next)} REPS`, variantLabel(next.exerciseId, next.variantId).toUpperCase()]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </div>
+            </div>
+            <div className="flex-none text-right">
+              <div className="font-mono text-[52px] leading-[0.8] font-semibold tabular-nums tracking-[-0.03em] text-[var(--fg)]">
+                {heroNum}
+              </div>
+              <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
+                {heroUnit === "MIN" ? "MINUTOS" : "HORAS"}
+              </div>
             </div>
           </div>
-        </div>
+        )
       ) : (
         <div className="border border-[var(--rule2)] p-5 font-mono text-[12px] tracking-[0.04em] text-[var(--faint)]">
           {total > 0
@@ -121,6 +167,7 @@ export function TodayView() {
           block={b}
           idx={i + 1}
           isNext={b.id === next?.id}
+          nextDue={showActions}
           muscle={muscleOf(b)}
           reps={repsOf(b)}
         />
@@ -180,12 +227,14 @@ function DayRow({
   block,
   idx,
   isNext,
+  nextDue,
   muscle,
   reps,
 }: {
   block: Block;
   idx: number;
   isNext: boolean;
+  nextDue: boolean;
   muscle: string;
   reps: string;
 }) {
@@ -196,7 +245,7 @@ function DayRow({
   let statusColor = "var(--faint)";
   if (isDone) [status, statusColor] = ["HECHO", "var(--faint2)"];
   else if (skip) [status, statusColor] = ["SALTADO", "var(--faint2)"];
-  else if (isNext) [status, statusColor] = ["AHORA", "var(--acc)"];
+  else if (isNext) [status, statusColor] = [nextDue ? "AHORA" : "PRÓXIMA", "var(--acc)"];
   else if (unsched) [status, statusColor] = ["NO ENTRA", "var(--faint2)"];
 
   return (
