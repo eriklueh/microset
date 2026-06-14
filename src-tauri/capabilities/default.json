@@ -15,11 +15,13 @@
     "opener:allow-open-path",
     "notification:default",
     "notification:allow-register-action-types",
-    { "identifier": "fs:allow-read-text-file", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }] },
-    { "identifier": "fs:allow-write-text-file", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }] },
-    { "identifier": "fs:allow-mkdir", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }] },
-    { "identifier": "fs:allow-exists", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }] },
-    { "identifier": "fs:allow-watch", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }] },
-    { "identifier": "fs:allow-unwatch", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }] }
+    { "identifier": "fs:allow-read-text-file", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-write-text-file", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-read-dir", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-mkdir", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-remove", "allow": [{ "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-exists", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-watch", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] },
+    { "identifier": "fs:allow-unwatch", "allow": [{ "path": "$APPCONFIG" }, { "path": "$APPCONFIG/*" }, { "path": "$APPCONFIG/**" }] }
   ]
 }
