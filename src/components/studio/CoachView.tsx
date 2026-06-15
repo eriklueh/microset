@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Check, Plus, Trash2 } from "lucide-react";
-import { listCoachSessions, openCoach, type CoachSession } from "@/lib/windows";
+import {
+  listCoachSessions,
+  openCoach,
+  readCoachSession,
+  type CoachSession,
+  type CoachSessionMsg,
+} from "@/lib/windows";
 import { useStore } from "@/store/useStore";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
@@ -42,6 +48,12 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
   const [convos, setConvos] = useState<ConversationMeta[]>([]);
   const [ccSessions, setCcSessions] = useState<CoachSession[]>([]);
   const [conv, setConv] = useState<Conversation | null>(null);
+  const [ccConv, setCcConv] = useState<{
+    id: string;
+    cwd: string;
+    title: string;
+    messages: CoachSessionMsg[];
+  } | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,17 +160,26 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
 
   const newChat = () => {
     setConv(null);
+    setCcConv(null);
     setPending(null);
     setError(null);
     setInput("");
   };
   const openConv = async (id: string) => {
+    setCcConv(null);
     const c = await loadConversation(id);
     if (c) {
       setConv(c);
       setPending(null);
       setError(null);
     }
+  };
+  const openCC = async (t: Thread) => {
+    setConv(null);
+    setPending(null);
+    setError(null);
+    const messages = await readCoachSession(t.id, t.cwd ?? "");
+    setCcConv({ id: t.id, cwd: t.cwd ?? "", title: t.title, messages });
   };
   const removeConv = async (id: string, e: MouseEvent) => {
     e.stopPropagation();
@@ -245,11 +266,11 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
             )}
             {threads.map((c) => {
               const isCC = c.source === "claude-code";
-              const active = !isCC && conv?.id === c.id;
+              const active = isCC ? ccConv?.id === c.id : conv?.id === c.id;
               return (
                 <button
                   key={`${c.source}-${c.id}`}
-                  onClick={() => (isCC ? void openCoach(c.id, c.cwd) : void openConv(c.id))}
+                  onClick={() => (isCC ? void openCC(c) : void openConv(c.id))}
                   title={isCC ? "Retomar en Claude Code" : undefined}
                   className="group flex items-center gap-1.5 border-b border-[var(--rule)] px-3 py-2.5 text-left"
                   style={{ background: active ? "var(--bar0)" : "transparent" }}
@@ -277,62 +298,100 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
-            {messages.length === 0 && !error ? (
-              <div className="m-auto max-w-[420px] text-center">
-                <div className="text-[16px] font-semibold text-[var(--fg)]">¿Qué querés lograr?</div>
-                <p className="mt-2 text-[13px] leading-[1.6] text-[var(--faint)]">
-                  Te propongo cambios en tu rutina, semana o equipo — y los aprobás antes de aplicar.
-                </p>
-                <div className="mt-4 flex flex-col gap-2">
-                  {STARTERS.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => void send(s)}
-                      className="border border-[var(--rule2)] px-3 py-2 text-[12.5px] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--fg)]"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+          {ccConv ? (
+            <>
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--rule2)] px-4 py-2.5">
+                <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--fg)]">
+                  {ccConv.title}
+                </span>
+                <span className="flex-none font-mono text-[9px] font-bold tracking-[0.12em] text-[var(--faint2)]">
+                  CLAUDE CODE · SOLO LECTURA
+                </span>
               </div>
-            ) : (
-              <>
-                {messages.map((m, i) => (
-                  <Bubble key={i} role={m.role} text={m.content} />
-                ))}
-                {busy && (
-                  <div className="font-mono text-[11px] tracking-[0.1em] text-[var(--faint)]">PENSANDO…</div>
-                )}
-                {error && (
-                  <div className="font-mono text-[11px] leading-[1.5]" style={{ color: "var(--destructive)" }}>
-                    {error}
+              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
+                {ccConv.messages.length === 0 && (
+                  <div className="m-auto font-mono text-[11px] tracking-[0.06em] text-[var(--faint)]">
+                    SESIÓN VACÍA O ILEGIBLE
                   </div>
                 )}
-                {pending && <ReviewCard changes={pending} onApprove={approve} onDiscard={discard} />}
-              </>
-            )}
-            <div ref={endRef} />
-          </div>
+                {ccConv.messages.map((m, i) => (
+                  <Bubble key={i} role={m.role} text={m.text} />
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-2 border-t border-[var(--rule2)] p-2.5">
+                <span className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">
+                  LA CONVERSACIÓN VIVE EN CLAUDE CODE
+                </span>
+                <button
+                  onClick={() => void openCoach(ccConv.id, ccConv.cwd)}
+                  className="border-2 border-[var(--fg)] px-3.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--fg)]"
+                >
+                  RETOMAR EN CLAUDE CODE
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
+                {messages.length === 0 && !error ? (
+                  <div className="m-auto max-w-[420px] text-center">
+                    <div className="text-[16px] font-semibold text-[var(--fg)]">¿Qué querés lograr?</div>
+                    <p className="mt-2 text-[13px] leading-[1.6] text-[var(--faint)]">
+                      Te propongo cambios en tu rutina, semana o equipo — y los aprobás antes de aplicar.
+                    </p>
+                    <div className="mt-4 flex flex-col gap-2">
+                      {STARTERS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => void send(s)}
+                          className="border border-[var(--rule2)] px-3 py-2 text-[12.5px] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--fg)]"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((m, i) => (
+                      <Bubble key={i} role={m.role} text={m.content} />
+                    ))}
+                    {busy && (
+                      <div className="font-mono text-[11px] tracking-[0.1em] text-[var(--faint)]">
+                        PENSANDO…
+                      </div>
+                    )}
+                    {error && (
+                      <div className="font-mono text-[11px] leading-[1.5]" style={{ color: "var(--destructive)" }}>
+                        {error}
+                      </div>
+                    )}
+                    {pending && <ReviewCard changes={pending} onApprove={approve} onDiscard={discard} />}
+                  </>
+                )}
+                <div ref={endRef} />
+              </div>
 
-          <div className="flex items-center gap-2 border-t border-[var(--rule2)] p-2.5">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void send();
-              }}
-              placeholder="Hablá con el coach…"
-              className="flex-1 bg-transparent px-1 text-[13.5px] text-[var(--fg)] outline-none placeholder:text-[var(--faint2)]"
-            />
-            <button
-              onClick={() => void send()}
-              disabled={busy || !input.trim()}
-              className="bg-[var(--acc)] px-4 py-2 font-mono text-[11px] font-bold tracking-[0.06em] text-[var(--on)] disabled:opacity-40"
-            >
-              ENVIAR
-            </button>
-          </div>
+              <div className="flex items-center gap-2 border-t border-[var(--rule2)] p-2.5">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.currentTarget.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void send();
+                  }}
+                  placeholder="Hablá con el coach…"
+                  className="flex-1 bg-transparent px-1 text-[13.5px] text-[var(--fg)] outline-none placeholder:text-[var(--faint2)]"
+                />
+                <button
+                  onClick={() => void send()}
+                  disabled={busy || !input.trim()}
+                  className="bg-[var(--acc)] px-4 py-2 font-mono text-[11px] font-bold tracking-[0.06em] text-[var(--on)] disabled:opacity-40"
+                >
+                  ENVIAR
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

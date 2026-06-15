@@ -68,10 +68,24 @@ export interface CoachSession {
   cwd: string;
 }
 
-/** Read-only list of Claude Code sessions run in the config workspace. */
+/** Read-only list of Claude Code sessions run in any microset workspace. */
 export async function listCoachSessions(): Promise<CoachSession[]> {
   try {
     return await invoke<CoachSession[]>("list_coach_sessions");
+  } catch {
+    return [];
+  }
+}
+
+export interface CoachSessionMsg {
+  role: "user" | "assistant";
+  text: string;
+}
+
+/** Read a Claude Code session transcript into readable messages (read-only). */
+export async function readCoachSession(id: string, cwd: string): Promise<CoachSessionMsg[]> {
+  try {
+    return await invoke<CoachSessionMsg[]>("read_coach_session", { id, cwd });
   } catch {
     return [];
   }

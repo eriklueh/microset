@@ -80,6 +80,7 @@ pub fn run() {
             hide_toast,
             open_coach,
             list_coach_sessions,
+            read_coach_session,
             coach_complete,
             coach_complete_openai
         ])
@@ -356,5 +357,107 @@ fn list_coach_sessions(app: tauri::AppHandle) -> Result<Vec<CoachSession>, Strin
         }
     }
     out.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+    Ok(out)
+}
+
+#[derive(serde::Serialize)]
+struct CoachMessageOut {
+    role: String,
+    text: String,
+}
+
+fn encode_cwd(cwd: &str) -> String {
+    cwd.chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect()
+}
+
+/// Read a Claude Code session transcript into readable messages (user prompts +
+/// assistant text; thinking and tool results are skipped, tool calls noted).
+#[tauri::command]
+fn read_coach_session(
+    app: tauri::AppHandle,
+    cwd: String,
+    id: String,
+) -> Result<Vec<CoachMessageOut>, String> {
+    let home = app.path().home_dir().map_err(|e| e.to_string())?;
+    let path = home
+        .join(".claude")
+        .join("projects")
+        .join(encode_cwd(&cwd))
+        .join(format!("{id}.jsonl"));
+    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+
+    fn flush(out: &mut Vec<CoachMessageOut>, buf: &mut String) {
+        let t = buf.trim();
+        if !t.is_empty() {
+            out.push(CoachMessageOut { role: "assistant".to_string(), text: t.to_string() });
+        }
+        buf.clear();
+    }
+
+    let mut out: Vec<CoachMessageOut> = Vec::new();
+    let mut buf = String::new();
+    let mut buf_id = String::new();
+    for line in content.lines() {
+        let v: serde_json::Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        match v.get("type").and_then(|t| t.as_str()).unwrap_or("") {
+            "assistant" => {
+                let mid = v
+                    .get("message")
+                    .and_then(|m| m.get("id"))
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("");
+                if !buf_id.is_empty() && mid != buf_id {
+                    flush(&mut out, &mut buf);
+                }
+                buf_id = mid.to_string();
+                if let Some(blocks) = v
+                    .get("message")
+                    .and_then(|m| m.get("content"))
+                    .and_then(|c| c.as_array())
+                {
+                    for b in blocks {
+                        match b.get("type").and_then(|t| t.as_str()).unwrap_or("") {
+                            "text" => {
+                                if let Some(s) = b.get("text").and_then(|x| x.as_str()) {
+                                    if !buf.is_empty() {
+                                        buf.push('\n');
+                                    }
+                                    buf.push_str(s);
+                                }
+                            }
+                            "tool_use" => {
+                                if let Some(n) = b.get("name").and_then(|x| x.as_str()) {
+                                    if !buf.is_empty() {
+                                        buf.push('\n');
+                                    }
+                                    buf.push_str(&format!("· acción: {n}"));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            "user" => {
+                // A typed prompt has string content; tool results are arrays (skip).
+                if let Some(s) = v
+                    .get("message")
+                    .and_then(|m| m.get("content"))
+                    .and_then(|c| c.as_str())
+                {
+                    flush(&mut out, &mut buf);
+                    buf_id.clear();
+                    out.push(CoachMessageOut { role: "user".to_string(), text: s.to_string() });
+                }
+            }
+            _ => {}
+        }
+    }
+    flush(&mut out, &mut buf);
     Ok(out)
 }
