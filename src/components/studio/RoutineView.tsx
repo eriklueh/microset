@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, exerciseContext, isAvailable } from "@/domain/seed";
 import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
@@ -15,7 +15,6 @@ import { useCatalog } from "@/hooks/useCatalog";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
 
-const hh = (min: number) => `${Math.round(min / 60)}H`;
 const DOW = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const MUSCLE_ORDER: MuscleGroup[] = ["pull", "push", "core", "legs"];
 const WARN = "#e0a400";
@@ -50,6 +49,7 @@ export function RoutineView() {
   const [selectedId, setSelectedId] = useState(dayTypes[0]?.id ?? "");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const selected = dayTypes.find((d) => d.id === selectedId) ?? dayTypes[0];
   if (!selected) {
@@ -75,6 +75,13 @@ export function RoutineView() {
   );
 
   const { totalSets, fits, allFit, balance } = analyzeRoutine(routine, owned, settings, byId);
+  const missing = MUSCLE_ORDER.filter((m) => balance[m] === 0);
+  const hasVol = MUSCLE_ORDER.some((m) => balance[m] > 0);
+  const balanceLabel = !hasVol
+    ? "SIN VOLUMEN"
+    : missing.length
+      ? `FALTA ${missing.map((m) => MUSCLE_LABEL[m].toUpperCase()).join(", ")}`
+      : "EQUILIBRADO";
 
   const handleCreate = (i: {
     name: string;
@@ -100,7 +107,7 @@ export function RoutineView() {
     <div className="flex flex-col px-[34px] py-[30px]">
       <Masthead title="RUTINA" sub="ARMÁ CADA TIPO DE DÍA" />
 
-      {/* Day-type picker */}
+      {/* Day-type tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {dayTypes.map((dt) => {
           const on = selected.id === dt.id;
@@ -127,15 +134,15 @@ export function RoutineView() {
         </button>
       </div>
 
-      {/* Day-type name + usage */}
-      <div className="mt-4 flex items-center gap-3 border border-[var(--rule2)] px-3.5 py-3">
+      {/* Active day-type: slim rename + usage + delete */}
+      <div className="mt-4 flex items-center gap-3">
         <input
           value={selected.name}
           onChange={(e) => renameDayType(selected.id, e.currentTarget.value)}
           aria-label="Nombre del tipo de día"
-          className="min-w-0 flex-1 bg-transparent text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)] outline-none"
+          className="min-w-0 flex-1 border-b border-transparent bg-transparent text-[16px] font-bold tracking-[-0.01em] text-[var(--fg)] outline-none focus:border-[var(--rule2)]"
         />
-        <span className="flex-none font-mono text-[10.5px] tracking-[0.08em] text-[var(--faint)]">
+        <span className="flex-none font-mono text-[10px] tracking-[0.08em] text-[var(--faint2)]">
           {usedDays.length > 0 ? usedDays.join(" ") : "SIN ASIGNAR"}
         </span>
         <button
@@ -148,57 +155,57 @@ export function RoutineView() {
         </button>
       </div>
 
-      {/* Methodology */}
-      <div className="mt-3 border border-[var(--rule2)] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
-            METODOLOGÍA
+      {/* Compact strip: sets · feasibility · balance · methodology */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border border-[var(--rule2)] px-4 py-2.5">
+        <span className="font-mono text-[11px] tracking-[0.06em]">
+          <span className="text-[var(--faint)]">SERIES </span>
+          <span className="font-semibold text-[var(--fg)]">{totalSets}</span>
+        </span>
+        <span
+          className="font-mono text-[11px] font-semibold tracking-[0.06em]"
+          title={allFit ? undefined : "Recortá volumen o ampliá tu horario."}
+          style={{ color: totalSets === 0 ? "var(--faint2)" : allFit ? "var(--acc)" : WARN }}
+        >
+          {totalSets === 0 ? "VACÍO" : allFit ? "ENTRA ✓" : `ENTRAN ${fits}/${totalSets}`}
+        </span>
+        {totalSets > 0 && (
+          <span className="flex items-center gap-2">
+            <span className="flex h-[6px] w-[80px] gap-px">
+              {MUSCLE_ORDER.map((m) =>
+                balance[m] > 0 ? (
+                  <span key={m} style={{ width: `${(balance[m] / totalSets) * 100}%`, background: MUSCLE_COLOR[m] }} />
+                ) : null,
+              )}
+            </span>
+            <span
+              className="font-mono text-[10px] tracking-[0.06em]"
+              style={{ color: balanceLabel.startsWith("FALTA") ? WARN : "var(--faint)" }}
+            >
+              {balanceLabel}
+            </span>
           </span>
-          <select
-            value={methodologyId}
-            onChange={(e) => applyMethodology(selected.id, e.currentTarget.value)}
-            aria-label="Metodología"
-            className={`${input} appearance-none px-2.5 py-1.5 font-mono text-[11.5px]`}
-          >
-            {METHODOLOGIES.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[var(--ink2)]">
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <p className="mt-3 text-[14px] font-semibold text-[var(--fg)]">{method.tagline}</p>
-        <p className="mt-1.5 text-[12.5px] leading-[1.55] text-[var(--faint)]">{method.description}</p>
+        )}
+        <select
+          value={methodologyId}
+          onChange={(e) => applyMethodology(selected.id, e.currentTarget.value)}
+          aria-label="Metodología"
+          title={method.description}
+          className={`${input} ml-auto appearance-none px-2.5 py-1 font-mono text-[11px]`}
+        >
+          {METHODOLOGIES.map((m) => (
+            <option key={m.id} value={m.id} className="bg-[var(--ink2)]">
+              {m.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Summary */}
-      <div className="mt-3 border border-[var(--rule2)] p-4">
-        <div className="flex items-baseline justify-between">
-          <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
-            RESUMEN DEL DÍA
-          </span>
-          <span className="font-mono text-[20px] font-semibold text-[var(--fg)]">
-            {totalSets}
-            <span className="text-[12px] text-[var(--faint2)]"> SERIES</span>
-          </span>
-        </div>
-        <p className="mt-2 text-[12.5px] leading-[1.5]" style={{ color: allFit ? "var(--faint)" : WARN }}>
-          {totalSets === 0
-            ? "Agregá ejercicios para empezar."
-            : allFit
-              ? `Entran las ${totalSets} series en tu horario (${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}).`
-              : `Solo entran ${fits} de ${totalSets} series. Recortá volumen o ampliá tu horario.`}
-        </p>
-        {totalSets > 0 && <Balance balance={balance} total={totalSets} />}
-      </div>
-
-      {/* Exercises */}
-      <div className="mt-6 font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
-        EJERCICIOS
-      </div>
-      <div className="mt-2.5 border-t border-[var(--rule)]">
+      {/* Exercise list — the main content */}
+      <div className="mt-5 border-t border-[var(--rule)]">
         {routine.length === 0 && (
-          <p className="py-4 text-[13px] text-[var(--faint)]">Agregá ejercicios desde abajo.</p>
+          <p className="py-4 text-[13px] text-[var(--faint)]">
+            Sin ejercicios. Agregá con el botón de abajo.
+          </p>
         )}
         {routine.map((r) => {
           const ex = byId(r.exerciseId);
@@ -212,7 +219,7 @@ export function RoutineView() {
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate text-[19px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
+                    <span className="truncate text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
                       {r.name}
                     </span>
                     {orphan && (
@@ -257,25 +264,13 @@ export function RoutineView() {
                   </button>
                 </div>
 
-                <button
-                  onClick={() => removeFromRoutine(selected.id, r.exerciseId)}
-                  aria-label="Quitar"
-                  className="text-[var(--faint2)] hover:text-[var(--destructive)]"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </div>
-
-              {ex && ex.axis.length > 1 && (
-                <div className="mt-2.5 flex items-center gap-2.5">
-                  <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--faint2)]">
-                    NIVEL
-                  </span>
+                {ex && ex.axis.length > 1 ? (
                   <select
                     value={r.variantId ?? defaultVariantId(ex)}
                     onChange={(e) => setRoutineVariant(selected.id, r.exerciseId, e.currentTarget.value)}
                     aria-label="Nivel de intensidad"
-                    className={`${input} h-8 flex-1 appearance-none px-2.5 font-mono text-[11.5px]`}
+                    title="Nivel de intensidad"
+                    className={`${input} h-8 w-[120px] appearance-none px-2 font-mono text-[11px]`}
                   >
                     {ex.axis.map((v) => (
                       <option key={v.id} value={v.id} className="bg-[var(--ink2)]">
@@ -283,83 +278,105 @@ export function RoutineView() {
                       </option>
                     ))}
                   </select>
-                </div>
-              )}
+                ) : (
+                  <span className="w-[120px] flex-none" />
+                )}
+
+                <button
+                  onClick={() => removeFromRoutine(selected.id, r.exerciseId)}
+                  aria-label="Quitar"
+                  className="flex-none text-[var(--faint2)] hover:text-[var(--destructive)]"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Catalog */}
-      <div className="mt-6 flex items-center justify-between">
-        <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
-          AGREGAR EJERCICIO
-        </span>
+      {/* Collapsible add-exercise picker */}
+      <div className="mt-4">
         <button
-          onClick={() => setCreating((v) => !v)}
-          className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--acc)]"
+          onClick={() => setAdding((v) => !v)}
+          className="flex w-full items-center justify-between border border-[var(--rule2)] px-4 py-2.5 hover:border-[var(--fg)]"
         >
-          {creating ? "CANCELAR" : "CREAR PROPIO"}
+          <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--acc)]">
+            <Plus className="size-3.5" /> AGREGAR EJERCICIO
+          </span>
+          <ChevronDown
+            className="size-4 text-[var(--faint2)] transition-transform"
+            style={{ transform: adding ? "rotate(180deg)" : "none" }}
+          />
         </button>
-      </div>
 
-      {creating && <CreateExerciseForm onCreate={handleCreate} />}
-
-      <div className="relative mt-2.5">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--faint2)]" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          placeholder="BUSCAR EJERCICIO…"
-          className={`${input} h-9 w-full pr-3 pl-9 font-mono text-[12px] tracking-[0.04em] placeholder:text-[var(--faint2)]`}
-        />
-      </div>
-
-      {MUSCLE_ORDER.map((m) => {
-        const group = available.filter((e) => e.muscle === m);
-        if (group.length === 0) return null;
-        return (
-          <div key={m} className="mt-3">
-            <div className="font-mono text-[10px] tracking-[0.14em] text-[var(--faint2)]">
-              {MUSCLE_LABEL[m].toUpperCase()}
+        {adding && (
+          <div className="border border-t-0 border-[var(--rule2)] p-3.5">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[var(--faint2)]" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.currentTarget.value)}
+                  placeholder="BUSCAR EJERCICIO…"
+                  className={`${input} h-9 w-full pr-3 pl-9 font-mono text-[12px] tracking-[0.04em] placeholder:text-[var(--faint2)]`}
+                />
+              </div>
+              <button
+                onClick={() => setCreating((v) => !v)}
+                className="flex-none font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--acc)]"
+              >
+                {creating ? "CANCELAR" : "CREAR PROPIO"}
+              </button>
             </div>
-            <div className="mt-1.5 border-t border-[var(--rule)]">
-              {group.map((e) => (
-                <div
-                  key={e.id}
-                  className="flex items-center gap-3 border-b border-[var(--rule)] py-2.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-semibold text-[var(--fg)]">{e.name}</div>
-                    <div className="font-mono text-[10.5px] text-[var(--faint2)]">{e.defaultReps}</div>
+
+            {creating && <CreateExerciseForm onCreate={handleCreate} />}
+
+            {MUSCLE_ORDER.map((m) => {
+              const group = available.filter((e) => e.muscle === m);
+              if (group.length === 0) return null;
+              return (
+                <div key={m} className="mt-3">
+                  <div className="font-mono text-[10px] tracking-[0.14em] text-[var(--faint2)]">
+                    {MUSCLE_LABEL[m].toUpperCase()}
                   </div>
-                  <button
-                    onClick={() =>
-                      addToRoutine(selected.id, {
-                        exerciseId: e.id,
-                        name: e.name,
-                        sets: e.defaultSets,
-                        target: e.defaultReps,
-                        variantId: defaultVariantId(e),
-                      })
-                    }
-                    className="flex items-center gap-1.5 border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
-                    style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
-                  >
-                    <Plus className="size-3.5" /> AGREGAR
-                  </button>
+                  <div className="mt-1.5 border-t border-[var(--rule)]">
+                    {group.map((e) => (
+                      <div key={e.id} className="flex items-center gap-3 border-b border-[var(--rule)] py-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[15px] font-semibold text-[var(--fg)]">{e.name}</div>
+                          <div className="font-mono text-[10.5px] text-[var(--faint2)]">{e.defaultReps}</div>
+                        </div>
+                        <button
+                          onClick={() =>
+                            addToRoutine(selected.id, {
+                              exerciseId: e.id,
+                              name: e.name,
+                              sets: e.defaultSets,
+                              target: e.defaultReps,
+                              variantId: defaultVariantId(e),
+                            })
+                          }
+                          className="flex items-center gap-1.5 border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
+                          style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
+                        >
+                          <Plus className="size-3.5" /> AGREGAR
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+              );
+            })}
 
-      {available.length === 0 && (
-        <p className="mt-3 text-[13px] text-[var(--faint)]">
-          {search ? `No hay ejercicios para "${search}".` : "No quedan ejercicios para agregar."}
-        </p>
-      )}
+            {available.length === 0 && (
+              <p className="mt-3 text-[13px] text-[var(--faint)]">
+                {search ? `No hay ejercicios para "${search}".` : "No quedan ejercicios para agregar."}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -388,7 +405,7 @@ function CreateExerciseForm({
     setEquipment((eq) => (eq.includes(id) ? eq.filter((e) => e !== id) : [...eq, id]));
 
   return (
-    <div className="mt-2.5 flex flex-col gap-3 border border-[var(--rule2)] p-3.5">
+    <div className="mt-3 flex flex-col gap-3 border border-[var(--rule2)] p-3.5">
       <input
         value={name}
         onChange={(e) => setName(e.currentTarget.value)}
@@ -477,31 +494,6 @@ function CreateExerciseForm({
       >
         CREAR Y AGREGAR
       </button>
-    </div>
-  );
-}
-
-function Balance({ balance, total }: { balance: Record<MuscleGroup, number>; total: number }) {
-  return (
-    <div className="mt-3">
-      <div className="flex h-[6px] gap-px">
-        {MUSCLE_ORDER.map((m) =>
-          balance[m] > 0 ? (
-            <div key={m} style={{ width: `${(balance[m] / total) * 100}%`, background: MUSCLE_COLOR[m] }} />
-          ) : null,
-        )}
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-3.5 gap-y-1">
-        {MUSCLE_ORDER.filter((m) => balance[m] > 0).map((m) => (
-          <span
-            key={m}
-            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.08em] text-[var(--faint)]"
-          >
-            <span className="size-2" style={{ background: MUSCLE_COLOR[m] }} />
-            {MUSCLE_LABEL[m].toUpperCase()} · {balance[m]}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }
