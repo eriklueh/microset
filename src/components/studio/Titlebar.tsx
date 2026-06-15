@@ -8,9 +8,8 @@ export function Titlebar() {
       data-tauri-drag-region
       className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--rule2)] bg-[var(--bg)] pr-1.5 pl-3.5 select-none"
     >
-      <div className="pointer-events-none flex items-center gap-2.5">
+      <div className="pointer-events-none flex items-center">
         <div className="size-3.5 bg-[var(--acc)]" />
-        <span className="text-[12.5px] text-[var(--faint)]">microset</span>
       </div>
       <div className="flex items-center gap-0.5">
         <button

@@ -178,7 +178,7 @@ function Shell({ isNow, children }: { isNow: boolean; children: ReactNode }) {
         <div className="pointer-events-none flex items-center gap-1.5">
           <span className="size-2" style={{ background: isNow ? "var(--on)" : "var(--acc)" }} />
           <span
-            className="font-mono text-[9px] font-bold tracking-[0.2em] uppercase"
+            className="font-mono text-[9px] font-bold tracking-[0.2em]"
             style={{ color: isNow ? "var(--on)" : "var(--faint)" }}
           >
             microset

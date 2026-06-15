@@ -70,7 +70,7 @@ export function Toast() {
       >
         <div className="pointer-events-none flex items-center gap-1.5">
           <span className="size-2 bg-[var(--acc)]" />
-          <span className="font-mono text-[9px] font-bold tracking-[0.2em] text-[var(--faint)] uppercase">
+          <span className="font-mono text-[9px] font-bold tracking-[0.2em] text-[var(--faint)]">
             microset
           </span>
         </div>
