@@ -26,6 +26,7 @@ import {
 } from "@/domain/seed";
 import { methodologyById } from "@/domain/methodologies";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
+import { detectLang, type Lang } from "@/lib/strings";
 import { setPanelVisible } from "@/lib/windows";
 
 /** A named routine template that can be assigned to weekdays. */
@@ -119,6 +120,7 @@ interface State {
   settings: Settings;
   day: DayPlan | null;
   theme: ThemeConfig;
+  lang: Lang;
   logs: LogEntry[];
   methodologyId: string;
   toastBlockId: string | null; // block currently shown in the toast window
@@ -167,6 +169,9 @@ interface State {
   // theme
   setThemeMode: (mode: ThemeMode) => void;
   setAccent: (accent: Accent) => void;
+
+  // language
+  setLang: (lang: Lang) => void;
 
   // preferences setters
   setPanelEnabled: (value: boolean) => void;
@@ -221,6 +226,7 @@ export const useStore = create<State>()(
       settings: DEFAULT_SETTINGS,
       day: null,
       theme: DEFAULT_THEME,
+      lang: detectLang(),
       logs: [],
       methodologyId: DEFAULT_METHODOLOGY,
       toastBlockId: null,
@@ -398,6 +404,11 @@ export const useStore = create<State>()(
         applyTheme(t.mode, t.accent);
       },
 
+      setLang: (lang) => {
+        set({ lang });
+        if (typeof document !== "undefined") document.documentElement.lang = lang;
+      },
+
       setPanelEnabled: (value) => {
         set({ panelEnabled: value });
         void setPanelVisible(value);
@@ -428,6 +439,7 @@ export const useStore = create<State>()(
           customEquipment: [],
           settings: DEFAULT_SETTINGS,
           theme: DEFAULT_THEME,
+          lang: detectLang(),
           logs: [],
           methodologyId: DEFAULT_METHODOLOGY,
           toastBlockId: null,
@@ -551,6 +563,7 @@ export const useStore = create<State>()(
         settings: s.settings,
         day: s.day,
         theme: s.theme,
+        lang: s.lang,
         logs: s.logs,
         methodologyId: s.methodologyId,
         toastBlockId: s.toastBlockId,

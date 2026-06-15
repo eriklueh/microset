@@ -1,5 +1,6 @@
 import { ArrowUp, X } from "lucide-react";
 import { useUpdater } from "@/hooks/useUpdater";
+import { useT } from "@/lib/i18n";
 
 /**
  * Manifiesto update prompt. Renders only when a newer signed release is found.
@@ -8,6 +9,7 @@ import { useUpdater } from "@/hooks/useUpdater";
  */
 export function UpdateBanner() {
   const u = useUpdater();
+  const t = useT();
   if (!u.available) return null;
 
   const busy = u.phase === "downloading";
@@ -20,7 +22,7 @@ export function UpdateBanner() {
         <div className="flex items-center gap-1.5">
           <ArrowUp className="size-3.5 text-[var(--acc)]" strokeWidth={3} />
           <span className="font-mono text-[9.5px] font-semibold tracking-[0.2em] text-[var(--acc)]">
-            ACTUALIZACIÓN
+            {t.update.label}
           </span>
         </div>
         {!busy && (
@@ -36,14 +38,10 @@ export function UpdateBanner() {
 
       <div className="px-4 pb-3.5">
         <div className="text-[15px] leading-tight font-extrabold tracking-[-0.01em]">
-          Nueva versión {u.version}
+          {t.update.newVersion} {u.version}
         </div>
         <div className="mt-1 font-mono text-[10px] tracking-[0.04em] text-[var(--faint)]">
-          {failed
-            ? "FALLÓ LA DESCARGA — REINTENTÁ"
-            : busy
-              ? `DESCARGANDO ${u.pct}%`
-              : "LISTA PARA INSTALAR"}
+          {failed ? t.update.failed : busy ? `${t.update.downloading} ${u.pct}%` : t.update.ready}
         </div>
 
         {busy ? (
@@ -57,7 +55,7 @@ export function UpdateBanner() {
             className="mt-3 flex w-full items-center justify-center gap-1.5 bg-[var(--acc)] py-2 font-mono text-[11px] font-bold tracking-[0.06em] text-[var(--on)] hover:opacity-90"
           >
             <ArrowUp className="size-3.5" strokeWidth={3} />
-            {failed ? "REINTENTAR" : "ACTUALIZAR Y REINICIAR"}
+            {failed ? t.update.retry : t.update.install}
           </button>
         )}
       </div>

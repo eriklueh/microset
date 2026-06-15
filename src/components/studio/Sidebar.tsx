@@ -1,4 +1,5 @@
 import { resolveDark } from "@/lib/theme";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 
 export type Section =
@@ -10,14 +11,7 @@ export type Section =
   | "progress"
   | "settings";
 
-const NAV: { id: Section; label: string }[] = [
-  { id: "coach", label: "COACH" },
-  { id: "today", label: "HOY" },
-  { id: "routine", label: "RUTINA" },
-  { id: "week", label: "SEMANA" },
-  { id: "equipment", label: "EQUIPO" },
-  { id: "progress", label: "PROGRESO" },
-];
+const NAV_IDS = ["coach", "today", "routine", "week", "equipment", "progress"] as const;
 
 const rowBase =
   "flex w-full items-center gap-3 px-[18px] py-[13px] text-left transition-colors";
@@ -32,6 +26,7 @@ export function Sidebar({
   const theme = useStore((s) => s.theme);
   const setThemeMode = useStore((s) => s.setThemeMode);
   const isDark = resolveDark(theme.mode);
+  const t = useT();
 
   return (
     <aside className="flex w-[210px] shrink-0 flex-col border-r border-[var(--rule2)] bg-[var(--bg)]">
@@ -45,12 +40,12 @@ export function Sidebar({
       </div>
 
       <nav className="flex flex-col">
-        {NAV.map((item, i) => {
-          const on = active === item.id;
+        {NAV_IDS.map((id, i) => {
+          const on = active === id;
           return (
             <button
-              key={item.id}
-              onClick={() => onSelect(item.id)}
+              key={id}
+              onClick={() => onSelect(id)}
               className={`${rowBase} border-t border-[var(--rule)] ${
                 on ? "bg-[var(--acc)] text-[var(--on)]" : "text-[var(--dim)] hover:text-[var(--fg)]"
               }`}
@@ -59,7 +54,7 @@ export function Sidebar({
                 {`0${i + 1}`}
               </span>
               <span className="font-mono text-[12.5px] font-semibold tracking-[0.08em]">
-                {item.label}
+                {t.nav[id]}
               </span>
             </button>
           );
@@ -80,7 +75,7 @@ export function Sidebar({
           <span className={`font-mono text-[10px] ${active === "settings" ? "text-[var(--on)] opacity-60" : "text-[var(--faint2)]"}`}>
             07
           </span>
-          <span className="font-mono text-[12.5px] font-semibold tracking-[0.08em]">AJUSTES</span>
+          <span className="font-mono text-[12.5px] font-semibold tracking-[0.08em]">{t.nav.settings}</span>
         </button>
         <button
           onClick={() => setThemeMode(isDark ? "light" : "dark")}
@@ -88,7 +83,7 @@ export function Sidebar({
         >
           <span className="font-mono text-[10px] text-[var(--faint2)]">◐</span>
           <span className="font-mono text-[12.5px] font-semibold tracking-[0.08em]">
-            {isDark ? "TEMA CLARO" : "TEMA OSCURO"}
+            {isDark ? t.nav.themeLight : t.nav.themeDark}
           </span>
         </button>
       </div>

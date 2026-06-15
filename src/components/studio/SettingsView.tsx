@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ACCENTS, THEME_MODES } from "@/lib/theme";
 import { openConfigFolder } from "@/lib/windows";
 import { reloadFromFiles } from "@/store/files";
+import { useT, LangSelect } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
 import { SquareSwitch } from "./EquipmentView";
@@ -31,14 +32,20 @@ export function SettingsView() {
   const replan = useStore((s) => s.replan);
   const resetSettings = useStore((s) => s.resetSettings);
   const resetAll = useStore((s) => s.resetAll);
+  const t = useT();
   const lunch = settings.avoidWindows[0];
+  const modeLabel: Record<string, string> = {
+    light: t.settings.modeLight,
+    dark: t.settings.modeDark,
+    system: t.settings.modeSystem,
+  };
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="AJUSTES" sub="CONFIGURACIÓN" />
+      <Masthead title={t.settings.title} sub={t.settings.sub} />
 
-      <Section title="APARIENCIA">
-        <Row label="Tema">
+      <Section title={t.settings.appearance}>
+        <Row label={t.settings.theme}>
           <div className="flex">
             {THEME_MODES.map((m, i) => {
               const on = theme.mode === m.id;
@@ -56,13 +63,13 @@ export function SettingsView() {
                     position: "relative",
                   }}
                 >
-                  {m.label.toUpperCase()}
+                  {(modeLabel[m.id] ?? m.label).toUpperCase()}
                 </button>
               );
             })}
           </div>
         </Row>
-        <Row label="Acento">
+        <Row label={t.settings.accent}>
           <div className="flex gap-2">
             {ACCENTS.map((a) => (
               <button
@@ -79,32 +86,35 @@ export function SettingsView() {
             ))}
           </div>
         </Row>
+        <Row label={t.settings.languageLabel}>
+          <LangSelect />
+        </Row>
       </Section>
 
-      <Section title="PANEL FLOTANTE">
-        <Row label="Mostrar panel" hint="Mini-ventana siempre visible con el próximo ejercicio.">
+      <Section title={t.settings.panelSection}>
+        <Row label={t.settings.showPanel} hint={t.settings.showPanelHint}>
           <SquareSwitch on={panelEnabled} onClick={() => setPanelEnabled(!panelEnabled)} />
         </Row>
       </Section>
 
-      <Section title="NOTIFICACIONES">
-        <Row label="Avisos de microset" hint="Te avisa cuando toca una serie.">
+      <Section title={t.settings.notifications}>
+        <Row label={t.settings.notifLabel} hint={t.settings.notifHint}>
           <SquareSwitch
             on={notificationsEnabled}
             onClick={() => setNotificationsEnabled(!notificationsEnabled)}
           />
         </Row>
-        <Row label="Tiempo de posponer">
+        <Row label={t.settings.snoozeLabel}>
           <div className="w-24">
             <NumberInput value={snoozeMinutes} suffix="min" min={5} max={120} step={5} onChange={setSnoozeMinutes} />
           </div>
         </Row>
       </Section>
 
-      <Section title="HORARIO LABORAL">
+      <Section title={t.settings.work}>
         <div className="grid grid-cols-2 gap-3">
           <Field
-            label="Inicio"
+            label={t.settings.start}
             suffix="h"
             value={toHour(settings.workWindow.start)}
             min={0}
@@ -112,7 +122,7 @@ export function SettingsView() {
             onChange={(h) => setSettings({ workWindow: { ...settings.workWindow, start: h * 60 } })}
           />
           <Field
-            label="Fin"
+            label={t.settings.end}
             suffix="h"
             value={toHour(settings.workWindow.end)}
             min={1}
@@ -122,10 +132,10 @@ export function SettingsView() {
         </div>
       </Section>
 
-      <Section title="ALMUERZO">
+      <Section title={t.settings.lunch}>
         <div className="grid grid-cols-2 gap-3">
           <Field
-            label="Desde"
+            label={t.settings.from}
             suffix="h"
             value={lunch ? toHour(lunch.start) : 13}
             min={0}
@@ -133,7 +143,7 @@ export function SettingsView() {
             onChange={(h) => setSettings({ avoidWindows: [{ start: h * 60, end: lunch?.end ?? 14 * 60 }] })}
           />
           <Field
-            label="Hasta"
+            label={t.settings.to}
             suffix="h"
             value={lunch ? toHour(lunch.end) : 14}
             min={1}
@@ -143,9 +153,9 @@ export function SettingsView() {
         </div>
       </Section>
 
-      <Section title="DESCANSO MÍNIMO">
+      <Section title={t.settings.minRest}>
         <Field
-          label="Entre series"
+          label={t.settings.between}
           suffix="min"
           value={settings.minRest}
           min={5}
@@ -155,8 +165,8 @@ export function SettingsView() {
         />
       </Section>
 
-      <Section title="COACH">
-        <Row label="Proveedor">
+      <Section title={t.settings.coach}>
+        <Row label={t.settings.provider}>
           <div className="flex">
             {(["anthropic", "local"] as const).map((p, i) => {
               const on = coach.provider === p;
@@ -180,63 +190,63 @@ export function SettingsView() {
             })}
           </div>
         </Row>
-        <Row label="Modelo" hint={coach.provider === "local" ? undefined : "Necesita ANTHROPIC_API_KEY en el entorno."}>
+        <Row label={t.settings.model} hint={coach.provider === "local" ? undefined : t.settings.modelHint}>
           <input
             value={coach.model}
             onChange={(e) => setCoachConfig({ model: e.currentTarget.value })}
-            aria-label="Modelo"
+            aria-label={t.settings.model}
             className={`${input} h-9 w-[200px] px-2.5 font-mono text-[12px]`}
           />
         </Row>
         {coach.provider === "local" && (
-          <Row label="Endpoint" hint="OpenAI-compatible (Ollama / LM Studio).">
+          <Row label={t.settings.endpoint} hint={t.settings.endpointHint}>
             <input
               value={coach.endpoint}
               onChange={(e) => setCoachConfig({ endpoint: e.currentTarget.value })}
-              aria-label="Endpoint"
+              aria-label={t.settings.endpoint}
               className={`${input} h-9 w-[230px] px-2.5 font-mono text-[12px]`}
             />
           </Row>
         )}
-        <ProfileField label="OBJETIVOS" value={profile.goals} onChange={(v) => setProfile({ goals: v })} placeholder="Ej: mi primer muscle-up, 12 dominadas, bajar grasa…" />
-        <ProfileField label="DIETA" value={profile.diet} onChange={(v) => setProfile({ diet: v })} placeholder="Ej: superávit leve, ~140 g de proteína…" />
-        <ProfileField label="RESTRICCIONES" value={profile.constraints} onChange={(v) => setProfile({ constraints: v })} placeholder="Ej: molestia en hombro derecho, sin saltos…" />
+        <ProfileField label={t.settings.goals} value={profile.goals} onChange={(v) => setProfile({ goals: v })} placeholder={t.settings.goalsPh} />
+        <ProfileField label={t.settings.diet} value={profile.diet} onChange={(v) => setProfile({ diet: v })} placeholder={t.settings.dietPh} />
+        <ProfileField label={t.settings.constraints} value={profile.constraints} onChange={(v) => setProfile({ constraints: v })} placeholder={t.settings.constraintsPh} />
       </Section>
 
-      <Section title="MODO DEMO">
-        <Row label="Activar modo demo" hint="Agenda series desde ahora, ignorando tu horario, para probar la app.">
+      <Section title={t.settings.demo}>
+        <Row label={t.settings.demoLabel} hint={t.settings.demoHint}>
           <SquareSwitch on={demoMode} onClick={() => setDemoMode(!demoMode)} />
         </Row>
       </Section>
 
-      <Section title="DATOS">
-        <Row label="Carpeta de config" hint="Tus JSON editables: rutina, equipo, perfil, logs.">
+      <Section title={t.settings.data}>
+        <Row label={t.settings.configFolder} hint={t.settings.configFolderHint}>
           <button className={dataBtn} onClick={() => void openConfigFolder()}>
-            ABRIR CARPETA
+            {t.settings.openFolder}
           </button>
         </Row>
-        <Row label="Recargar desde archivos" hint="Re-lee la config de los archivos al instante.">
+        <Row label={t.settings.reload} hint={t.settings.reloadHint}>
           <button className={dataBtn} onClick={() => void reloadFromFiles()}>
-            RECARGAR
+            {t.settings.reloadBtn}
           </button>
         </Row>
-        <Row label="Replanificar hoy" hint="Vuelve a repartir las series desde ahora.">
+        <Row label={t.settings.replan} hint={t.settings.replanHint}>
           <button className={dataBtn} onClick={replan}>
-            REPLANIFICAR
+            {t.settings.replanBtn}
           </button>
         </Row>
-        <Row label="Restablecer ajustes" hint="Horario, almuerzo y descanso a sus valores iniciales.">
+        <Row label={t.settings.resetSettings} hint={t.settings.resetSettingsHint}>
           <button className={dataBtn} onClick={resetSettings}>
-            RESTABLECER
+            {t.settings.resetBtn}
           </button>
         </Row>
-        <Row label="Restablecer todo" hint="Borra rutina, equipo y registros. Vuelve de fábrica.">
+        <Row label={t.settings.resetAll} hint={t.settings.resetAllHint}>
           <button
             className="border px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.06em]"
             style={{ borderColor: "var(--destructive)", color: "var(--destructive)" }}
             onClick={resetAll}
           >
-            RESTABLECER TODO
+            {t.settings.resetAllBtn}
           </button>
         </Row>
       </Section>

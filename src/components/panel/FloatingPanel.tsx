@@ -2,8 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Check, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { variantLabel } from "@/domain/seed";
-import { MUSCLE_LABEL } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
+import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
 
 /** Surface the quick actions only when the set is due or this many minutes away. */
@@ -24,6 +24,7 @@ export function FloatingPanel() {
   const decline = useStore((s) => s.decline);
   const ensureToday = useStore((s) => s.ensureToday);
   const { byId } = useCatalog();
+  const t = useT();
   const [now, setNow] = useState(nowMinutes());
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function FloatingPanel() {
         <div className="flex flex-1 flex-col items-center justify-center gap-1.5">
           <span className="size-2 bg-[var(--faint2)]" />
           <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--faint)] uppercase">
-            Sin series
+            {t.panel.noSets}
           </span>
         </div>
       </Shell>
@@ -55,9 +56,9 @@ export function FloatingPanel() {
   const soon = eta > 0 && eta <= ACTION_THRESHOLD_MIN;
 
   const ex = byId(next.exerciseId);
-  const muscle = ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : "";
+  const muscle = ex ? t.muscle[ex.muscle].toUpperCase() : "";
   const reps = next.target ?? ex?.defaultReps ?? "";
-  const caption = [reps ? `${reps} REPS` : "", variantLabel(next.exerciseId, next.variantId).toUpperCase()]
+  const caption = [reps ? `${reps} ${t.panel.reps}` : "", variantLabel(next.exerciseId, next.variantId).toUpperCase()]
     .filter(Boolean)
     .join(" · ");
 
@@ -66,7 +67,7 @@ export function FloatingPanel() {
     return (
       <Shell isNow>
         <div className="flex flex-1 flex-col gap-1 p-2.5">
-          <span className="font-mono text-[9px] font-bold tracking-[0.22em]">AHORA</span>
+          <span className="font-mono text-[9px] font-bold tracking-[0.22em]">{t.panel.now}</span>
           <span className="truncate text-[22px] leading-[0.95] font-extrabold tracking-[-0.02em] uppercase">
             {next.name}
           </span>
@@ -78,14 +79,14 @@ export function FloatingPanel() {
               onClick={() => done(next.id)}
               className="flex flex-1 items-center justify-center gap-1 bg-[var(--on)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--acc)]"
             >
-              <Check className="size-3" strokeWidth={3} /> HECHO
+              <Check className="size-3" strokeWidth={3} /> {t.panel.done}
             </button>
             <button
               onClick={() => decline(next.id)}
               className="border px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--on)]"
               style={{ borderColor: BLACK_A(0.4) }}
             >
-              AHORA NO
+              {t.panel.notNow}
             </button>
           </div>
         </div>
@@ -97,7 +98,7 @@ export function FloatingPanel() {
   const h = Math.floor(eta / 60);
   const m = eta % 60;
   const heroNum = eta < 60 ? String(eta) : `${h}:${String(m).padStart(2, "0")}`;
-  const heroUnit = eta < 60 ? "MIN" : "H";
+  const heroUnit = eta < 60 ? t.panel.min : t.panel.h;
 
   // Proximity hairline: fill from the previous set's time to this one.
   const prevTime = Math.max(
@@ -111,7 +112,7 @@ export function FloatingPanel() {
     <Shell isNow={false}>
       <div className="flex flex-1 flex-col gap-1 p-2.5">
         <span className="font-mono text-[8.5px] font-semibold tracking-[0.18em] text-[var(--faint)]">
-          PRÓXIMA{muscle ? ` · ${muscle}` : ""}
+          {t.panel.next}{muscle ? ` · ${muscle}` : ""}
         </span>
         <div className="flex items-baseline gap-1.5">
           <span
@@ -139,13 +140,13 @@ export function FloatingPanel() {
               onClick={() => done(next.id)}
               className="flex flex-1 items-center justify-center gap-1 bg-[var(--acc)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--on)]"
             >
-              <Check className="size-3" strokeWidth={3} /> HECHO
+              <Check className="size-3" strokeWidth={3} /> {t.panel.done}
             </button>
             <button
               onClick={() => decline(next.id)}
               className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
             >
-              AHORA NO
+              {t.panel.notNow}
             </button>
           </div>
         ) : (

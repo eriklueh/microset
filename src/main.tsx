@@ -23,6 +23,7 @@ document.documentElement.classList.add(
 // Apply persisted theme before first paint and keep it in sync with the OS.
 const { mode, accent } = useStore.getState().theme;
 applyTheme(mode, accent);
+document.documentElement.lang = useStore.getState().lang;
 watchSystemTheme(
   () => useStore.getState().theme.mode,
   () => useStore.getState().theme.accent,

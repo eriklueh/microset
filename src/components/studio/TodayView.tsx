@@ -3,11 +3,10 @@ import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import type { Block, Settings } from "@/lib/engine";
 import { exerciseContext, variantLabel } from "@/domain/seed";
-import { MUSCLE_LABEL } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
+import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
 
-const DOW = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const hh = (min: number) => pad(Math.round(min / 60));
 const NEXT_BG = "color-mix(in oklch, var(--acc) 5%, transparent)";
@@ -21,6 +20,7 @@ export function TodayView() {
   const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
   const { byId } = useCatalog();
+  const t = useT();
   const [now, setNow] = useState(nowMinutes());
 
   useEffect(() => {
@@ -29,18 +29,18 @@ export function TodayView() {
   }, []);
 
   if (!day) return null;
-  const weekday = DOW[(new Date().getDay() + 6) % 7];
+  const weekday = t.today.weekdays[(new Date().getDay() + 6) % 7];
 
   if (day.rest) {
     return (
       <div className="flex flex-col px-[34px] py-[30px]">
-        <Mast weekday={weekday} dayType="DESCANSO" settings={settings} done={0} total={0} pct={0} />
+        <Mast weekday={weekday} dayType={t.today.rest} settings={settings} done={0} total={0} pct={0} />
         <div className="mt-2 border border-[var(--rule2)] p-10 text-center">
           <div className="text-[34px] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
-            Día de descanso
+            {t.today.restTitle}
           </div>
           <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)] uppercase">
-            Hoy toca recuperar · mañana seguimos
+            {t.today.restSub}
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@ export function TodayView() {
 
   const muscleOf = (b: Block) => {
     const ex = byId(b.exerciseId);
-    return ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : "";
+    return ex ? t.muscle[ex.muscle].toUpperCase() : "";
   };
   const repsOf = (b: Block) => b.target ?? byId(b.exerciseId)?.defaultReps ?? "";
 
@@ -66,12 +66,12 @@ export function TodayView() {
   const heroH = Math.floor(Math.max(eta, 0) / 60);
   const heroM = Math.max(eta, 0) % 60;
   const heroNum = eta < 60 ? String(Math.max(eta, 0)) : `${heroH}:${String(heroM).padStart(2, "0")}`;
-  const heroUnit = eta < 60 ? "MIN" : "H";
+  const heroIsMin = eta < 60;
   const nextEx = next ? byId(next.exerciseId) : undefined;
   const nextMeta = next
     ? [
-        nextEx && exerciseContext(nextEx) === "desk" ? "DE ESCRITORIO" : "",
-        `${repsOf(next)} REPS`,
+        nextEx && exerciseContext(nextEx) === "desk" ? t.context.desk.toUpperCase() : "",
+        `${repsOf(next)} ${t.today.reps}`,
         variantLabel(next.exerciseId, next.variantId).toUpperCase(),
       ]
         .filter(Boolean)
@@ -94,7 +94,7 @@ export function TodayView() {
           <div className="flex items-center justify-between gap-6 bg-[var(--acc)] px-[26px] py-[22px] text-[var(--on)]">
             <div className="min-w-0">
               <div className="font-mono text-[11px] font-semibold tracking-[0.2em]">
-                {isDue ? "AHORA" : `EN ${eta} MIN`} — {formatMinute(next.time)}
+                {isDue ? t.today.now : `${t.today.in} ${eta} ${t.today.min}`} — {formatMinute(next.time)}
               </div>
               <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
                 {next.name}
@@ -108,21 +108,21 @@ export function TodayView() {
                 onClick={() => done(next.id)}
                 className="flex items-center justify-center gap-2 bg-[var(--on)] px-[26px] py-[13px] font-mono text-[13px] font-semibold tracking-[0.08em] text-[var(--acc)]"
               >
-                <Check className="size-4" strokeWidth={3} /> HECHO
+                <Check className="size-4" strokeWidth={3} /> {t.today.done}
               </button>
               <div className="flex gap-2">
                 <button
                   onClick={() => snooze(next.id, 30)}
                   className="flex-1 border-2 border-[var(--on)] px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
                 >
-                  POSPONER
+                  {t.today.snooze}
                 </button>
                 <button
                   onClick={() => decline(next.id)}
                   className="flex-1 border-2 px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
                   style={{ borderColor: "rgba(10,10,10,0.35)" }}
                 >
-                  AHORA NO
+                  {t.today.notNow}
                 </button>
               </div>
             </div>
@@ -134,7 +134,7 @@ export function TodayView() {
           >
             <div className="min-w-0">
               <div className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[var(--faint)]">
-                PRÓXIMA — {formatMinute(next.time)}
+                {t.today.next} — {formatMinute(next.time)}
               </div>
               <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
                 {next.name}
@@ -148,22 +148,20 @@ export function TodayView() {
                 {heroNum}
               </div>
               <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
-                {heroUnit === "MIN" ? "MINUTOS" : "HORAS"}
+                {heroIsMin ? t.today.minutes : t.today.hours}
               </div>
             </div>
           </div>
         )
       ) : (
         <div className="border border-[var(--rule2)] p-5 font-mono text-[12px] tracking-[0.04em] text-[var(--faint)]">
-          {total > 0
-            ? "FUERA DE HORARIO · MAÑANA SE REPARTEN DE NUEVO"
-            : "SIN EJERCICIOS — ARMÁ TU RUTINA"}
+          {total > 0 ? t.today.outOfHours : t.today.noRoutine}
         </div>
       )}
 
       <div className="mt-[26px] flex items-center justify-between">
         <span className="font-mono text-[11px] font-semibold tracking-[0.18em] text-[var(--faint)]">
-          EL DÍA — {total} SERIES
+          {t.today.theDay} — {total} {t.today.sets}
         </span>
       </div>
       <div className="mt-3 h-px bg-[var(--rule2)]" />
@@ -197,12 +195,13 @@ function Mast({
   total: number;
   pct: number;
 }) {
+  const t = useT();
   return (
     <>
       <div className="flex items-end justify-between gap-5">
         <div>
           <h2 className="text-[68px] leading-[0.82] font-extrabold tracking-[-0.05em] text-[var(--fg)]">
-            HOY
+            {t.today.title}
           </h2>
           <div className="mt-3.5 font-mono text-[10.5px] tracking-[0.12em] text-[var(--faint)]">
             {[weekday, dayType, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`]
@@ -216,7 +215,7 @@ function Mast({
             <span className="text-[var(--faint2)]">/{pad(total)}</span>
           </div>
           <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
-            SERIES HECHAS
+            {t.today.setsDone}
           </div>
         </div>
       </div>
@@ -244,15 +243,16 @@ function DayRow({
   muscle: string;
   reps: string;
 }) {
+  const t = useT();
   const isDone = block.status === "done";
   const skip = block.status === "skipped";
   const unsched = block.time < 0;
-  let status = "PENDIENTE";
+  let status = t.today.stPending;
   let statusColor = "var(--faint)";
-  if (isDone) [status, statusColor] = ["HECHO", "var(--faint2)"];
-  else if (skip) [status, statusColor] = ["SALTADO", "var(--faint2)"];
-  else if (isNext) [status, statusColor] = [nextDue ? "AHORA" : "PRÓXIMA", "var(--acc)"];
-  else if (unsched) [status, statusColor] = ["NO ENTRA", "var(--faint2)"];
+  if (isDone) [status, statusColor] = [t.today.stDone, "var(--faint2)"];
+  else if (skip) [status, statusColor] = [t.today.stSkipped, "var(--faint2)"];
+  else if (isNext) [status, statusColor] = [nextDue ? t.today.stNow : t.today.stNext, "var(--acc)"];
+  else if (unsched) [status, statusColor] = [t.today.stWontFit, "var(--faint2)"];
 
   return (
     <div

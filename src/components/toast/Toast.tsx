@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import { exerciseContext, variantLabel } from "@/domain/seed";
-import { MUSCLE_LABEL } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { closeToastWindow, openToastWindow } from "@/lib/windows";
 
@@ -26,6 +26,7 @@ export function Toast() {
   const dismissToast = useStore((s) => s.dismissToast);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const { byId } = useCatalog();
+  const t = useT();
 
   const block = day?.blocks.find(
     (b) => b.id === toastBlockId && b.status !== "done" && b.status !== "skipped",
@@ -45,11 +46,11 @@ export function Toast() {
 
   const ex = byId(block.exerciseId);
   const desk = ex ? exerciseContext(ex) === "desk" : false;
-  const muscle = ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : "";
+  const muscle = ex ? t.muscle[ex.muscle].toUpperCase() : "";
   const reps = block.target ?? ex?.defaultReps ?? "";
   const meta = [
-    desk ? "ESCRITORIO" : muscle,
-    reps ? `${reps} REPS` : "",
+    desk ? t.context.desk.toUpperCase() : muscle,
+    reps ? `${reps} ${t.toast.reps}` : "",
     variantLabel(block.exerciseId, block.variantId).toUpperCase(),
   ]
     .filter(Boolean)
@@ -85,7 +86,7 @@ export function Toast() {
 
       <div className="flex flex-1 flex-col gap-0.5 py-1.5 pr-3 pl-3.5">
         <div className="font-mono text-[9px] font-semibold tracking-[0.2em] text-[var(--acc)]">
-          AHORA · {formatMinute(block.time)}
+          {t.toast.now} · {formatMinute(block.time)}
         </div>
         <div className="truncate text-[24px] leading-[0.95] font-extrabold tracking-[-0.02em] uppercase">
           {block.name}
@@ -101,19 +102,19 @@ export function Toast() {
             onClick={() => act(done)}
             className="flex flex-1 items-center justify-center gap-1 bg-[var(--acc)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--on)]"
           >
-            <Check className="size-3" strokeWidth={3} /> HECHO
+            <Check className="size-3" strokeWidth={3} /> {t.toast.done}
           </button>
           <button
             onClick={() => act((id) => snooze(id, snoozeMinutes))}
             className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
           >
-            POSPONER
+            {t.toast.snooze}
           </button>
           <button
             onClick={() => act(decline)}
             className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
           >
-            AHORA NO
+            {t.toast.notNow}
           </button>
         </div>
       </div>
