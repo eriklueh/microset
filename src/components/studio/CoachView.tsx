@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Check, Plus, Trash2 } from "lucide-react";
-import { listCoachSessions, openCoach } from "@/lib/windows";
+import { listCoachSessions, openCoach, type CoachSession } from "@/lib/windows";
 import { useStore } from "@/store/useStore";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
@@ -22,6 +22,14 @@ const STARTERS = [
 ];
 const nowISO = () => new Date().toISOString();
 
+type Thread = {
+  id: string;
+  title: string;
+  updatedAt: string;
+  source: "app" | "claude-code";
+  cwd?: string;
+};
+
 export function CoachView({ onSettings }: { onSettings: () => void }) {
   const coach = useStore((s) => s.coach);
   const dayTypes = useStore((s) => s.dayTypes);
@@ -32,7 +40,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
   const snap = useMemo(() => coachSnapshot(), [dayTypes, week, logs, settings, owned]);
 
   const [convos, setConvos] = useState<ConversationMeta[]>([]);
-  const [ccSessions, setCcSessions] = useState<ConversationMeta[]>([]);
+  const [ccSessions, setCcSessions] = useState<CoachSession[]>([]);
   const [conv, setConv] = useState<Conversation | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,25 +48,27 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
   const [pending, setPending] = useState<ProposedChange[] | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const refresh = () => {
-    void listConversations().then(setConvos);
-    void listCoachSessions().then((cc) =>
-      setCcSessions(
-        cc.map((s) => ({
-          id: s.id,
-          title: s.title,
-          updatedAt: s.updatedAt,
-          messageCount: s.messageCount,
-          source: "claude-code" as const,
-        })),
-      ),
-    );
-  };
+  const refresh = () => void listConversations().then(setConvos);
   useEffect(refresh, []);
-  const threads = useMemo(
-    () => [...convos, ...ccSessions].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
-    [convos, ccSessions],
-  );
+  useEffect(() => {
+    void listCoachSessions().then(setCcSessions);
+  }, []);
+  const threads = useMemo<Thread[]>(() => {
+    const app: Thread[] = convos.map((c) => ({
+      id: c.id,
+      title: c.title,
+      updatedAt: c.updatedAt,
+      source: "app",
+    }));
+    const cc: Thread[] = ccSessions.map((s) => ({
+      id: s.id,
+      title: s.title,
+      updatedAt: s.updatedAt,
+      source: "claude-code",
+      cwd: s.cwd,
+    }));
+    return [...app, ...cc].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  }, [convos, ccSessions]);
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [conv?.messages.length, pending, busy]);
@@ -239,7 +249,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
               return (
                 <button
                   key={`${c.source}-${c.id}`}
-                  onClick={() => (isCC ? void openCoach(c.id) : void openConv(c.id))}
+                  onClick={() => (isCC ? void openCoach(c.id, c.cwd) : void openConv(c.id))}
                   title={isCC ? "Retomar en Claude Code" : undefined}
                   className="group flex items-center gap-1.5 border-b border-[var(--rule)] px-3 py-2.5 text-left"
                   style={{ background: active ? "var(--bar0)" : "transparent" }}

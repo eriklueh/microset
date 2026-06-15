@@ -215,13 +215,21 @@ async fn coach_complete_openai(
 /// Open a terminal running Claude Code in the config folder (the coach workspace).
 /// With `session`, resumes that Claude Code session (`claude --resume <id>`).
 #[tauri::command]
-fn open_coach(app: tauri::AppHandle, session: Option<String>) -> Result<(), String> {
-    let dir = app
-        .path()
-        .app_config_dir()
-        .map_err(|e| e.to_string())?
-        .to_string_lossy()
-        .to_string();
+fn open_coach(
+    app: tauri::AppHandle,
+    session: Option<String>,
+    cwd: Option<String>,
+) -> Result<(), String> {
+    // Resume runs in the session's own cwd; otherwise the config workspace.
+    let dir = match cwd {
+        Some(d) if !d.is_empty() => d,
+        _ => app
+            .path()
+            .app_config_dir()
+            .map_err(|e| e.to_string())?
+            .to_string_lossy()
+            .to_string(),
+    };
 
     let claude = match session.as_deref() {
         Some(id) if !id.is_empty() => format!("claude --resume {id}"),
@@ -254,81 +262,98 @@ struct CoachSession {
     title: String,
     updated_at: String,
     message_count: u32,
+    cwd: String,
 }
 
-/// List the Claude Code sessions run in the config-folder workspace (read-only).
-/// Transcripts live in ~/.claude/projects/<cwd-encoded>/*.jsonl. Best-effort:
+fn parse_session(path: &std::path::Path) -> Option<CoachSession> {
+    if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
+        return None;
+    }
+    let id = path.file_stem()?.to_str()?.to_string();
+    let content = std::fs::read_to_string(path).ok()?;
+    let mut title = String::new();
+    let mut first_user = String::new();
+    let mut updated_at = String::new();
+    let mut cwd = String::new();
+    let mut count: u32 = 0;
+    for line in content.lines() {
+        let v: serde_json::Value = match serde_json::from_str(line) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        if cwd.is_empty() {
+            if let Some(c) = v.get("cwd").and_then(|x| x.as_str()) {
+                cwd = c.to_string();
+            }
+        }
+        match v.get("type").and_then(|t| t.as_str()).unwrap_or("") {
+            "ai-title" => {
+                if let Some(s) = v.get("aiTitle").and_then(|x| x.as_str()) {
+                    title = s.to_string();
+                }
+            }
+            "user" | "assistant" => {
+                count += 1;
+                if let Some(ts) = v.get("timestamp").and_then(|x| x.as_str()) {
+                    updated_at = ts.to_string();
+                }
+                if first_user.is_empty() {
+                    if let Some(c) = v
+                        .get("message")
+                        .and_then(|m| m.get("content"))
+                        .and_then(|c| c.as_str())
+                    {
+                        first_user = c.chars().take(48).collect();
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    if count == 0 {
+        return None;
+    }
+    let title = if !title.is_empty() {
+        title
+    } else if !first_user.is_empty() {
+        first_user
+    } else {
+        "Sesión Claude Code".to_string()
+    };
+    Some(CoachSession { id, title, updated_at, message_count: count, cwd })
+}
+
+/// List the Claude Code sessions run in any microset project folder (read-only).
+/// Transcripts live in ~/.claude/projects/<cwd-encoded>/*.jsonl; we scan folders
+/// whose name mentions "microset" (config workspace, repo, src-tauri). Best-effort:
 /// coupled to Claude Code's transcript format; returns [] if absent/unreadable.
 #[tauri::command]
 fn list_coach_sessions(app: tauri::AppHandle) -> Result<Vec<CoachSession>, String> {
-    let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
-    let encoded: String = config
-        .to_string_lossy()
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
-        .collect();
     let home = app.path().home_dir().map_err(|e| e.to_string())?;
-    let proj = home.join(".claude").join("projects").join(&encoded);
+    let projects = home.join(".claude").join("projects");
 
     let mut out: Vec<CoachSession> = Vec::new();
-    let entries = match std::fs::read_dir(&proj) {
+    let project_dirs = match std::fs::read_dir(&projects) {
         Ok(e) => e,
-        Err(_) => return Ok(out), // no sessions yet
+        Err(_) => return Ok(out),
     };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
+    for pd in project_dirs.flatten() {
+        let p = pd.path();
+        if !p.is_dir() {
             continue;
         }
-        let id = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
-        let content = match std::fs::read_to_string(&path) {
-            Ok(c) => c,
+        if !pd.file_name().to_string_lossy().to_lowercase().contains("microset") {
+            continue;
+        }
+        let files = match std::fs::read_dir(&p) {
+            Ok(f) => f,
             Err(_) => continue,
         };
-        let mut title = String::new();
-        let mut first_user = String::new();
-        let mut updated_at = String::new();
-        let mut count: u32 = 0;
-        for line in content.lines() {
-            let v: serde_json::Value = match serde_json::from_str(line) {
-                Ok(v) => v,
-                Err(_) => continue,
-            };
-            match v.get("type").and_then(|t| t.as_str()).unwrap_or("") {
-                "ai-title" => {
-                    if let Some(s) = v.get("aiTitle").and_then(|x| x.as_str()) {
-                        title = s.to_string();
-                    }
-                }
-                "user" | "assistant" => {
-                    count += 1;
-                    if let Some(ts) = v.get("timestamp").and_then(|x| x.as_str()) {
-                        updated_at = ts.to_string();
-                    }
-                    if first_user.is_empty() {
-                        if let Some(c) = v
-                            .get("message")
-                            .and_then(|m| m.get("content"))
-                            .and_then(|c| c.as_str())
-                        {
-                            first_user = c.chars().take(48).collect();
-                        }
-                    }
-                }
-                _ => {}
+        for entry in files.flatten() {
+            if let Some(s) = parse_session(&entry.path()) {
+                out.push(s);
             }
         }
-        if count == 0 {
-            continue;
-        }
-        let title = if !title.is_empty() {
-            title
-        } else if !first_user.is_empty() {
-            first_user
-        } else {
-            "Sesión Claude Code".to_string()
-        };
-        out.push(CoachSession { id, title, updated_at, message_count: count });
     }
     out.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
     Ok(out)
