@@ -1,7 +1,7 @@
 import { Masthead } from "./Masthead";
+import { useT } from "@/lib/i18n";
 import { REST, useStore, type WeekKind } from "@/store/useStore";
 
-const DAYS = ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"];
 const todayIdx = (new Date().getDay() + 6) % 7;
 const NEXT_BG = "color-mix(in oklch, var(--acc) 5%, transparent)";
 const selCls =
@@ -13,12 +13,13 @@ export function SemanaView() {
   const dayKind = useStore((s) => s.dayKind);
   const setWeekDay = useStore((s) => s.setWeekDay);
   const setDayKind = useStore((s) => s.setDayKind);
+  const t = useT();
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="SEMANA" sub="QUÉ HACÉS CADA DÍA" />
+      <Masthead title={t.week.title} sub={t.week.sub} />
       <div className="border-b border-[var(--rule)]">
-        {DAYS.map((d, i) => {
+        {t.today.weekdays.map((d, i) => {
           const today = i === todayIdx;
           return (
             <div
@@ -36,7 +37,7 @@ export function SemanaView() {
               <select
                 value={week[i]}
                 onChange={(e) => setWeekDay(i, e.currentTarget.value)}
-                aria-label={`Día ${d}`}
+                aria-label={`${t.week.day} ${d}`}
                 className={`${selCls} flex-1 appearance-none text-[var(--fg)]`}
               >
                 {dayTypes.map((dt) => (
@@ -45,19 +46,19 @@ export function SemanaView() {
                   </option>
                 ))}
                 <option value={REST} className="bg-[var(--ink2)]">
-                  DESCANSO
+                  {t.today.rest}
                 </option>
               </select>
               <select
                 value={dayKind[i] ?? ""}
                 onChange={(e) => setDayKind(i, (e.currentTarget.value || null) as WeekKind | null)}
-                aria-label={`Lugar ${d}`}
+                aria-label={`${t.week.place} ${d}`}
                 className={`${selCls} w-[150px] flex-none appearance-none`}
                 style={{ color: dayKind[i] ? "var(--fg)" : "var(--faint2)" }}
               >
                 <option value="" className="bg-[var(--ink2)]">—</option>
-                <option value="home" className="bg-[var(--ink2)]">CASA</option>
-                <option value="office" className="bg-[var(--ink2)]">OFICINA</option>
+                <option value="home" className="bg-[var(--ink2)]">{t.week.home}</option>
+                <option value="office" className="bg-[var(--ink2)]">{t.week.office}</option>
               </select>
             </div>
           );

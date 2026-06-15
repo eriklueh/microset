@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Masthead } from "./Masthead";
 import { EQUIPMENT } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 
 const SEED_IDS = new Set(EQUIPMENT.map((e) => e.id));
@@ -15,6 +16,7 @@ export function EquipmentView() {
   const addCustomEquipment = useStore((s) => s.addCustomEquipment);
   const removeCustomEquipment = useStore((s) => s.removeCustomEquipment);
   const { all, byId, allEquipment } = useCatalog();
+  const t = useT();
   const [name, setName] = useState("");
 
   const used = new Set(dayTypes.flatMap((d) => d.routine.map((r) => r.exerciseId)));
@@ -28,14 +30,14 @@ export function EquipmentView() {
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="EQUIPO" sub="LO QUE TENÉS EN CASA" />
+      <Masthead title={t.equipment.title} sub={t.equipment.sub} />
 
       <div className="border-b border-[var(--rule)]">
         {allEquipment.map((eq) => {
           const enables = all.filter((e) => e.equipment.includes(eq.id)).length;
           const inRoutines = [...used].filter((id) => byId(id)?.equipment.includes(eq.id)).length;
           const custom = !SEED_IDS.has(eq.id);
-          const sub = `${enables} EJERCICIO${enables === 1 ? "" : "S"}${inRoutines > 0 ? ` · ${inRoutines} EN RUTINAS` : ""}`;
+          const sub = `${enables} ${enables === 1 ? t.equipment.exercise : t.equipment.exercises}${inRoutines > 0 ? ` · ${inRoutines} ${t.equipment.inRoutines}` : ""}`;
           return (
             <div
               key={eq.id}
@@ -46,7 +48,7 @@ export function EquipmentView() {
                   {eq.name}
                 </div>
                 <div className="mt-[5px] font-mono text-[10.5px] tracking-[0.08em] text-[var(--faint)]">
-                  {custom ? "PROPIO · " : ""}
+                  {custom ? `${t.equipment.custom} · ` : ""}
                   {sub}
                 </div>
               </div>
@@ -54,7 +56,7 @@ export function EquipmentView() {
                 {custom && (
                   <button
                     onClick={() => removeCustomEquipment(eq.id)}
-                    aria-label="Eliminar equipo"
+                    aria-label={t.equipment.removeAria}
                     className="text-[var(--faint2)] hover:text-[var(--destructive)]"
                   >
                     <Trash2 className="size-4" />
@@ -74,7 +76,7 @@ export function EquipmentView() {
           onKeyDown={(e) => {
             if (e.key === "Enter") add();
           }}
-          placeholder="NUEVO EQUIPO (EJ: ANILLAS)"
+          placeholder={t.equipment.placeholder}
           className={`${input} h-9 flex-1 px-3 font-mono text-[12px] tracking-[0.04em] placeholder:text-[var(--faint2)]`}
         />
         <button
@@ -83,7 +85,7 @@ export function EquipmentView() {
           className="flex items-center gap-1.5 border px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] disabled:opacity-40"
           style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
         >
-          <Plus className="size-3.5" /> AGREGAR
+          <Plus className="size-3.5" /> {t.equipment.add}
         </button>
       </div>
     </div>

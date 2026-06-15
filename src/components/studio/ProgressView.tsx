@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { defaultVariantId } from "@/domain/seed";
 import type { Exercise, LogEntry } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
 
@@ -22,14 +23,16 @@ function shortDate(iso: string): string {
 export function ProgressView() {
   const logs = useStore((s) => s.logs);
   const { byId } = useCatalog();
+  const t = useT();
 
   if (logs.length === 0) {
     return (
       <div className="flex flex-col px-[34px] py-[30px]">
-        <Masthead title="PROGRESO" sub="TU EVOLUCIÓN" />
+        <Masthead title={t.progress.title} sub={t.progress.sub} />
         <div className="border border-[var(--rule2)] p-8 text-center text-[13px] leading-[1.6] text-[var(--faint)]">
-          Todavía no registraste series. Marcá ejercicios como{" "}
-          <span className="font-semibold text-[var(--fg)]">HECHO</span> y acá vas a ver tu evolución.
+          {t.progress.emptyBefore}{" "}
+          <span className="font-semibold text-[var(--fg)]">{t.progress.emptyDoneWord}</span>{" "}
+          {t.progress.emptyAfter}
         </div>
       </div>
     );
@@ -58,12 +61,22 @@ export function ProgressView() {
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="PROGRESO" sub="TU EVOLUCIÓN" />
+      <Masthead title={t.progress.title} sub={t.progress.sub} />
 
       <div className="grid grid-cols-3 border border-[var(--rule2)]">
-        <Metric label="ESTA SEMANA" value={thisWeek} unit="SERIES" delta={thisWeek - lastWeek} first />
-        <Metric label="RACHA" value={streak} unit={streak === 1 ? "DÍA" : "DÍAS"} />
-        <Metric label="ACTIVOS" value={activeExercises} unit="EJERCICIOS" />
+        <Metric
+          label={t.progress.weekLabel}
+          value={thisWeek}
+          unit={t.progress.sets}
+          delta={thisWeek - lastWeek}
+          first
+        />
+        <Metric
+          label={t.progress.streakLabel}
+          value={streak}
+          unit={streak === 1 ? t.progress.day : t.progress.days}
+        />
+        <Metric label={t.progress.activeLabel} value={activeExercises} unit={t.progress.exercises} />
       </div>
 
       <div className="mt-3 flex flex-col gap-3">
@@ -99,6 +112,7 @@ function ExerciseProgress({
   inLast7: (l: LogEntry) => boolean;
   inPrev7: (l: LogEntry) => boolean;
 }) {
+  const t = useT();
   const sorted = [...logs].sort((a, b) => (a.at < b.at ? -1 : 1));
   const lastLog = sorted[sorted.length - 1];
   const currentVariantId = lastLog?.variantId ?? defaultVariantId(ex);
@@ -132,7 +146,9 @@ function ExerciseProgress({
         <span className="text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
           {ex.name}
         </span>
-        <span className="font-mono text-[11px] text-[var(--faint)]">{logs.length} SERIES</span>
+        <span className="font-mono text-[11px] text-[var(--faint)]">
+          {logs.length} {t.progress.sets}
+        </span>
       </div>
 
       {ex.axis.length > 1 && (
@@ -151,15 +167,24 @@ function ExerciseProgress({
             ))}
           </div>
           <div className="mt-2 font-mono text-[11px] tracking-[0.03em]">
-            <span className="text-[var(--fg)]">ESTÁS EN {currentLabel.toUpperCase()}</span>
-            {reachedAt && <span className="text-[var(--faint)]"> · DESDE {shortDate(reachedAt)}</span>}
+            <span className="text-[var(--fg)]">
+              {t.progress.youreAt} {currentLabel.toUpperCase()}
+            </span>
+            {reachedAt && (
+              <span className="text-[var(--faint)]">
+                {" "}
+                · {t.progress.since} {shortDate(reachedAt)}
+              </span>
+            )}
             <span className="text-[var(--faint)]">
-              {nextLabel ? ` · SIGUIENTE ${nextLabel.toUpperCase()}` : " · NIVEL MÁXIMO"}
+              {nextLabel
+                ? ` · ${t.progress.nextLevel} ${nextLabel.toUpperCase()}`
+                : ` · ${t.progress.maxLevel}`}
             </span>
           </div>
           {readyToLevel && (
             <span className="mt-2 inline-block bg-[var(--acc)] px-2.5 py-1 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--on)]">
-              LISTO: {nextLabel!.toUpperCase()}
+              {t.progress.ready} {nextLabel!.toUpperCase()}
             </span>
           )}
         </div>
@@ -168,10 +193,12 @@ function ExerciseProgress({
       <div className="mt-3.5">
         <div className="mb-2 flex items-baseline justify-between">
           <span className="font-mono text-[10px] font-semibold tracking-[0.12em] text-[var(--faint)]">
-            ÚLTIMOS 7 DÍAS
+            {t.progress.last7days}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="font-mono text-[11px] text-[var(--fg)]">{wkThis} SERIES</span>
+            <span className="font-mono text-[11px] text-[var(--fg)]">
+              {wkThis} {t.progress.sets}
+            </span>
             <Delta value={wkThis - wkPrev} />
           </span>
         </div>

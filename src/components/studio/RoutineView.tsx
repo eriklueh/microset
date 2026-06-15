@@ -4,18 +4,16 @@ import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, exerciseContext, isAvailable } from "@/domain/seed";
 import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
 import {
-  CONTEXT_LABEL,
-  MUSCLE_LABEL,
   type EquipmentId,
   type ExerciseContext,
   type Measure,
   type MuscleGroup,
 } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
 
-const DOW = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const MUSCLE_ORDER: MuscleGroup[] = ["pull", "push", "core", "legs"];
 const WARN = "#e0a400";
 const MUSCLE_COLOR: Record<MuscleGroup, string> = {
@@ -29,6 +27,7 @@ const stepBtn =
   "grid size-8 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]";
 
 export function RoutineView() {
+  const t = useT();
   const dayTypes = useStore((s) => s.dayTypes);
   const week = useStore((s) => s.week);
   const owned = useStore((s) => s.ownedEquipment);
@@ -55,16 +54,16 @@ export function RoutineView() {
   if (!selected) {
     return (
       <div className="flex flex-col px-[34px] py-[30px]">
-        <Masthead title="RUTINA" sub="ARMÁ CADA TIPO DE DÍA" />
+        <Masthead title={t.routine.title} sub={t.routine.sub} />
         <div className="border border-[var(--rule2)] p-8 text-center text-[13px] text-[var(--faint)]">
-          No hay tipos de día. Restablecé desde Ajustes o creá uno.
+          {t.routine.noDayTypes}
         </div>
       </div>
     );
   }
   const routine = selected.routine;
   const method = methodologyById(methodologyId) ?? METHODOLOGIES[0];
-  const usedDays = DOW.filter((_, i) => week[i] === selected.id);
+  const usedDays = t.routine.dow.filter((_, i) => week[i] === selected.id);
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
   const available = all.filter(
@@ -78,10 +77,10 @@ export function RoutineView() {
   const missing = MUSCLE_ORDER.filter((m) => balance[m] === 0);
   const hasVol = MUSCLE_ORDER.some((m) => balance[m] > 0);
   const balanceLabel = !hasVol
-    ? "SIN VOLUMEN"
+    ? t.routine.noVolume
     : missing.length
-      ? `FALTA ${missing.map((m) => MUSCLE_LABEL[m].toUpperCase()).join(", ")}`
-      : "EQUILIBRADO";
+      ? `${t.routine.missing} ${missing.map((m) => t.muscle[m].toUpperCase()).join(", ")}`
+      : t.routine.balanced;
 
   const handleCreate = (i: {
     name: string;
@@ -105,7 +104,7 @@ export function RoutineView() {
 
   return (
     <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title="RUTINA" sub="ARMÁ CADA TIPO DE DÍA" />
+      <Masthead title={t.routine.title} sub={t.routine.sub} />
 
       {/* Day-type tabs */}
       <div className="flex flex-wrap items-center gap-2">
@@ -127,10 +126,10 @@ export function RoutineView() {
           );
         })}
         <button
-          onClick={() => setSelectedId(addDayType("Nuevo"))}
+          onClick={() => setSelectedId(addDayType(t.routine.newDayType))}
           className="flex items-center gap-1 border border-[var(--rule2)] px-3 py-2 font-mono text-[11.5px] font-semibold tracking-[0.06em] text-[var(--faint)] hover:text-[var(--fg)]"
         >
-          <Plus className="size-3.5" /> TIPO
+          <Plus className="size-3.5" /> {t.routine.type}
         </button>
       </div>
 
@@ -139,16 +138,16 @@ export function RoutineView() {
         <input
           value={selected.name}
           onChange={(e) => renameDayType(selected.id, e.currentTarget.value)}
-          aria-label="Nombre del tipo de día"
+          aria-label={t.routine.dayTypeNameAria}
           className="min-w-0 flex-1 border-b border-transparent bg-transparent text-[16px] font-bold tracking-[-0.01em] text-[var(--fg)] outline-none focus:border-[var(--rule2)]"
         />
         <span className="flex-none font-mono text-[10px] tracking-[0.08em] text-[var(--faint2)]">
-          {usedDays.length > 0 ? usedDays.join(" ") : "SIN ASIGNAR"}
+          {usedDays.length > 0 ? usedDays.join(" ") : t.routine.unassigned}
         </span>
         <button
           disabled={dayTypes.length <= 1}
           onClick={() => removeDayType(selected.id)}
-          aria-label="Eliminar tipo de día"
+          aria-label={t.routine.deleteDayTypeAria}
           className="flex-none text-[var(--faint2)] hover:text-[var(--destructive)] disabled:opacity-30"
         >
           <Trash2 className="size-4" />
@@ -158,15 +157,15 @@ export function RoutineView() {
       {/* Compact strip: sets · feasibility · balance · methodology */}
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border border-[var(--rule2)] px-4 py-2.5">
         <span className="font-mono text-[11px] tracking-[0.06em]">
-          <span className="text-[var(--faint)]">SERIES </span>
+          <span className="text-[var(--faint)]">{t.routine.sets} </span>
           <span className="font-semibold text-[var(--fg)]">{totalSets}</span>
         </span>
         <span
           className="font-mono text-[11px] font-semibold tracking-[0.06em]"
-          title={allFit ? undefined : "Recortá volumen o ampliá tu horario."}
+          title={allFit ? undefined : t.routine.fitHint}
           style={{ color: totalSets === 0 ? "var(--faint2)" : allFit ? "var(--acc)" : WARN }}
         >
-          {totalSets === 0 ? "VACÍO" : allFit ? "ENTRA ✓" : `ENTRAN ${fits}/${totalSets}`}
+          {totalSets === 0 ? t.routine.empty : allFit ? t.routine.fits : `${t.routine.fitsCount} ${fits}/${totalSets}`}
         </span>
         {totalSets > 0 && (
           <span className="flex items-center gap-2">
@@ -179,7 +178,7 @@ export function RoutineView() {
             </span>
             <span
               className="font-mono text-[10px] tracking-[0.06em]"
-              style={{ color: balanceLabel.startsWith("FALTA") ? WARN : "var(--faint)" }}
+              style={{ color: balanceLabel.startsWith(t.routine.missing) ? WARN : "var(--faint)" }}
             >
               {balanceLabel}
             </span>
@@ -188,7 +187,7 @@ export function RoutineView() {
         <select
           value={methodologyId}
           onChange={(e) => applyMethodology(selected.id, e.currentTarget.value)}
-          aria-label="Metodología"
+          aria-label={t.routine.methodologyAria}
           title={method.description}
           className={`${input} ml-auto appearance-none px-2.5 py-1 font-mono text-[11px]`}
         >
@@ -204,7 +203,7 @@ export function RoutineView() {
       <div className="mt-5 border-t border-[var(--rule)]">
         {routine.length === 0 && (
           <p className="py-4 text-[13px] text-[var(--faint)]">
-            Sin ejercicios. Agregá con el botón de abajo.
+            {t.routine.emptyList}
           </p>
         )}
         {routine.map((r) => {
@@ -226,28 +225,28 @@ export function RoutineView() {
                       <AlertTriangle
                         className="size-3.5 shrink-0"
                         style={{ color: WARN }}
-                        aria-label="Te falta el equipo para este ejercicio"
+                        aria-label={t.routine.missingGearAria}
                       />
                     )}
                   </div>
                   <div className="mt-0.5 font-mono text-[10.5px] tracking-[0.08em] text-[var(--faint2)]">
-                    {ex ? MUSCLE_LABEL[ex.muscle].toUpperCase() : ""}
-                    {ex && exerciseContext(ex) === "desk" ? " · ESCRITORIO" : ""}
-                    {orphan ? " · FALTA EQUIPO" : ""}
+                    {ex ? t.muscle[ex.muscle].toUpperCase() : ""}
+                    {ex && exerciseContext(ex) === "desk" ? ` · ${t.routine.deskTag}` : ""}
+                    {orphan ? ` · ${t.routine.missingGearTag}` : ""}
                   </div>
                 </div>
 
                 <input
                   value={r.target ?? ex?.defaultReps ?? ""}
                   onChange={(e) => setRoutineTarget(selected.id, r.exerciseId, e.currentTarget.value)}
-                  aria-label="Reps o duración"
+                  aria-label={t.routine.repsOrDurationAria}
                   className={`${input} h-8 w-16 text-center font-mono text-[12px]`}
                 />
 
                 <div className="flex items-center">
                   <button
                     onClick={() => setRoutineSets(selected.id, r.exerciseId, r.sets - 1)}
-                    aria-label="Menos series"
+                    aria-label={t.routine.fewerSetsAria}
                     className={stepBtn}
                   >
                     <Minus className="size-3.5" />
@@ -257,7 +256,7 @@ export function RoutineView() {
                   </span>
                   <button
                     onClick={() => setRoutineSets(selected.id, r.exerciseId, r.sets + 1)}
-                    aria-label="Más series"
+                    aria-label={t.routine.moreSetsAria}
                     className={stepBtn}
                   >
                     <Plus className="size-3.5" />
@@ -268,8 +267,8 @@ export function RoutineView() {
                   <select
                     value={r.variantId ?? defaultVariantId(ex)}
                     onChange={(e) => setRoutineVariant(selected.id, r.exerciseId, e.currentTarget.value)}
-                    aria-label="Nivel de intensidad"
-                    title="Nivel de intensidad"
+                    aria-label={t.routine.intensityAria}
+                    title={t.routine.intensityAria}
                     className={`${input} h-8 w-[120px] appearance-none px-2 font-mono text-[11px]`}
                   >
                     {ex.axis.map((v) => (
@@ -284,7 +283,7 @@ export function RoutineView() {
 
                 <button
                   onClick={() => removeFromRoutine(selected.id, r.exerciseId)}
-                  aria-label="Quitar"
+                  aria-label={t.routine.removeAria}
                   className="flex-none text-[var(--faint2)] hover:text-[var(--destructive)]"
                 >
                   <Trash2 className="size-4" />
@@ -302,7 +301,7 @@ export function RoutineView() {
           className="flex w-full items-center justify-between border border-[var(--rule2)] px-4 py-2.5 hover:border-[var(--fg)]"
         >
           <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--acc)]">
-            <Plus className="size-3.5" /> AGREGAR EJERCICIO
+            <Plus className="size-3.5" /> {t.routine.addExercise}
           </span>
           <ChevronDown
             className="size-4 text-[var(--faint2)] transition-transform"
@@ -318,7 +317,7 @@ export function RoutineView() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.currentTarget.value)}
-                  placeholder="BUSCAR EJERCICIO…"
+                  placeholder={t.routine.searchPlaceholder}
                   className={`${input} h-9 w-full pr-3 pl-9 font-mono text-[12px] tracking-[0.04em] placeholder:text-[var(--faint2)]`}
                 />
               </div>
@@ -326,7 +325,7 @@ export function RoutineView() {
                 onClick={() => setCreating((v) => !v)}
                 className="flex-none font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--acc)]"
               >
-                {creating ? "CANCELAR" : "CREAR PROPIO"}
+                {creating ? t.routine.cancel : t.routine.createOwn}
               </button>
             </div>
 
@@ -338,7 +337,7 @@ export function RoutineView() {
               return (
                 <div key={m} className="mt-3">
                   <div className="font-mono text-[10px] tracking-[0.14em] text-[var(--faint2)]">
-                    {MUSCLE_LABEL[m].toUpperCase()}
+                    {t.muscle[m].toUpperCase()}
                   </div>
                   <div className="mt-1.5 border-t border-[var(--rule)]">
                     {group.map((e) => (
@@ -360,7 +359,7 @@ export function RoutineView() {
                           className="flex items-center gap-1.5 border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
                           style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
                         >
-                          <Plus className="size-3.5" /> AGREGAR
+                          <Plus className="size-3.5" /> {t.routine.add}
                         </button>
                       </div>
                     ))}
@@ -371,7 +370,7 @@ export function RoutineView() {
 
             {available.length === 0 && (
               <p className="mt-3 text-[13px] text-[var(--faint)]">
-                {search ? `No hay ejercicios para "${search}".` : "No quedan ejercicios para agregar."}
+                {search ? `${t.routine.noResultsPre}"${search}".` : t.routine.noneLeft}
               </p>
             )}
           </div>
@@ -400,6 +399,7 @@ function CreateExerciseForm({
   const [equipment, setEquipment] = useState<EquipmentId[]>([]);
   const [context, setContext] = useState<ExerciseContext>("space");
   const { allEquipment } = useCatalog();
+  const t = useT();
 
   const toggleEq = (id: EquipmentId) =>
     setEquipment((eq) => (eq.includes(id) ? eq.filter((e) => e !== id) : [...eq, id]));
@@ -409,7 +409,7 @@ function CreateExerciseForm({
       <input
         value={name}
         onChange={(e) => setName(e.currentTarget.value)}
-        placeholder="NOMBRE DEL EJERCICIO"
+        placeholder={t.routine.exerciseNamePlaceholder}
         className={`${input} h-9 px-2.5 text-[14px] placeholder:text-[var(--faint2)]`}
       />
       <div className="grid grid-cols-3 gap-2">
@@ -417,11 +417,11 @@ function CreateExerciseForm({
           value={muscle}
           onChange={(e) => setMuscle(e.currentTarget.value as MuscleGroup)}
           className={`${input} h-9 appearance-none px-2 font-mono text-[11.5px]`}
-          aria-label="Músculo"
+          aria-label={t.routine.muscleAria}
         >
           {MUSCLE_ORDER.map((m) => (
             <option key={m} value={m} className="bg-[var(--ink2)]">
-              {MUSCLE_LABEL[m]}
+              {t.muscle[m]}
             </option>
           ))}
         </select>
@@ -429,17 +429,17 @@ function CreateExerciseForm({
           value={measure}
           onChange={(e) => setMeasure(e.currentTarget.value as Measure)}
           className={`${input} h-9 appearance-none px-2 font-mono text-[11.5px]`}
-          aria-label="Medida"
+          aria-label={t.routine.measureAria}
         >
-          <option value="reps" className="bg-[var(--ink2)]">Reps</option>
-          <option value="hold" className="bg-[var(--ink2)]">Aguante</option>
+          <option value="reps" className="bg-[var(--ink2)]">{t.routine.measureReps}</option>
+          <option value="hold" className="bg-[var(--ink2)]">{t.routine.measureHold}</option>
         </select>
         <input
           value={reps}
           onChange={(e) => setReps(e.currentTarget.value)}
           placeholder={measure === "hold" ? "20s" : "8"}
           className={`${input} h-9 px-2 text-center font-mono text-[12px]`}
-          aria-label="Reps o duración"
+          aria-label={t.routine.repsOrDurationAria}
         />
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -473,7 +473,7 @@ function CreateExerciseForm({
                 color: on ? "var(--acc)" : "var(--faint)",
               }}
             >
-              {CONTEXT_LABEL[c].toUpperCase()}
+              {t.context[c].toUpperCase()}
             </button>
           );
         })}
@@ -492,7 +492,7 @@ function CreateExerciseForm({
         }
         className="bg-[var(--acc)] px-4 py-2.5 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--on)] disabled:opacity-40"
       >
-        CREAR Y AGREGAR
+        {t.routine.createAndAdd}
       </button>
     </div>
   );

@@ -13,6 +13,7 @@ import { useStore } from "@/store/useStore";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
 import { coachSnapshot } from "@/coach/snapshot";
+import { useT } from "@/lib/i18n";
 import {
   deleteConversation,
   listConversations,
@@ -23,11 +24,6 @@ import {
 } from "@/coach/history";
 
 const WARN = "#e0a400";
-const STARTERS = [
-  "Armá mi semana para mi objetivo",
-  "Subí mi volumen sin pasarme del horario",
-  "Tengo una molestia hoy, adaptá la rutina",
-];
 const nowISO = () => new Date().toISOString();
 
 type Thread = {
@@ -75,6 +71,7 @@ function MarkdownText({ text }: { text: string }) {
 }
 
 export function CoachView({ onSettings }: { onSettings: () => void }) {
+  const t = useT();
   const coach = useStore((s) => s.coach);
   const dayTypes = useStore((s) => s.dayTypes);
   const week = useStore((s) => s.week);
@@ -232,16 +229,16 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-[30px] leading-none font-extrabold tracking-[-0.03em] text-[var(--fg)]">
-            COACH
+            {t.coach.title}
           </h2>
           <div className="mt-1.5 font-mono text-[10px] tracking-[0.12em] text-[var(--faint)]">
-            TU ENTRENADOR
+            {t.coach.subtitle}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onSettings}
-            title="Configurar en Ajustes"
+            title={t.coach.configureInSettings}
             className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
           >
             {coach.provider === "local" ? "LOCAL" : "API"} · {coach.model}
@@ -257,33 +254,33 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
 
       {/* Actionable status strip */}
       <div className="mt-3.5 flex flex-wrap items-center gap-2">
-        <Insight label={`SEMANA · ${snap.activeDays}`} />
+        <Insight label={`${t.coach.week} · ${snap.activeDays}`} />
         {snap.feasibilityOk ? (
-          <Insight label="TODO ENTRA" tone="ok" />
+          <Insight label={t.coach.allFits} tone="ok" />
         ) : (
           <Insight
-            label={`NO ENTRA: ${snap.overflow.join(", ")}`}
+            label={`${t.coach.wontFit}: ${snap.overflow.join(", ")}`}
             tone="warn"
-            onClick={() => void send("No me entra el volumen, ajustalo para que entre en mi horario")}
+            onClick={() => void send(t.coach.promptFitVolume)}
           />
         )}
         {snap.readyToLevel.length > 0 ? (
           <Insight
-            label={`LISTO: ${snap.readyToLevel[0]}`}
+            label={`${t.coach.ready}: ${snap.readyToLevel[0]}`}
             tone="ok"
-            onClick={() => void send(`¿Estoy listo para subir de nivel en ${snap.readyToLevel[0]}?`)}
+            onClick={() => void send(`${t.coach.promptLevelUpPrefix} ${snap.readyToLevel[0]}?`)}
           />
         ) : (
-          <Insight label={`${snap.thisWeekSets} SERIES · 7D`} />
+          <Insight label={`${snap.thisWeekSets} ${t.coach.setsSevenDays}`} />
         )}
         {snap.balanceLabel.startsWith("Falta") ? (
           <Insight
             label={snap.balanceLabel}
             tone="warn"
-            onClick={() => void send("Equilibrá los grupos musculares de mi rutina")}
+            onClick={() => void send(t.coach.promptBalance)}
           />
         ) : (
-          <Insight label="EQUILIBRADO" />
+          <Insight label={t.coach.balanced} />
         )}
       </div>
 
@@ -294,12 +291,12 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
             onClick={newChat}
             className="flex items-center gap-1.5 border-b border-[var(--rule2)] px-3 py-2.5 font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--acc)] hover:bg-[var(--bar0)]"
           >
-            <Plus className="size-3.5" /> NUEVA
+            <Plus className="size-3.5" /> {t.coach.new}
           </button>
           <div className="flex flex-1 flex-col overflow-y-auto">
             {threads.length === 0 && (
               <div className="px-3 py-3 font-mono text-[10px] leading-[1.5] tracking-[0.04em] text-[var(--faint2)]">
-                SIN CHARLAS TODAVÍA
+                {t.coach.noChatsYet}
               </div>
             )}
             {threads.map((c) => {
@@ -309,7 +306,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                 <button
                   key={`${c.source}-${c.id}`}
                   onClick={() => (isCC ? void openCC(c) : void openConv(c.id))}
-                  title={isCC ? "Retomar en Claude Code" : undefined}
+                  title={isCC ? t.coach.resumeInClaudeCode : undefined}
                   className="group flex items-center gap-1.5 border-b border-[var(--rule)] px-3 py-2.5 text-left"
                   style={{ background: active ? "var(--bar0)" : "transparent" }}
                 >
@@ -343,13 +340,13 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                   {ccConv.title}
                 </span>
                 <span className="flex-none font-mono text-[9px] font-bold tracking-[0.12em] text-[var(--faint2)]">
-                  CLAUDE CODE · SOLO LECTURA
+                  {t.coach.claudeCodeReadOnly}
                 </span>
               </div>
               <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
                 {ccConv.messages.length === 0 && (
                   <div className="m-auto font-mono text-[11px] tracking-[0.06em] text-[var(--faint)]">
-                    SESIÓN VACÍA O ILEGIBLE
+                    {t.coach.emptyOrUnreadable}
                   </div>
                 )}
                 {ccConv.messages.map((m, i) => (
@@ -358,13 +355,13 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
               </div>
               <div className="flex items-center justify-between gap-2 border-t border-[var(--rule2)] p-2.5">
                 <span className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">
-                  LA CONVERSACIÓN VIVE EN CLAUDE CODE
+                  {t.coach.conversationLivesInClaudeCode}
                 </span>
                 <button
                   onClick={() => void openCoach(ccConv.id, ccConv.cwd)}
                   className="border-2 border-[var(--fg)] px-3.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--fg)]"
                 >
-                  RETOMAR EN CLAUDE CODE
+                  {t.coach.resumeInClaudeCodeBtn}
                 </button>
               </div>
             </>
@@ -373,12 +370,12 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
               <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
                 {messages.length === 0 && !error ? (
                   <div className="m-auto max-w-[420px] text-center">
-                    <div className="text-[16px] font-semibold text-[var(--fg)]">¿Qué querés lograr?</div>
+                    <div className="text-[16px] font-semibold text-[var(--fg)]">{t.coach.onboardingTitle}</div>
                     <p className="mt-2 text-[13px] leading-[1.6] text-[var(--faint)]">
-                      Te propongo cambios en tu rutina, semana o equipo — y los aprobás antes de aplicar.
+                      {t.coach.onboardingBody}
                     </p>
                     <div className="mt-4 flex flex-col gap-2">
-                      {STARTERS.map((s) => (
+                      {t.coach.starters.map((s) => (
                         <button
                           key={s}
                           onClick={() => void send(s)}
@@ -396,7 +393,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                     ))}
                     {busy && (
                       <div className="font-mono text-[11px] tracking-[0.1em] text-[var(--faint)]">
-                        PENSANDO…
+                        {t.coach.thinking}
                       </div>
                     )}
                     {error && (
@@ -417,7 +414,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void send();
                   }}
-                  placeholder="Hablá con el coach…"
+                  placeholder={t.coach.inputPlaceholder}
                   className="flex-1 bg-transparent px-1 text-[13.5px] text-[var(--fg)] outline-none placeholder:text-[var(--faint2)]"
                 />
                 <button
@@ -425,7 +422,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                   disabled={busy || !input.trim()}
                   className="bg-[var(--acc)] px-4 py-2 font-mono text-[11px] font-bold tracking-[0.06em] text-[var(--on)] disabled:opacity-40"
                 >
-                  ENVIAR
+                  {t.coach.send}
                 </button>
               </div>
             </>
@@ -478,10 +475,11 @@ function ReviewCard({
   onApprove: () => void;
   onDiscard: () => void;
 }) {
+  const t = useT();
   return (
     <div className="border border-[var(--acc)]">
       <div className="border-b border-[var(--rule2)] px-3 py-2 font-mono text-[10px] font-semibold tracking-[0.14em] text-[var(--acc)]">
-        CAMBIOS PROPUESTOS · {changes.length}
+        {t.coach.proposedChanges} · {changes.length}
       </div>
       <div className="flex flex-col gap-1.5 px-3 py-2.5">
         {changes.map((c, i) => (
@@ -496,13 +494,13 @@ function ReviewCard({
           onClick={onApprove}
           className="flex flex-1 items-center justify-center gap-1 bg-[var(--acc)] py-1.5 font-mono text-[11px] font-bold tracking-[0.06em] text-[var(--on)]"
         >
-          <Check className="size-3.5" strokeWidth={3} /> APLICAR
+          <Check className="size-3.5" strokeWidth={3} /> {t.coach.apply}
         </button>
         <button
           onClick={onDiscard}
           className="border border-[var(--rule2)] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
         >
-          DESCARTAR
+          {t.coach.discard}
         </button>
       </div>
     </div>
