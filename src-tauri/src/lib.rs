@@ -239,8 +239,15 @@ fn open_coach(
 
     #[cfg(target_os = "windows")]
     let mut cmd = {
-        let mut c = std::process::Command::new("cmd");
-        c.args(["/C", "start", "", "cmd", "/K", &format!("cd /d \"{dir}\" && {claude}")]);
+        use std::os::windows::process::CommandExt;
+        const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
+        let mut c = std::process::Command::new("powershell");
+        c.args([
+            "-NoExit",
+            "-Command",
+            &format!("Set-Location -LiteralPath '{dir}'; {claude}"),
+        ]);
+        c.creation_flags(CREATE_NEW_CONSOLE); // open in its own PowerShell window
         c
     };
 
