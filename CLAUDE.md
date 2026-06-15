@@ -119,7 +119,7 @@ floating panel uses Hyprland windowrules, and WebKitGTK may need
 - ✅ **M3** — Notification loop (`useScheduler` + native notifications, action buttons)
 - ✅ **M4** — Floating panel (2nd always-on-top window; cross-window sync via Tauri events)
 - ✅ **Fases 0–4** — full UX/product backlog (editable prescriptions, variants/progression, methodologies, weekly day-types, catalog + custom exercises). See [docs/MODEL.md](docs/MODEL.md).
-- 🛠️ **M5** — Stats ✅ (Progreso view) · autostart + installer ⬜
+- 🛠️ **M5** — Stats ✅ · installer ✅ (release v0.1.0) · auto-update ✅ (tauri-plugin-updater; ver [docs/RELEASING.md](docs/RELEASING.md)) · autostart ⬜
 - ✅ **M6** — AI coach: provider-agnostic contract + 3 interchangeable modes (Claude Code, Anthropic API, local OpenAI-compatible), with review-and-apply. See [docs/agent/coach.md](docs/agent/coach.md).
 
 ## Coach mode (M6) — running Claude Code in this repo

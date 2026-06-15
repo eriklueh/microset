@@ -50,9 +50,18 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/eriklueh/microset/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUzMEQwRjY5OURFRkNCN0QKUldSOXkrK2RhUThOVTQzRElZRHorbDJ6QVlwdy8zRFFTdWZsckNLRlVnS0RNM1hBc3ZiRFRmUE4K"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

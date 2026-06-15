@@ -11,6 +11,7 @@ import { SemanaView } from "@/components/studio/SemanaView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { ProgressView } from "@/components/studio/ProgressView";
 import { SettingsView } from "@/components/studio/SettingsView";
+import { UpdateBanner } from "@/components/studio/UpdateBanner";
 
 function App() {
   const [section, setSection] = useState<Section>("today");
@@ -43,6 +44,7 @@ function App() {
           {section === "settings" && <SettingsView />}
         </main>
       </div>
+      <UpdateBanner />
     </div>
   );
 }
