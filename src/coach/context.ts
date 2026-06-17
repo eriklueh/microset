@@ -1,5 +1,5 @@
 import { EQUIPMENT, EXERCISES, exerciseContext, isAvailable, variantLabel } from "@/domain/seed";
-import { DEFAULT_INTENSITY, INTENSITIES } from "@/domain/intensity";
+import { DEFAULT_INTENSITY, INTENSITIES, scaleSets } from "@/domain/intensity";
 import { MUSCLE_LABEL } from "@/domain/types";
 import type { Exercise } from "@/domain/types";
 import { useStore } from "@/store/useStore";
@@ -48,11 +48,14 @@ export function buildCoachContext() {
   }));
 
   const dayTypes = s.dayTypes.map((dt) => {
-    const a = analyzeRoutine(dt.routine, s.ownedEquipment, s.settings, byId);
+    const intensity = dt.intensity ?? DEFAULT_INTENSITY;
+    // feasibility/balance must reflect the SCHEDULED sets (after intensity), not the raw ones
+    const scheduled = dt.routine.map((r) => ({ ...r, sets: scaleSets(r.sets, intensity) }));
+    const a = analyzeRoutine(scheduled, s.ownedEquipment, s.settings, byId);
     return {
       id: dt.id,
       name: dt.name,
-      intensity: dt.intensity ?? DEFAULT_INTENSITY,
+      intensity,
       routine: dt.routine.map((r) => {
         const ex = byId(r.exerciseId);
         return {
