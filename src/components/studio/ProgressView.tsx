@@ -6,9 +6,8 @@ import type { Exercise, LogEntry } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
-import { BodyFigures, BodyLegend } from "./BodyMap";
-import { Corners, RegMark } from "./hud";
-import { RAIL_BODY_W, RAIL_CLASS, ViewHeader } from "./shell";
+import { BodyLegend, ModelRail } from "./BodyMap";
+import { ViewHeader } from "./shell";
 
 const DAY = 86_400_000;
 const WARN = "#e0a400";
@@ -77,23 +76,17 @@ export function ProgressView() {
     <div className="flex h-full flex-col">
       <ViewHeader kicker={t.progress.sub} title={t.progress.title} />
       <div className="flex min-h-0 flex-1">
-        {/* LEFT RAIL — what you trained in the last 7 days (anchored) */}
-        <aside className={RAIL_CLASS}>
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.progress.last7days}</span>
-            <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+        {/* LEFT RAIL — what you trained in the last 7 days (anchored, shared ModelRail) */}
+        <ModelRail
+          label={t.progress.last7days}
+          meta={
+            <>
               <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
               {t.body.live}
-            </span>
-          </div>
-          <div
-            className="relative flex justify-center border border-[var(--rule2)] p-4"
-            style={{ background: "radial-gradient(ellipse at 50% 32%, color-mix(in oklch, var(--acc) 5%, transparent), transparent 62%)" }}
-          >
-            <Corners />
-            <RegMark className="top-2 left-2.5" />
-            <BodyFigures state={aggState} width={RAIL_BODY_W} />
-          </div>
+            </>
+          }
+          state={aggState}
+        >
           <BodyLegend />
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-pixel text-[30px] leading-[0.8] text-[var(--fg)]">{worked}</span>
@@ -102,7 +95,7 @@ export function ProgressView() {
               {t.body.coverage}
             </span>
           </div>
-        </aside>
+        </ModelRail>
 
         {/* RIGHT PANE — metrics + per-exercise progress (scrolls) */}
         <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">

@@ -25,9 +25,8 @@ import {
   type BodyGroup,
   type Role,
 } from "@/domain/bodyGroups";
-import { BodyFigures, BodyLegend, GroupChips } from "./BodyMap";
-import { Barcode, Corners, RegMark } from "./hud";
-import { RAIL_BODY_W, RAIL_CLASS, ViewHeader } from "./shell";
+import { BodyLegend, GroupChips, ModelRail } from "./BodyMap";
+import { ViewHeader } from "./shell";
 
 type Mode = "list" | "crear" | "buscar";
 
@@ -613,84 +612,36 @@ export function RoutineView() {
     </div>
   );
 
-  // ----- left cockpit (anchored across modes) --------------------------------
+  // ----- left cockpit (anchored across modes; shared ModelRail = same Y as Hoy/Progreso) ----
   const leftCol = (
-    <aside className={RAIL_CLASS}>
-      {/* scanner HUD header */}
-      <div className="flex items-center justify-between border-b border-[var(--rule)] pb-2">
-        <span className="flex min-w-0 items-center gap-2">
-          <Barcode height={8} />
-          <span className="truncate font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">
-            {creating
-              ? t.body.musclesNew
-              : hovered
-                ? `${t.body.isolated} · ${name(hoverEx!).toUpperCase()}`
-                : t.body.coverageDay}
-          </span>
-        </span>
-        <span className="flex flex-none items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
-          {creating ? (
-            `${primCount}P · ${secCount}S`
-          ) : (
-            <>
-              <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
-              {t.body.live}
-            </>
-          )}
-        </span>
-      </div>
-
-      {/* body scanner: dot-grid texture · tick ruler · sweep line · register chrome */}
-      <div className="relative overflow-hidden border border-[var(--rule2)]">
-        {/* telemetry dot grid */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, color-mix(in oklch, var(--faint2) 22%, transparent) 1px, transparent 1.5px)",
-            backgroundSize: "13px 13px",
-          }}
-        />
-        {/* center glow */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 34%, color-mix(in oklch, var(--acc) 7%, transparent), transparent 60%)" }}
-        />
-        {/* top tick ruler */}
-        <div className="pointer-events-none absolute inset-x-3 top-1.5 z-[1] flex justify-between">
-          {Array.from({ length: 15 }).map((_, i) => (
-            <span key={i} className="w-px bg-[var(--rule2)]" style={{ height: i % 3 === 0 ? 6 : 3 }} />
-          ))}
-        </div>
-        {/* center divider (FRENTE | ESPALDA) */}
-        <span
-          className="pointer-events-none absolute inset-y-6 left-1/2 z-[1] w-px -translate-x-1/2"
-          style={{ background: "color-mix(in oklch, var(--rule) 70%, transparent)" }}
-        />
-        {/* sweeping scan line */}
-        <span
-          className="ms-scan pointer-events-none absolute inset-x-2 z-[1] h-px"
-          style={{
-            background: "linear-gradient(90deg, transparent, var(--acc), transparent)",
-            boxShadow: "0 0 6px color-mix(in oklch, var(--acc) 70%, transparent)",
-          }}
-        />
-        <Corners />
-        <RegMark className="top-3 left-1/2 -translate-x-1/2" />
-        <div className="relative z-[1] flex justify-center px-3 pt-6 pb-3">
-          <BodyFigures state={bodyState} width={RAIL_BODY_W} onPick={creating ? cycleMuscle : undefined} />
-        </div>
-      </div>
-
+    <ModelRail
+      label={
+        creating
+          ? t.body.musclesNew
+          : hovered
+            ? `${t.body.isolated} · ${name(hoverEx!).toUpperCase()}`
+            : t.body.coverageDay
+      }
+      meta={
+        creating ? (
+          `${primCount}P · ${secCount}S`
+        ) : (
+          <>
+            <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+            {t.body.live}
+          </>
+        )
+      }
+      state={bodyState}
+      onPick={creating ? cycleMuscle : undefined}
+    >
       <BodyLegend />
-
       <div className="text-center font-mono text-[9px] tracking-[0.06em] text-[var(--faint2)]">
         {creating ? t.body.pickHint : t.body.spreadHint}
       </div>
-
       <div className="flex-1" />
       {gapCard}
-    </aside>
+    </ModelRail>
   );
 
   // ----- right pane: list / create / browse ----------------------------------

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import Model, { type IExerciseData } from "react-body-highlighter";
 import {
   exerciseGroupRoles,
@@ -12,6 +12,8 @@ import {
 } from "@/domain/bodyGroups";
 import type { Exercise } from "@/domain/types";
 import { useT } from "@/lib/i18n";
+import { Corners, RegMark } from "./hud";
+import { RAIL_BODY_W, RAIL_CLASS } from "./shell";
 
 function dataFor(state: MuscleState): IExerciseData[] {
   return Object.entries(state).map(([m, s]) => ({
@@ -74,6 +76,95 @@ export function BodyLegend() {
         </span>
       ))}
     </div>
+  );
+}
+
+/**
+ * The HUD "scanner" box that frames the body figures. Shared by every view's model rail
+ * (Hoy / Rutina / Progreso) so the figure sits at the *exact same Y* everywhere — dot-grid
+ * telemetry, center glow, tick ruler, divider, sweep line and register chrome included.
+ */
+export function ModelScanner({
+  state,
+  onPick,
+}: {
+  state: MuscleState;
+  onPick?: (muscle: string) => void;
+}) {
+  return (
+    <div className="relative overflow-hidden border border-[var(--rule2)]">
+      {/* telemetry dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, color-mix(in oklch, var(--faint2) 22%, transparent) 1px, transparent 1.5px)",
+          backgroundSize: "13px 13px",
+        }}
+      />
+      {/* center glow */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse at 50% 34%, color-mix(in oklch, var(--acc) 7%, transparent), transparent 60%)" }}
+      />
+      {/* top tick ruler */}
+      <div className="pointer-events-none absolute inset-x-3 top-1.5 z-[1] flex justify-between">
+        {Array.from({ length: 15 }).map((_, i) => (
+          <span key={i} className="w-px bg-[var(--rule2)]" style={{ height: i % 3 === 0 ? 6 : 3 }} />
+        ))}
+      </div>
+      {/* center divider (FRENTE | ESPALDA) */}
+      <span
+        className="pointer-events-none absolute inset-y-6 left-1/2 z-[1] w-px -translate-x-1/2"
+        style={{ background: "color-mix(in oklch, var(--rule) 70%, transparent)" }}
+      />
+      {/* sweeping scan line */}
+      <span
+        className="ms-scan pointer-events-none absolute inset-x-2 z-[1] h-px"
+        style={{
+          background: "linear-gradient(90deg, transparent, var(--acc), transparent)",
+          boxShadow: "0 0 6px color-mix(in oklch, var(--acc) 70%, transparent)",
+        }}
+      />
+      <Corners />
+      <RegMark className="top-3 left-1/2 -translate-x-1/2" />
+      <div className="relative z-[1] flex justify-center px-3 pt-6 pb-3">
+        <BodyFigures state={state} width={RAIL_BODY_W} onPick={onPick} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The anchored "model" rail (HUD label row + scanner + per-view footer) shared by Hoy /
+ * Rutina / Progreso. Identical structure guarantees the model sits at the same coordinates
+ * across views — no shift, no vertical drift. `children` is the per-view footer (legend +
+ * counters / hints) rendered below the body.
+ */
+export function ModelRail({
+  label,
+  meta,
+  state,
+  onPick,
+  children,
+}: {
+  label: ReactNode;
+  meta: ReactNode;
+  state: MuscleState;
+  onPick?: (muscle: string) => void;
+  children?: ReactNode;
+}) {
+  return (
+    <aside className={RAIL_CLASS}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 truncate font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{label}</span>
+        <span className="flex flex-none items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+          {meta}
+        </span>
+      </div>
+      <ModelScanner state={state} onPick={onPick} />
+      {children}
+    </aside>
   );
 }
 

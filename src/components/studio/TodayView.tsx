@@ -7,9 +7,8 @@ import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
-import { BodyFigures, BodyLegend } from "./BodyMap";
-import { Corners, RegMark } from "./hud";
-import { RAIL_BODY_W, RAIL_CLASS, ViewHeader } from "./shell";
+import { BodyLegend, ModelRail } from "./BodyMap";
+import { ViewHeader } from "./shell";
 
 const metaLine = (parts: (string | false)[]) => parts.filter(Boolean).join(" · ");
 
@@ -120,23 +119,17 @@ export function TodayView() {
       />
 
       <div className="flex min-h-0 flex-1">
-        {/* LEFT RAIL — today's muscle load (anchored cockpit) */}
-        <aside className={RAIL_CLASS}>
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.today.loadToday}</span>
-            <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+        {/* LEFT RAIL — today's muscle load (anchored cockpit, shared ModelRail) */}
+        <ModelRail
+          label={t.today.loadToday}
+          meta={
+            <>
               <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
               {t.body.live}
-            </span>
-          </div>
-          <div
-            className="relative flex justify-center border border-[var(--rule2)] p-4"
-            style={{ background: "radial-gradient(ellipse at 50% 32%, color-mix(in oklch, var(--acc) 5%, transparent), transparent 62%)" }}
-          >
-            <Corners />
-            <RegMark className="top-2 left-2.5" />
-            <BodyFigures state={aggState} width={RAIL_BODY_W} />
-          </div>
+            </>
+          }
+          state={aggState}
+        >
           <BodyLegend />
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-pixel text-[30px] leading-[0.8] text-[var(--fg)]">{worked}</span>
@@ -145,7 +138,7 @@ export function TodayView() {
               {t.body.coverage}
             </span>
           </div>
-        </aside>
+        </ModelRail>
 
         {/* RIGHT PANE — next set + the day timeline (scrolls) */}
         <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
