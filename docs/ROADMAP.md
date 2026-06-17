@@ -1,7 +1,9 @@
 # microset — Roadmap & Design
 
 This is the living source of truth for *what* microset is and *why*. Update it as
-decisions change. For day-to-day dev context see [../CLAUDE.md](../CLAUDE.md).
+decisions change. For day-to-day dev context see [../CLAUDE.md](../CLAUDE.md); for the
+looser idea queue (product bets + Marathon UI/UX polish not yet scheduled) see
+[BACKLOG.md](BACKLOG.md).
 
 ---
 
