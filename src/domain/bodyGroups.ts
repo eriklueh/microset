@@ -141,3 +141,80 @@ export function freqFor(role: Role, level: Level): number {
 
 export const PRIMARY_COLOR = "var(--acc)";
 export const SECONDARY_COLOR = "#e8913c";
+
+// ---- create-form helpers: presets, name suggestion, role↔state ---------------
+
+/** Specific muscle roles per coarse pattern — seeds the create form per category. */
+export const PATTERN_PRESETS: Record<MuscleGroup, Record<string, Role>> = {
+  push: { chest: "primary", triceps: "primary", "front-deltoids": "secondary" },
+  pull: { "upper-back": "primary", biceps: "primary", "back-deltoids": "secondary", forearm: "secondary" },
+  legs: { quadriceps: "primary", gluteal: "primary", hamstring: "secondary", calves: "secondary", adductor: "secondary" },
+  core: { abs: "primary", obliques: "secondary", "lower-back": "secondary" },
+};
+
+/** Pre-seed the create-form picker from a coarse pattern. */
+export function presetRoles(pattern: MuscleGroup): Record<string, Role> {
+  return { ...(PATTERN_PRESETS[pattern] ?? {}) };
+}
+
+/** Cycle a muscle's role: none → primary → secondary → none. */
+export function cycleRole(role: Role | undefined): Role {
+  return role === "primary" ? "secondary" : role === "secondary" ? "none" : "primary";
+}
+
+type Suggestion = { pattern: MuscleGroup; muscles: Record<string, Role> };
+
+/** Keyword → (pattern + specific muscles) rules for name-based autofill. */
+const SUGGEST_RULES: { kw: string[]; pattern: MuscleGroup; muscles: Record<string, Role> }[] = [
+  { kw: ["glúteo", "gluteo", "puente", "hip thrust", "thrust"], pattern: "legs", muscles: { gluteal: "primary", hamstring: "primary", quadriceps: "secondary" } },
+  { kw: ["pantorrilla", "gemelo", "calf", "elevación de tal"], pattern: "legs", muscles: { calves: "primary" } },
+  { kw: ["sentadilla", "búlgara", "bulgara", "zancada", "split", "pistol", "sentadi", "cuádriceps", "cuadriceps", "squat", "lunge"], pattern: "legs", muscles: { quadriceps: "primary", gluteal: "primary", hamstring: "secondary" } },
+  { kw: ["curl", "bíceps", "biceps"], pattern: "pull", muscles: { biceps: "primary", forearm: "secondary" } },
+  { kw: ["dominada", "pull up", "pull-up", "pullup", "jalón", "jalon", "remo", "row", "australiana"], pattern: "pull", muscles: { "upper-back": "primary", biceps: "primary", "back-deltoids": "secondary", forearm: "secondary" } },
+  { kw: ["tríceps", "triceps", "extensión", "extension", "press francés", "frances"], pattern: "push", muscles: { triceps: "primary" } },
+  { kw: ["militar", "overhead", "hombro", "lateral", "pike"], pattern: "push", muscles: { "front-deltoids": "primary", triceps: "secondary" } },
+  { kw: ["fondo", "dip", "flexión", "flexion", "push up", "push-up", "lagartija", "press", "banca", "diamante", "pecho"], pattern: "push", muscles: { chest: "primary", triceps: "primary", "front-deltoids": "secondary" } },
+  { kw: ["plancha", "l-sit", "lsit", "abdomen", "abdominal", "crunch", "hollow", "core", "rueda", "ab wheel", "oblicuo"], pattern: "core", muscles: { abs: "primary", obliques: "secondary", "lower-back": "secondary" } },
+];
+
+/** Infer pattern + specific muscles from a free-text exercise name (null if no match). */
+export function suggestFromName(raw: string): Suggestion | null {
+  const n = (raw || "").toLowerCase().trim();
+  if (!n) return null;
+  for (const r of SUGGEST_RULES) {
+    if (r.kw.some((k) => n.indexOf(k) >= 0)) return { pattern: r.pattern, muscles: { ...r.muscles } };
+  }
+  return null;
+}
+
+/** Body groups covered by a set of fine-muscle roles, with their role (primary wins). */
+export function coveredGroupsFromRoles(roles: Record<string, Role>): Partial<Record<BodyGroup, Role>> {
+  const out: Partial<Record<BodyGroup, Role>> = {};
+  for (const [mu, role] of Object.entries(roles)) {
+    if (role === "none") continue;
+    const g = MUSCLE_GROUP[mu];
+    if (!g) continue;
+    if (role === "primary" || out[g] !== "primary") out[g] = out[g] === "primary" ? "primary" : role;
+  }
+  return out;
+}
+
+/** Turn a roles map into a paint state (uniform level, for the live create preview). */
+export function rolesToState(roles: Record<string, Role>, level: Level = 3): MuscleState {
+  const st: MuscleState = {};
+  for (const [m, r] of Object.entries(roles)) if (r !== "none") st[m] = { role: r, level };
+  return st;
+}
+
+/** Merge two paint states (primary wins on role, max on level) — for projected coverage. */
+export function mergeStates(a: MuscleState, b: MuscleState): MuscleState {
+  const out: MuscleState = { ...a };
+  for (const [m, s] of Object.entries(b)) {
+    const cur = out[m];
+    out[m] = {
+      role: cur?.role === "primary" || s.role === "primary" ? "primary" : s.role,
+      level: Math.max(cur?.level ?? 0, s.level) as Level,
+    };
+  }
+  return out;
+}

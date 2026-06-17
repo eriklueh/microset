@@ -22,7 +22,16 @@ function dataFor(state: MuscleState): IExerciseData[] {
 }
 
 /** Front + back figures painted by role (lime/amber) and volume shade. */
-export function BodyFigures({ state, width = 150 }: { state: MuscleState; width?: number }) {
+export function BodyFigures({
+  state,
+  width = 150,
+  onPick,
+}: {
+  state: MuscleState;
+  width?: number;
+  /** When set, muscles are clickable — fires with the react-body-highlighter muscle id. */
+  onPick?: (muscle: string) => void;
+}) {
   const t = useT();
   const data = useMemo(() => dataFor(state), [state]);
   return (
@@ -36,6 +45,7 @@ export function BodyFigures({ state, width = 150 }: { state: MuscleState; width?
               bodyColor={NONE_COLOR}
               highlightedColors={HEAT_RAMP}
               svgStyle={{ width: "100%" }}
+              onClick={onPick ? (s) => onPick((s as { muscle: string }).muscle) : undefined}
             />
           </div>
           <div className="mt-1 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">

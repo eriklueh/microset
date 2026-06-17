@@ -47,6 +47,7 @@ export interface CustomExerciseInput {
   measure: Measure;
   context: ExerciseContext;
   defaultReps: string;
+  defaultSets?: number;
   /** Specific muscles worked (react-body-highlighter ids), for the body map. */
   primary?: string[];
   secondary?: string[];
@@ -332,7 +333,7 @@ export const useStore = create<State>()(
           secondary: input.secondary,
           measure: input.measure,
           context: input.context,
-          defaultSets: 3,
+          defaultSets: input.defaultSets ?? 3,
           defaultReps: input.defaultReps,
           axis: [{ id: "bw", label: "Peso corporal", kind: "bodyweight" }],
         };
