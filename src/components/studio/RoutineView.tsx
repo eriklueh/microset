@@ -2,7 +2,8 @@ import { useState } from "react";
 import { AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
-import { useMethodologies } from "@/domain/i18n";
+import { useIntensities } from "@/domain/i18n";
+import { scaleSets } from "@/domain/intensity";
 import type { EquipmentId, ExerciseContext, Measure, MuscleGroup } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
@@ -52,8 +53,7 @@ export function RoutineView() {
   const clearDayOverride = useStore((s) => s.clearDayOverride);
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
-  const methodologyId = useStore((s) => s.methodologyId);
-  const applyMethodology = useStore((s) => s.applyMethodology);
+  const setIntensity = useStore((s) => s.setIntensity);
   const setRoutineSets = useStore((s) => s.setRoutineSets);
   const setRoutineTarget = useStore((s) => s.setRoutineTarget);
   const setRoutineVariant = useStore((s) => s.setRoutineVariant);
@@ -66,7 +66,7 @@ export function RoutineView() {
   const addCustomExercise = useStore((s) => s.addCustomExercise);
 
   const { all, byId, name, variantLabel, allEquipment, eqName } = useCatalog();
-  const methodologies = useMethodologies();
+  const intensities = useIntensities();
   const [selectedId, setSelectedId] = useState(dayTypes[0]?.id ?? "");
   const [mode, setMode] = useState<Mode>("list");
   const [search, setSearch] = useState("");
@@ -104,7 +104,9 @@ export function RoutineView() {
     );
   }
   const routine = selected.routine;
-  const method = methodologies.byId(methodologyId) ?? methodologies.all[0];
+  const dayIntensity = selected.intensity ?? "normal";
+  // intensity scales the SCHEDULED sets (non-destructive) — header/coverage reflect that
+  const effRoutine = routine.map((r) => ({ ...r, sets: scaleSets(r.sets, dayIntensity) }));
   const regions = t.body.regions as Record<string, string>;
   const regionLabel = (g: BodyGroup) => regions[g].toUpperCase();
   const muscleName = (mu: string) => (t.body.muscleNames as Record<string, string>)[mu] ?? mu;
@@ -117,8 +119,8 @@ export function RoutineView() {
       e.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
-  const { totalSets, fits, allFit } = analyzeRoutine(routine, owned, settings, byId);
-  const aggState = aggregateState(routine, byId, owned);
+  const { totalSets, fits, allFit } = analyzeRoutine(effRoutine, owned, settings, byId);
+  const aggState = aggregateState(effRoutine, byId, owned);
   const worked = workedGroupCount(aggState);
   const legGap = totalSets > 0 && !groupWorked(aggState, "legs");
 
@@ -322,13 +324,14 @@ export function RoutineView() {
               {totalSets === 0 ? t.routine.empty : allFit ? t.routine.fits : `${t.routine.fitsCount} ${fits}/${totalSets}`}
             </span>
             <select
-              value={methodologyId}
-              onChange={(e) => applyMethodology(selected.id, e.currentTarget.value)}
-              aria-label={t.routine.methodologyAria}
-              title={method.description}
+              value={dayIntensity}
+              onChange={(e) => setIntensity(selected.id, e.currentTarget.value as "deload" | "normal" | "push")}
+              aria-label={t.routine.dayIntensityAria}
+              title={intensities.byId(dayIntensity)?.description}
               className={`${input} appearance-none px-2.5 py-1.5 font-mono text-[11px]`}
+              style={{ color: dayIntensity === "normal" ? "var(--dim)" : "var(--acc)" }}
             >
-              {methodologies.all.map((m) => (
+              {intensities.all.map((m) => (
                 <option key={m.id} value={m.id} className="bg-[var(--ink2)]">
                   {m.name}
                 </option>

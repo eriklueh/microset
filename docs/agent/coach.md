@@ -24,7 +24,7 @@ objetivos, consciente de su progreso, su equipo y su horario.
 Un snapshot (lo arma `src/coach/context.ts → buildCoachContext()`), con estos campos:
 - `profile` — objetivos / dieta / restricciones (texto libre del usuario).
 - `settings` — `workWindow {start,end}`, `minRest`, `avoidWindows` (minutos desde medianoche).
-- `methodology` actual + `methodologies` disponibles (gtg/volume/strength/maintenance/free).
+- `intensities` disponibles (deload/normal/push, con `factor`). La intensidad vive POR tipo de día (campo `intensity` en cada day-type) — escala las series programadas, no las reescribe.
 - `week` — 7 días (lun→dom): `dayType` (o DESCANSO), `dayTypeId`, `place` (home/office/—).
 - `dayTypes` — por tipo: `routine[]` (ejercicio, sets, target, variante, muscle, context),
   `totalSets`, `fitsInDay` ("all" o "N/total"), `balance` por grupo muscular.
@@ -61,7 +61,7 @@ ver `src/coach/tools.ts`) y la **edición de archivo de config** (modo Claude Co
 | `set_day_kind {index,kind}` | setDayKind | `routine.json`: `dayKind[index]` = `home`/`office`/`null` |
 | `set_day_override {date,slot,kind}` | setDayOverride | `routine.json`: `dayOverrides["YYYY-M-D"] = {slot,kind}` |
 | `clear_day_override {date}` | clearDayOverride | `routine.json`: borrar la key de `dayOverrides` |
-| `set_methodology {dayTypeId,methodologyId}` | applyMethodology | `routine.json` + `settings.json` (ajusta sets y minRest) |
+| `set_intensity {dayTypeId,intensity}` | setIntensity | `routine.json`: `intensity` del day-type (deload/normal/push) |
 | `set_settings {workWindowStart,workWindowEnd,minRest}` | setSettings | `settings.json`: `settings.*` |
 | `set_profile {goals,diet,constraints}` | setProfile | `profile.json` |
 
@@ -75,8 +75,8 @@ Excluido del coach: `resetAll`, `resetSettings`, tema/acento.
 
 ## Archivos de config (Claude Code mode)
 Carpeta: `%APPDATA%/com.microset.app/` (Win) · `~/.config/com.microset.app/` (Linux).
-- `settings.json` — `{ settings:{workWindow,minRest,avoidWindows}, theme, methodologyId, panelEnabled, notificationsEnabled, snoozeMinutes, demoMode }`
-- `routine.json` — `{ dayTypes:[{id,name,routine:[{exerciseId,name,sets,target?,variantId?}]}], week:[7], dayKind:[7], dayOverrides:{ "YYYY-M-D": {slot,kind} } }`. El orden del array `routine` es la secuencia diaria; `week` es el patrón recurrente y `dayOverrides` son excepciones por fecha (el motor usa override de la fecha, si no, el patrón semanal).
+- `settings.json` — `{ settings:{workWindow,minRest,avoidWindows}, theme, panelEnabled, notificationsEnabled, snoozeMinutes, demoMode }`
+- `routine.json` — `{ dayTypes:[{id,name,intensity?:"deload"|"normal"|"push",routine:[{exerciseId,name,sets,target?,variantId?}]}], week:[7], dayKind:[7], dayOverrides:{ "YYYY-M-D": {slot,kind} } }`. El orden del array `routine` es la secuencia diaria; `intensity` escala las series PROGRAMADAS (no las reescribe); `week` es el patrón recurrente y `dayOverrides` son excepciones por fecha (el motor usa override de la fecha, si no, el patrón semanal).
 - `equipment.json` — `{ owned:string[], custom:[{id,name}] }`
 - `exercises.json` — `{ custom: Exercise[] }`
 - `profile.json` — `{ goals, diet, constraints }`

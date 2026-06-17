@@ -24,7 +24,7 @@ import {
   exerciseById,
   isAvailable,
 } from "@/domain/seed";
-import { methodologyById } from "@/domain/methodologies";
+import { scaleSets, type IntensityId } from "@/domain/intensity";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { detectLang, type Lang } from "@/lib/strings";
 import { setPanelVisible } from "@/lib/windows";
@@ -34,6 +34,8 @@ export interface DayType {
   id: string;
   name: string;
   routine: RoutineItem[];
+  /** Volume knob for this day-type (scales scheduled sets; non-destructive). */
+  intensity?: IntensityId;
 }
 
 export type WeekKind = "home" | "office";
@@ -61,7 +63,6 @@ export interface CoachConfig {
 }
 
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
-const DEFAULT_METHODOLOGY = "gtg";
 const DEFAULT_PROFILE: UserProfile = { goals: "", diet: "", constraints: "" };
 const DEFAULT_COACH: CoachConfig = {
   provider: "anthropic",
@@ -158,7 +159,6 @@ interface State {
   theme: ThemeConfig;
   lang: Lang;
   logs: LogEntry[];
-  methodologyId: string;
   toastBlockId: string | null; // block currently shown in the toast window
   profile: UserProfile; // goals/diet/constraints for the AI coach
   coach: CoachConfig; // provider/model/endpoint for the AI coach
@@ -179,7 +179,8 @@ interface State {
   moveRoutineItem: (dayTypeId: string, exerciseId: string, dir: -1 | 1) => void;
   /** Set the full exercise order for a day-type (coach). Unlisted items keep their relative order at the end. */
   setRoutineOrder: (dayTypeId: string, orderedExerciseIds: string[]) => void;
-  applyMethodology: (dayTypeId: string, id: string) => void;
+  /** Set a day-type's intensity (non-destructive volume scale). */
+  setIntensity: (dayTypeId: string, id: IntensityId) => void;
 
   // day-type management
   addDayType: (name: string) => string;
@@ -273,7 +274,6 @@ export const useStore = create<State>()(
       theme: DEFAULT_THEME,
       lang: detectLang(),
       logs: [],
-      methodologyId: DEFAULT_METHODOLOGY,
       toastBlockId: null,
       profile: DEFAULT_PROFILE,
       coach: DEFAULT_COACH,
@@ -354,19 +354,10 @@ export const useStore = create<State>()(
         get().replan();
       },
 
-      applyMethodology: (dayTypeId, id) => {
-        const m = methodologyById(id);
-        if (!m || m.sets === 0) {
-          set({ methodologyId: id });
-        } else {
-          set((s) => ({
-            methodologyId: id,
-            dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
-              r.map((x) => ({ ...x, sets: m.sets })),
-            ),
-            settings: { ...s.settings, minRest: m.minRest },
-          }));
-        }
+      setIntensity: (dayTypeId, id) => {
+        set((s) => ({
+          dayTypes: s.dayTypes.map((d) => (d.id === dayTypeId ? { ...d, intensity: id } : d)),
+        }));
         get().replan();
       },
 
@@ -536,7 +527,6 @@ export const useStore = create<State>()(
           theme: DEFAULT_THEME,
           lang: detectLang(),
           logs: [],
-          methodologyId: DEFAULT_METHODOLOGY,
           toastBlockId: null,
           profile: DEFAULT_PROFILE,
           coach: DEFAULT_COACH,
@@ -575,10 +565,12 @@ export const useStore = create<State>()(
           return;
         }
 
-        const doable = routine.filter((r) => {
-          const ex = exerciseById(r.exerciseId);
-          return ex ? isAvailable(ex, ownedEquipment) : true;
-        });
+        const doable = routine
+          .filter((r) => {
+            const ex = exerciseById(r.exerciseId);
+            return ex ? isAvailable(ex, ownedEquipment) : true;
+          })
+          .map((r) => ({ ...r, sets: scaleSets(r.sets, dayType?.intensity) })); // intensity = non-destructive volume scale
         const { blocks } = createDayPlan(doable, settings, nowMinutes());
         set({
           day: { date: todayKey(), blocks, rest, dayTypeName: dayType?.name ?? null },
@@ -636,9 +628,10 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const p = persisted as Record<string, unknown>;
+        delete p.methodologyId; // v3: methodology → per-day-type intensity (default normal)
         if (p && (version < 1 || !p.dayTypes)) {
           const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
           p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
@@ -662,7 +655,6 @@ export const useStore = create<State>()(
         theme: s.theme,
         lang: s.lang,
         logs: s.logs,
-        methodologyId: s.methodologyId,
         toastBlockId: s.toastBlockId,
         profile: s.profile,
         coach: s.coach,

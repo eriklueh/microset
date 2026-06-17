@@ -18,10 +18,10 @@ the essentials are below.
   progress. This is your context. The app regenerates it — do not edit it.
 
 ## Edit these (your tools)
-- "routine.json" — { dayTypes:[{id,name,routine:[{exerciseId,name,sets,target?,variantId?}]}], week:[7], dayKind:[7] }
+- "routine.json" — { dayTypes:[{id,name,intensity?:"deload"|"normal"|"push",routine:[{exerciseId,name,sets,target?,variantId?}]}], week:[7], dayKind:[7], dayOverrides:{ "YYYY-M-D":{slot,kind} } }
 - "equipment.json" — { owned:[ids], custom:[{id,name}] }
 - "exercises.json" — { custom:[Exercise] }  (a custom exercise needs axis:[{id:"bw",label:"Peso corporal",kind:"bodyweight"}])
-- "settings.json" — { settings:{workWindow:{start,end},minRest,avoidWindows}, methodologyId, ... }
+- "settings.json" — { settings:{workWindow:{start,end},minRest,avoidWindows}, ... }
 - "profile.json" — { goals, diet, constraints }
 - "coach.json" — { provider, model, endpoint } (coach provider config)
 

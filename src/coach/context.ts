@@ -1,5 +1,5 @@
 import { EQUIPMENT, EXERCISES, exerciseContext, isAvailable, variantLabel } from "@/domain/seed";
-import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
+import { DEFAULT_INTENSITY, INTENSITIES } from "@/domain/intensity";
 import { MUSCLE_LABEL } from "@/domain/types";
 import type { Exercise } from "@/domain/types";
 import { useStore } from "@/store/useStore";
@@ -52,6 +52,7 @@ export function buildCoachContext() {
     return {
       id: dt.id,
       name: dt.name,
+      intensity: dt.intensity ?? DEFAULT_INTENSITY,
       routine: dt.routine.map((r) => {
         const ex = byId(r.exerciseId);
         return {
@@ -84,8 +85,7 @@ export function buildCoachContext() {
       minRest: s.settings.minRest,
       avoidWindows: s.settings.avoidWindows,
     },
-    methodology: methodologyById(s.methodologyId)?.name ?? s.methodologyId,
-    methodologies: METHODOLOGIES.map((m) => ({ id: m.id, name: m.name, sets: m.sets, minRest: m.minRest })),
+    intensities: INTENSITIES.map((m) => ({ id: m.id, name: m.name, factor: m.factor })),
     equipment: {
       owned: s.ownedEquipment,
       all: [...EQUIPMENT, ...s.customEquipment],

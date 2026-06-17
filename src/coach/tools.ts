@@ -231,12 +231,16 @@ export const COACH_TOOLS: CoachTool[] = [
     },
   },
   {
-    name: "set_methodology",
-    description: "Apply a methodology preset to a day-type (adjusts sets + min rest).",
-    params: obj({ dayTypeId: str("Day-type id"), methodologyId: enm(["gtg", "volume", "strength", "maintenance", "free"], "Methodology id") }, ["dayTypeId", "methodologyId"]),
-    apply: ({ dayTypeId, methodologyId }) => {
-      useStore.getState().applyMethodology(dayTypeId, methodologyId);
-      return `Metodología ${methodologyId} en ${dayTypeId}`;
+    name: "set_intensity",
+    description:
+      "Set a day-type's INTENSITY — a non-destructive volume knob. 'deload' schedules ~half the sets that day, 'normal' = the configured sets, 'push' ~1.5×. Does NOT rewrite per-exercise sets or change min rest; use it for deload weeks or loading days.",
+    params: obj(
+      { dayTypeId: str("Day-type id"), intensity: enm(["deload", "normal", "push"], "Intensity id") },
+      ["dayTypeId", "intensity"],
+    ),
+    apply: ({ dayTypeId, intensity }) => {
+      useStore.getState().setIntensity(dayTypeId, intensity);
+      return `Intensidad ${intensity} en ${dayTypeId}`;
     },
   },
   {

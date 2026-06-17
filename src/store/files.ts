@@ -41,7 +41,6 @@ function groups(s: State): Record<string, unknown> {
     [FILES.settings]: {
       settings: s.settings,
       theme: s.theme,
-      methodologyId: s.methodologyId,
       panelEnabled: s.panelEnabled,
       notificationsEnabled: s.notificationsEnabled,
       snoozeMinutes: s.snoozeMinutes,
@@ -86,7 +85,6 @@ async function readAll(): Promise<Partial<State>> {
   if (s) {
     if (s.settings) patch.settings = s.settings;
     if (s.theme) patch.theme = s.theme;
-    if (typeof s.methodologyId === "string") patch.methodologyId = s.methodologyId;
     if (typeof s.panelEnabled === "boolean") patch.panelEnabled = s.panelEnabled;
     if (typeof s.notificationsEnabled === "boolean") patch.notificationsEnabled = s.notificationsEnabled;
     if (typeof s.snoozeMinutes === "number") patch.snoozeMinutes = s.snoozeMinutes;

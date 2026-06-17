@@ -45,8 +45,8 @@ export function humanizeChange(c: ProposedChange): string {
       return `${DOW[a.index] ?? `día ${a.index}`} → ${a.slot === "rest" ? "Descanso" : dtName(a.slot)}`;
     case "set_day_kind":
       return `${DOW[a.index] ?? `día ${a.index}`} → ${a.kind === "home" ? "casa" : a.kind === "office" ? "oficina" : "sin lugar"}`;
-    case "set_methodology":
-      return `Metodología de ${dtName(a.dayTypeId)} → ${a.methodologyId}`;
+    case "set_intensity":
+      return `Intensidad de ${dtName(a.dayTypeId)} → ${a.intensity}`;
     case "set_settings":
       return "Ajustar horario / descanso";
     case "set_profile":

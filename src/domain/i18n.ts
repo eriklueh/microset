@@ -1,9 +1,9 @@
 /**
- * English names for the seed content (exercises, variants, equipment, methodologies).
+ * English names for the seed content (exercises, variants, equipment, intensities).
  * The seed itself stays Spanish (source of truth); these maps localize it by id when
  * the language is English. Custom/user content has no entry → falls back to as-entered.
  */
-import { METHODOLOGIES, type Methodology } from "@/domain/methodologies";
+import { INTENSITIES, type Intensity } from "@/domain/intensity";
 import { useLang } from "@/lib/i18n";
 
 export const EXERCISE_EN: Record<string, string> = {
@@ -49,46 +49,34 @@ export const EQUIPMENT_EN: Record<string, string> = {
   bands: "Bands",
 };
 
-const METHODOLOGY_EN: Record<string, { name: string; tagline: string; description: string }> = {
-  gtg: {
-    name: "Grease the Groove",
-    tagline: "Submaximal sets, frequent and spread out",
+const INTENSITY_EN: Record<string, { name: string; tagline: string; description: string }> = {
+  deload: {
+    name: "Deload",
+    tagline: "Less volume for a few days",
     description:
-      "Many short sets through the day, always far from failure (leave 2-3 reps in the tank). Build strength and technique without fatigue. It's the heart of microset.",
+      "Schedules ~half the sets that day. For deload weeks, fatigue or low time. Doesn't touch your routine — just programs fewer.",
   },
-  volume: {
-    name: "Volume",
-    tagline: "Accumulate work with moderate reps",
-    description:
-      "More sets per exercise with medium reps and shorter rest. Good for hypertrophy and muscular endurance.",
+  normal: {
+    name: "Normal",
+    tagline: "Your routine as-is",
+    description: "The sets you configured per exercise, unchanged.",
   },
-  strength: {
-    name: "Strength",
-    tagline: "Few sets, intense",
-    description:
-      "Fewer but demanding sets (hard variants or weighted) with more rest between each. To push your max.",
-  },
-  maintenance: {
-    name: "Maintenance",
-    tagline: "Just enough to hold",
-    description: "Low volume to keep what you've gained during heavy weeks or when short on time.",
-  },
-  free: {
-    name: "Free",
-    tagline: "You set sets and rest",
-    description: "No template: adjust everything by hand, per exercise.",
+  push: {
+    name: "Push",
+    tagline: "More volume that day",
+    description: "Bumps volume ~1.5×. For loading days — make sure it fits your schedule.",
   },
 };
 
-/** Localized methodology list/lookup (EN overrides name/tagline/description by id). */
-export function useMethodologies(): {
-  all: Methodology[];
-  byId: (id: string) => Methodology | undefined;
+/** Localized intensity list/lookup (EN overrides name/tagline/description by id). */
+export function useIntensities(): {
+  all: Intensity[];
+  byId: (id: string) => Intensity | undefined;
 } {
   const lang = useLang();
   const all =
     lang === "en"
-      ? METHODOLOGIES.map((m) => ({ ...m, ...(METHODOLOGY_EN[m.id] ?? {}) }))
-      : METHODOLOGIES;
+      ? INTENSITIES.map((m) => ({ ...m, ...(INTENSITY_EN[m.id] ?? {}) }))
+      : INTENSITIES;
   return { all, byId: (id) => all.find((m) => m.id === id) };
 }
