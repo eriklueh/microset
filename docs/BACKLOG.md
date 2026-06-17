@@ -5,7 +5,7 @@ Ideas and parked work that aren't committed milestones yet. The committed plan l
 polish, and small fixes we deliberately deferred. Promote items to the roadmap as they're
 picked up.
 
-**Status:** 🔜 next · 🧪 in progress · 💡 idea · 🩹 parked fix
+**Status:** ✅ shipped · 🔜 next · 🧪 in progress · 💡 idea · 🩹 parked fix
 **Effort:** S (hours) · M (a day-ish) · L (multi-session)
 
 ---
@@ -14,7 +14,7 @@ picked up.
 
 | Item | What | Effort | Status |
 |---|---|---|---|
-| **Hoy = timeline/relay** | Rebuild Hoy as a vertical HUD track: moving "now" marker, done blocks ticked, next highlighted. | M | 🧪 |
+| **Hoy = timeline/relay** | Hoy rebuilt as a vertical HUD relay track: spine of nodes, a "NOW" marker head above the next set, done/skipped/pending nodes, the next set as the live node (countdown when ahead, inline actions when due). | M | ✅ |
 | **Quick-log free sets** | A "+ registrar" affordance (panel + Hoy) to log a set done off-schedule. Feeds progression + balance. HUD stamp on log. | M | 💡 |
 | **Focus / DND window** | Tray/panel toggle that silences reminders for N min (meeting, deep work) without breaking the day's plan. `FOCO` state, dimmed chrome + pixel countdown. | S–M | 💡 |
 | **Proactive coach diagnostics** | Extend the coach readout with real patterns from logs (broken streak, "you postpone 15h", neglected groups) as one-tap actions. Reuses `analysis.ts` + logs, almost no new UI. | S–M | 💡 |
