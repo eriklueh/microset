@@ -6,12 +6,11 @@ export type Section =
   | "coach"
   | "today"
   | "routine"
-  | "week"
   | "equipment"
   | "progress"
   | "settings";
 
-const NAV_IDS = ["coach", "today", "routine", "week", "equipment", "progress"] as const;
+const NAV_IDS = ["coach", "today", "routine", "equipment", "progress"] as const;
 
 const rowBase =
   "flex w-full items-center gap-3 px-[18px] py-[13px] text-left transition-colors";
@@ -71,7 +70,7 @@ export function Sidebar({
           }`}
         >
           <span className={`font-mono text-[10px] ${active === "settings" ? "text-[var(--on)] opacity-60" : "text-[var(--faint2)]"}`}>
-            07
+            06
           </span>
           <span className="font-mono text-[12.5px] font-semibold tracking-[0.08em]">{t.nav.settings}</span>
         </button>

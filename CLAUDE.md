@@ -51,7 +51,7 @@ microset/
 │   ├── store/                # Zustand store (state + JSON persistence)
 │   ├── hooks/                # useScheduler (notification timer)
 │   ├── lib/notify.ts         # native OS notifications (fallback; unused by default)
-│   ├── components/studio/    # Studio views (Coach/Hoy/Rutina/Semana/Equipo/Progreso/Ajustes)
+│   ├── components/studio/    # Studio views (Coach/Hoy/Rutina/Equipo/Progreso/Ajustes; Semana fusionada en Rutina)
 │   ├── components/panel/     # FloatingPanel (always-on-top widget)
 │   ├── components/toast/     # Toast (custom in-app reminder window)
 │   ├── store/sync.ts         # cross-window state sync (Tauri events)
@@ -87,7 +87,7 @@ cargo build                   # (in src-tauri/) compile Rust only
 - **Design language — "Manifiesto" (brutalist-editorial):** solid surfaces, no glass/cards/rounding (`--radius: 0`), thin 1px rules (`--rule`/`--rule2`), big uppercase mastheads, mono labels/numerals (Geist Mono), solid lime accent blocks. Tokens are CSS vars per theme in `src/index.css` (`--bg/--fg/--acc/--on/--dim/--faint/--faint2/--rule/--rule2/--bar0…`), also mapped onto shadcn var names for compat. Components reference them via arbitrary values like `bg-[var(--acc)]` / `text-[var(--fg)]`.
 - **Theme:** light/dark/system + accent presets in `src/lib/theme.ts` (toggles `.dark` + `[data-accent]`, persisted in the store). Accents: lime (default, no attr), sky, violet, amber, rose, teal.
 - **Windows are opaque** (no transparency/vibrancy). The main window uses `decorations: false` + a **custom titlebar** (`components/studio/Titlebar.tsx`: drag region + min/max/close→hide-to-tray). The floating panel is its own borderless window. `window-vibrancy` was removed.
-- **Shell layout:** `App.tsx` = `Titlebar` + (`Sidebar` numbered 01–07 + `<main>` scrollable). Each view owns its masthead via `components/studio/Masthead.tsx`.
+- **Shell layout:** `App.tsx` = `Titlebar` (system bar) + (`Sidebar` numbered 01–06 + `<main>` scrollable) + `RelayBar`. Each view owns its masthead via `components/studio/Masthead.tsx`. The week (lun→dom day-type + casa/oficina) is a compact **week strip** inside Rutina, not a separate view.
 - Spanish is fine in user-facing copy (the user is a Spanish speaker); keep code/identifiers
   in English.
 - Keep `tauri.conf.json` identifier `com.microset.app`.

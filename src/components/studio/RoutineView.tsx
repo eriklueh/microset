@@ -6,7 +6,7 @@ import { useMethodologies } from "@/domain/i18n";
 import type { EquipmentId, ExerciseContext, Measure, MuscleGroup } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
-import { useStore } from "@/store/useStore";
+import { REST, useStore } from "@/store/useStore";
 import {
   BODY_GROUPS,
   GROUP_MUSCLES,
@@ -38,11 +38,15 @@ const input =
   "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
 const stepBtn =
   "grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]";
+const todayIdx = (new Date().getDay() + 6) % 7; // Mon=0 … Sun=6
 
 export function RoutineView() {
   const t = useT();
   const dayTypes = useStore((s) => s.dayTypes);
   const week = useStore((s) => s.week);
+  const dayKind = useStore((s) => s.dayKind);
+  const setWeekDay = useStore((s) => s.setWeekDay);
+  const setDayKind = useStore((s) => s.setDayKind);
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
   const methodologyId = useStore((s) => s.methodologyId);
@@ -305,6 +309,61 @@ export function RoutineView() {
           <span className="text-[var(--acc)]">UPTIME 0.978</span>
         </span>
       </div>
+    </div>
+  );
+
+  // ----- week strip (the merged Semana view): assign a day-type + place per day -
+  const weekStrip = (
+    <div className="flex flex-none border-b border-[var(--rule2)]">
+      {t.routine.dow.map((d, i) => {
+        const isToday = i === todayIdx;
+        const slot = week[i];
+        const isRest = slot === REST;
+        const editing = !isRest && slot === selected.id;
+        const place = dayKind[i];
+        return (
+          <div
+            key={i}
+            className="relative min-w-0 flex-1 border-r border-[var(--rule)] p-2 last:border-r-0"
+            style={{ background: editing ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent" }}
+          >
+            {editing && <span className="absolute inset-x-0 top-0 h-0.5 bg-[var(--acc)]" />}
+            <button
+              onClick={() => !isRest && setSelectedId(slot)}
+              title={isRest ? undefined : t.routine.editDayHint}
+              className="block w-full text-left font-mono text-[9.5px] tracking-[0.14em]"
+              style={{ color: isToday ? "var(--acc)" : "var(--faint)", cursor: isRest ? "default" : "pointer" }}
+            >
+              {d}
+              {isToday ? " ·" : ""}
+            </button>
+            <select
+              value={slot}
+              onChange={(e) => setWeekDay(i, e.currentTarget.value)}
+              aria-label={`${t.week.day} ${d}`}
+              className={`${input} mt-1 w-full appearance-none px-1.5 py-1 font-mono text-[10.5px]`}
+              style={{ color: isRest ? "var(--faint2)" : "var(--fg)" }}
+            >
+              {dayTypes.map((x) => (
+                <option key={x.id} value={x.id} className="bg-[var(--ink2)]">
+                  {x.name.toUpperCase()}
+                </option>
+              ))}
+              <option value={REST} className="bg-[var(--ink2)]">
+                {t.today.rest.toUpperCase()}
+              </option>
+            </select>
+            <button
+              onClick={() => setDayKind(i, place === null ? "home" : place === "home" ? "office" : null)}
+              aria-label={`${t.week.place} ${d}`}
+              className="mt-1 w-full border border-[var(--rule2)] px-1 py-0.5 font-mono text-[9px] tracking-[0.08em] hover:border-[var(--fg)]"
+              style={{ color: place ? "var(--dim)" : "var(--faint2)" }}
+            >
+              {place === "home" ? t.week.home.toUpperCase() : place === "office" ? t.week.office.toUpperCase() : "—"}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -891,6 +950,7 @@ export function RoutineView() {
   return (
     <div className="flex h-full flex-col">
       {header}
+      {mode === "list" && weekStrip}
       <div className="flex min-h-0 flex-1">
         {leftCol}
         {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}

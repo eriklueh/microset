@@ -9,7 +9,6 @@ import { Sidebar, type Section } from "@/components/studio/Sidebar";
 import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
 import { RoutineView } from "@/components/studio/RoutineView";
-import { SemanaView } from "@/components/studio/SemanaView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { ProgressView } from "@/components/studio/ProgressView";
 import { SettingsView } from "@/components/studio/SettingsView";
@@ -41,7 +40,6 @@ function App() {
           {section === "coach" && <CoachView onSettings={() => setSection("settings")} />}
           {section === "today" && <TodayView />}
           {section === "routine" && <RoutineView />}
-          {section === "week" && <SemanaView />}
           {section === "equipment" && <EquipmentView />}
           {section === "progress" && <ProgressView />}
           {section === "settings" && <SettingsView />}
