@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
 import { useIntensities } from "@/domain/i18n";
@@ -27,6 +27,7 @@ import {
 } from "@/domain/bodyGroups";
 import { BodyFigures, BodyLegend, GroupChips } from "./BodyMap";
 import { Barcode, Corners, RegMark } from "./hud";
+import { RAIL_BODY_W, RAIL_CLASS, ViewHeader } from "./shell";
 
 type Mode = "list" | "crear" | "buscar";
 
@@ -284,34 +285,15 @@ export function RoutineView() {
   };
 
   const header = (
-    <div className="flex-none border-b border-[var(--rule2)] px-7 pt-3.5 pb-3">
-      {/* Row 1 — identity + primary control */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          {mode !== "list" && (
-            <button
-              onClick={() => setMode("list")}
-              aria-label={t.routine.title}
-              className="flex-none text-[var(--acc)] hover:opacity-70"
-            >
-              <ArrowLeft className="size-4" />
-            </button>
-          )}
-          {mode !== "list" && (
-            <span className="flex-none font-mono text-[9px] tracking-[0.16em] text-[var(--acc)]">
-              {mode === "buscar" ? t.routine.fromLibrary : t.routine.newExercise}
-            </span>
-          )}
-          <h1
-            className="m-0 min-w-0 truncate text-[22px] leading-none font-extrabold tracking-[-0.03em] uppercase"
-            style={{ color: mode === "crear" && !cName ? "var(--faint2)" : "var(--fg)" }}
-          >
-            {mode === "list" ? t.routine.title : mode === "buscar" ? t.routine.searchTitle : cName || t.routine.unnamed}
-          </h1>
-        </div>
-
-        {mode === "list" ? (
-          <div className="flex flex-none items-center gap-3">
+    <ViewHeader
+      onBack={mode !== "list" ? () => setMode("list") : undefined}
+      backLabel={t.routine.title}
+      kicker={mode === "list" ? t.routine.sub : mode === "buscar" ? t.routine.fromLibrary : t.routine.newExercise}
+      title={mode === "list" ? t.routine.title : mode === "buscar" ? t.routine.searchTitle : cName || t.routine.unnamed}
+      titleMuted={mode === "crear" && !cName}
+      right={
+        mode === "list" ? (
+          <>
             <span className="font-mono text-[11px] tracking-[0.06em]">
               <span className="text-[var(--faint)]">{t.routine.sets} </span>
               <span className="font-semibold text-[var(--fg)]">{totalSets}</span>
@@ -337,25 +319,23 @@ export function RoutineView() {
                 </option>
               ))}
             </select>
-          </div>
+          </>
         ) : (
-          <div className="flex flex-none items-center gap-2">
+          <>
             {modeTab(t.routine.tabCreate, "crear")}
             {modeTab(t.routine.tabBrowse, "buscar")}
-          </div>
-        )}
-      </div>
-
-      {/* Row 2 — day-type tabs */}
-      <div className="mt-2.5 flex items-center justify-between gap-3">
+          </>
+        )
+      }
+      context={
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {mode !== "list" && (
             <span className="mr-0.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{t.routine.addTo}</span>
           )}
           {dayTypePills}
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 
   // [SEMANA | MES] toggle — lives at the top of the right working pane so the
@@ -635,7 +615,7 @@ export function RoutineView() {
 
   // ----- left cockpit (anchored across modes) --------------------------------
   const leftCol = (
-    <aside className="ms-rutina-rail flex w-[384px] flex-none flex-col gap-5 overflow-y-auto border-r border-[var(--rule2)] p-6">
+    <aside className={RAIL_CLASS}>
       {/* scanner HUD header */}
       <div className="flex items-center justify-between border-b border-[var(--rule)] pb-2">
         <span className="flex min-w-0 items-center gap-2">
@@ -698,7 +678,7 @@ export function RoutineView() {
         <Corners />
         <RegMark className="top-3 left-1/2 -translate-x-1/2" />
         <div className="relative z-[1] flex justify-center px-3 pt-6 pb-3">
-          <BodyFigures state={bodyState} width={158} onPick={creating ? cycleMuscle : undefined} />
+          <BodyFigures state={bodyState} width={RAIL_BODY_W} onPick={creating ? cycleMuscle : undefined} />
         </div>
       </div>
 

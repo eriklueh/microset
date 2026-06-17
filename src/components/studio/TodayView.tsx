@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
-import type { Block, RoutineItem, Settings } from "@/lib/engine";
+import type { Block, RoutineItem } from "@/lib/engine";
 import { exerciseContext } from "@/domain/seed";
 import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
 import { useCatalog } from "@/hooks/useCatalog";
@@ -9,6 +9,9 @@ import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
 import { BodyFigures, BodyLegend } from "./BodyMap";
 import { Corners, RegMark } from "./hud";
+import { RAIL_BODY_W, RAIL_CLASS, ViewHeader } from "./shell";
+
+const metaLine = (parts: (string | false)[]) => parts.filter(Boolean).join(" · ");
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const hh = (min: number) => pad(Math.round(min / 60));
@@ -38,7 +41,10 @@ export function TodayView() {
   if (day.rest) {
     return (
       <div className="flex h-full flex-col">
-        <Header weekday={weekday} dayType={t.today.rest} settings={settings} done={0} total={0} pct={0} showScore={false} />
+        <ViewHeader
+          kicker={metaLine([weekday, t.today.rest, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`])}
+          title={t.today.title}
+        />
         <div className="flex min-h-0 flex-1 items-center justify-center p-8">
           <div className="border border-[var(--rule2)] p-10 text-center">
             <div className="text-[34px] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
@@ -93,19 +99,29 @@ export function TodayView() {
 
   return (
     <div className="flex h-full flex-col">
-      <Header
-        weekday={weekday}
-        dayType={(day.dayTypeName ?? "").toUpperCase()}
-        settings={settings}
-        done={doneCount}
-        total={total}
-        pct={pct}
-        showScore
+      <ViewHeader
+        kicker={metaLine([weekday, (day.dayTypeName ?? "").toUpperCase(), `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`])}
+        title={t.today.title}
+        right={
+          <div className="text-right">
+            <div className="font-pixel text-[34px] leading-[0.8] text-[var(--fg)]">
+              {pad(doneCount)}
+              <span className="text-[var(--faint2)]">/{pad(total)}</span>
+            </div>
+            <div className="mt-1 font-mono text-[8.5px] tracking-[0.18em] text-[var(--faint)]">{t.today.setsDone}</div>
+          </div>
+        }
+        context={
+          <div className="flex h-[4px]">
+            <div className="bg-[var(--acc)]" style={{ width: `${pct}%` }} />
+            <div className="flex-1 bg-[var(--bar0)]" />
+          </div>
+        }
       />
 
       <div className="flex min-h-0 flex-1">
         {/* LEFT RAIL — today's muscle load (anchored cockpit) */}
-        <aside className="flex w-[340px] flex-none flex-col gap-4 overflow-y-auto border-r border-[var(--rule2)] p-6">
+        <aside className={RAIL_CLASS}>
           <div className="flex items-center justify-between">
             <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.today.loadToday}</span>
             <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
@@ -119,7 +135,7 @@ export function TodayView() {
           >
             <Corners />
             <RegMark className="top-2 left-2.5" />
-            <BodyFigures state={aggState} width={150} />
+            <BodyFigures state={aggState} width={RAIL_BODY_W} />
           </div>
           <BodyLegend />
           <div className="mt-1 flex items-baseline gap-2">
@@ -217,55 +233,6 @@ export function TodayView() {
           ))}
         </section>
       </div>
-    </div>
-  );
-}
-
-function Header({
-  weekday,
-  dayType,
-  settings,
-  done,
-  total,
-  pct,
-  showScore,
-}: {
-  weekday: string;
-  dayType: string;
-  settings: Settings;
-  done: number;
-  total: number;
-  pct: number;
-  showScore: boolean;
-}) {
-  const t = useT();
-  return (
-    <div className="flex-none border-b border-[var(--rule2)] px-7 pt-5 pb-4">
-      <div className="flex items-end justify-between gap-5">
-        <div>
-          <div className="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-[var(--faint)]">
-            {[weekday, dayType, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`].filter(Boolean).join(" · ")}
-          </div>
-          <h1 className="m-0 text-[40px] leading-[0.85] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
-            {t.today.title}
-          </h1>
-        </div>
-        {showScore && (
-          <div className="flex-none text-right">
-            <div className="font-pixel text-[44px] leading-[0.8] text-[var(--fg)]">
-              {pad(done)}
-              <span className="text-[var(--faint2)]">/{pad(total)}</span>
-            </div>
-            <div className="mt-1.5 font-mono text-[9.5px] tracking-[0.2em] text-[var(--faint)]">{t.today.setsDone}</div>
-          </div>
-        )}
-      </div>
-      {showScore && (
-        <div className="mt-4 flex h-[4px]">
-          <div className="bg-[var(--acc)]" style={{ width: `${pct}%` }} />
-          <div className="flex-1 bg-[var(--bar0)]" />
-        </div>
-      )}
     </div>
   );
 }

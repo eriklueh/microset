@@ -8,19 +8,7 @@ import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { BodyFigures, BodyLegend } from "./BodyMap";
 import { Corners, RegMark } from "./hud";
-
-/** Compact masthead shared by the empty + populated states. */
-function Header() {
-  const t = useT();
-  return (
-    <div className="flex-none border-b border-[var(--rule2)] px-7 pt-5 pb-4">
-      <div className="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-[var(--faint)]">{t.progress.sub}</div>
-      <h1 className="m-0 text-[40px] leading-[0.85] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
-        {t.progress.title}
-      </h1>
-    </div>
-  );
-}
+import { RAIL_BODY_W, RAIL_CLASS, ViewHeader } from "./shell";
 
 const DAY = 86_400_000;
 const WARN = "#e0a400";
@@ -45,7 +33,7 @@ export function ProgressView() {
   if (logs.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <Header />
+        <ViewHeader kicker={t.progress.sub} title={t.progress.title} />
         <div className="flex min-h-0 flex-1 items-center justify-center p-8">
           <div className="max-w-md border border-[var(--rule2)] p-8 text-center text-[13px] leading-[1.6] text-[var(--faint)]">
             {t.progress.emptyBefore}{" "}
@@ -87,10 +75,10 @@ export function ProgressView() {
 
   return (
     <div className="flex h-full flex-col">
-      <Header />
+      <ViewHeader kicker={t.progress.sub} title={t.progress.title} />
       <div className="flex min-h-0 flex-1">
         {/* LEFT RAIL — what you trained in the last 7 days (anchored) */}
-        <aside className="flex w-[340px] flex-none flex-col gap-4 overflow-y-auto border-r border-[var(--rule2)] p-6">
+        <aside className={RAIL_CLASS}>
           <div className="flex items-center justify-between">
             <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.progress.last7days}</span>
             <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
@@ -104,7 +92,7 @@ export function ProgressView() {
           >
             <Corners />
             <RegMark className="top-2 left-2.5" />
-            <BodyFigures state={aggState} width={150} />
+            <BodyFigures state={aggState} width={RAIL_BODY_W} />
           </div>
           <BodyLegend />
           <div className="mt-1 flex items-baseline gap-2">

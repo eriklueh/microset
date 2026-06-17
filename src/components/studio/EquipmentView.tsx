@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Masthead } from "./Masthead";
+import { ViewHeader } from "./shell";
 import { EQUIPMENT } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
@@ -29,9 +29,9 @@ export function EquipmentView() {
   };
 
   return (
-    <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title={t.equipment.title} sub={t.equipment.sub} />
-
+    <div className="flex h-full flex-col">
+      <ViewHeader kicker={t.equipment.sub} title={t.equipment.title} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
       <div className="border-b border-[var(--rule)]">
         {allEquipment.map((eq) => {
           const enables = all.filter((e) => e.equipment.includes(eq.id)).length;
@@ -87,6 +87,7 @@ export function EquipmentView() {
         >
           <Plus className="size-3.5" /> {t.equipment.add}
         </button>
+      </div>
       </div>
     </div>
   );

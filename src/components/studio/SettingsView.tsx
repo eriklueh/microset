@@ -4,7 +4,7 @@ import { openConfigFolder } from "@/lib/windows";
 import { reloadFromFiles } from "@/store/files";
 import { useT, LangSelect } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
-import { Masthead } from "./Masthead";
+import { ViewHeader } from "./shell";
 import { SquareSwitch } from "./EquipmentView";
 
 const toHour = (min: number) => Math.round(min / 60);
@@ -41,9 +41,9 @@ export function SettingsView() {
   };
 
   return (
-    <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title={t.settings.title} sub={t.settings.sub} />
-
+    <div className="flex h-full flex-col">
+      <ViewHeader kicker={t.settings.sub} title={t.settings.title} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
       <Section title={t.settings.appearance}>
         <Row label={t.settings.theme}>
           <div className="flex">
@@ -250,6 +250,7 @@ export function SettingsView() {
           </button>
         </Row>
       </Section>
+      </div>
     </div>
   );
 }
