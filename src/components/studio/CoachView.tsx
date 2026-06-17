@@ -10,6 +10,7 @@ import {
   type CoachSessionMsg,
 } from "@/lib/windows";
 import { useStore } from "@/store/useStore";
+import { ViewHeader } from "./shell";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
 import { coachSnapshot } from "@/coach/snapshot";
@@ -224,36 +225,32 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col px-[34px] pt-[22px] pb-[18px]">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-[30px] leading-none font-extrabold tracking-[-0.03em] text-[var(--fg)]">
-            {t.coach.title}
-          </h2>
-          <div className="mt-1.5 font-mono text-[10px] tracking-[0.12em] text-[var(--faint)]">
-            {t.coach.subtitle}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onSettings}
-            title={t.coach.configureInSettings}
-            className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
-          >
-            {coach.provider === "local" ? "LOCAL" : "API"} · {coach.model}
-          </button>
-          <button
-            onClick={() => void openCoach()}
-            className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
-          >
-            CLAUDE CODE
-          </button>
-        </div>
-      </div>
+    <div className="flex h-full flex-col">
+      <ViewHeader
+        kicker={t.coach.subtitle}
+        title={t.coach.title}
+        right={
+          <>
+            <button
+              onClick={onSettings}
+              title={t.coach.configureInSettings}
+              className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
+            >
+              {coach.provider === "local" ? "LOCAL" : "API"} · {coach.model}
+            </button>
+            <button
+              onClick={() => void openCoach()}
+              className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
+            >
+              CLAUDE CODE
+            </button>
+          </>
+        }
+      />
 
+      <div className="flex min-h-0 flex-1 flex-col px-7 py-6">
       {/* Actionable status strip */}
-      <div className="mt-3.5 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Insight label={`${t.coach.week} · ${snap.activeDays}`} />
         {snap.feasibilityOk ? (
           <Insight label={t.coach.allFits} tone="ok" />
@@ -428,6 +425,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
             </>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
