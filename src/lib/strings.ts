@@ -341,14 +341,6 @@ const es = {
   shell: {
     online: "EN LÍNEA",
     relay: "PAUSA ACTIVA RELAY",
-    ticker: [
-      "MOVÉS O TE OXIDÁS",
-      "ENTRÁ EN LAS PAUSAS",
-      "SALÍ DE LA SILLA",
-      "MICRO-PAUSAS DE MOVIMIENTO",
-      "8 PAUSAS AL DÍA",
-      "OPEN SOURCE · MIT",
-    ],
   },
 };
 
@@ -689,14 +681,6 @@ const en: Dict = {
   shell: {
     online: "ONLINE",
     relay: "ACTIVE BREAK RELAY",
-    ticker: [
-      "MOVE OR RUST",
-      "STEP INTO THE BREAKS",
-      "GET OFF THE CHAIR",
-      "MOVEMENT MICRO-BREAKS",
-      "8 BREAKS A DAY",
-      "OPEN SOURCE · MIT",
-    ],
   },
 };
 

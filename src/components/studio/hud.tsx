@@ -63,7 +63,7 @@ export function RelayBar() {
     <div className="flex w-[28px] flex-none flex-col items-center justify-between bg-[var(--acc)] py-3.5">
       <span className="size-2 bg-[var(--on)]" />
       <div
-        className="font-pixel text-[12px] font-bold tracking-[0.06em] text-[var(--on)]"
+        className="font-pixel text-[12px] tracking-[0.08em] text-[var(--on)]"
         style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
       >
         {t.shell.relay}
@@ -78,26 +78,3 @@ export function RelayBar() {
   );
 }
 
-/** Lime marquee scrolling the brand voice across the bottom of the shell. */
-export function Ticker() {
-  const t = useT();
-  const phrases = t.shell.ticker;
-  const half = (
-    <div className="flex shrink-0 items-center whitespace-nowrap">
-      {phrases.map((p, i) => (
-        <span key={i} className="flex items-center">
-          <span className="py-2 font-mono text-[11px] font-semibold tracking-[0.1em] text-[var(--on)]">{p}</span>
-          <span className="mx-5 size-[7px] flex-none rotate-45 bg-[var(--on)]" />
-        </span>
-      ))}
-    </div>
-  );
-  return (
-    <div className="flex-none overflow-hidden border-t border-[var(--rule2)] bg-[var(--acc)]">
-      <div className="ms-marq flex w-max">
-        {half}
-        {half}
-      </div>
-    </div>
-  );
-}

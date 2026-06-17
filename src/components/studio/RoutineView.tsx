@@ -217,7 +217,7 @@ export function RoutineView() {
     return (
       <button
         onClick={() => setMode(val)}
-        className="border px-4 py-2 font-mono text-[12px] font-semibold tracking-[0.06em]"
+        className="border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
         style={{
           borderColor: on ? "var(--acc)" : "var(--rule2)",
           background: on ? "var(--acc)" : "transparent",
@@ -230,44 +230,34 @@ export function RoutineView() {
   };
 
   const header = (
-    <div className="flex-none px-7 pt-6">
-      {/* breadcrumb */}
-      <button
-        onClick={mode === "list" ? undefined : () => setMode("list")}
-        className="flex items-center gap-2 font-mono text-[10px] tracking-[0.14em]"
-        style={{ cursor: mode === "list" ? "default" : "pointer" }}
-      >
-        {mode !== "list" && <ArrowLeft className="size-3.5 text-[var(--acc)]" />}
-        <span className="text-[var(--faint)]">{t.routine.title}</span>
-        <span className="text-[var(--faint2)]">/</span>
-        <span className="text-[var(--faint2)]">{selected.name.toUpperCase()}</span>
-      </button>
-
-      {/* title row */}
-      <div className="mt-3 flex items-end justify-between gap-5">
-        <div className="min-w-0 max-w-[560px]">
-          <div
-            className="mb-1.5 font-mono text-[10px] tracking-[0.16em]"
-            style={{ color: mode === "list" ? "var(--faint)" : "var(--acc)" }}
-          >
-            {mode === "list" ? t.routine.sub : mode === "buscar" ? t.routine.fromLibrary : t.routine.newExercise}
-          </div>
+    <div className="flex-none border-b border-[var(--rule2)] px-7 pt-3.5 pb-3">
+      {/* Row 1 — identity + primary control */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {mode !== "list" && (
+            <button
+              onClick={() => setMode("list")}
+              aria-label={t.routine.title}
+              className="flex-none text-[var(--acc)] hover:opacity-70"
+            >
+              <ArrowLeft className="size-4" />
+            </button>
+          )}
+          {mode !== "list" && (
+            <span className="flex-none font-mono text-[9px] tracking-[0.16em] text-[var(--acc)]">
+              {mode === "buscar" ? t.routine.fromLibrary : t.routine.newExercise}
+            </span>
+          )}
           <h1
-            className="m-0 truncate text-[34px] leading-[0.9] font-extrabold tracking-[-0.04em] uppercase"
-            style={{
-              color: mode === "crear" && !cName ? "var(--faint2)" : "var(--fg)",
-            }}
+            className="m-0 min-w-0 truncate text-[22px] leading-none font-extrabold tracking-[-0.03em] uppercase"
+            style={{ color: mode === "crear" && !cName ? "var(--faint2)" : "var(--fg)" }}
           >
-            {mode === "list"
-              ? t.routine.title
-              : mode === "buscar"
-                ? t.routine.searchTitle
-                : cName || t.routine.unnamed}
+            {mode === "list" ? t.routine.title : mode === "buscar" ? t.routine.searchTitle : cName || t.routine.unnamed}
           </h1>
         </div>
 
         {mode === "list" ? (
-          <div className="flex flex-none items-center gap-4">
+          <div className="flex flex-none items-center gap-3">
             <span className="font-mono text-[11px] tracking-[0.06em]">
               <span className="text-[var(--faint)]">{t.routine.sets} </span>
               <span className="font-semibold text-[var(--fg)]">{totalSets}</span>
@@ -294,31 +284,26 @@ export function RoutineView() {
             </select>
           </div>
         ) : (
-          <div className="flex flex-none items-center gap-2.5">
+          <div className="flex flex-none items-center gap-2">
             {modeTab(t.routine.tabCreate, "crear")}
             {modeTab(t.routine.tabBrowse, "buscar")}
           </div>
         )}
       </div>
 
-      {/* pills */}
-      <div className="mt-4 flex flex-wrap items-center gap-2.5">
-        {mode !== "list" && (
-          <span className="mr-1 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{t.routine.addTo}</span>
-        )}
-        {dayTypePills}
+      {/* Row 2 — day-type tabs + minimal HUD mark */}
+      <div className="mt-2.5 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {mode !== "list" && (
+            <span className="mr-0.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{t.routine.addTo}</span>
+          )}
+          {dayTypePills}
+        </div>
+        <span className="hidden flex-none items-center gap-2.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)] md:flex">
+          <Barcode height={9} />
+          <span className="text-[var(--acc)]">UPTIME 0.978</span>
+        </span>
       </div>
-    </div>
-  );
-
-  const hudStrip = (
-    <div className="mt-5 flex flex-none items-center gap-4 border-y border-[var(--rule)] px-7 py-2.5 font-mono text-[9.5px] tracking-[0.14em] text-[var(--faint2)]">
-      <Barcode />
-      <span>REF · MICROSET-RUT</span>
-      <span className="text-[var(--faint2)]">CFG · {selected.name.toUpperCase()}</span>
-      <span className="flex-1" />
-      <span>SYNC 0.793</span>
-      <span className="text-[var(--acc)]">UPTIME 0.978</span>
     </div>
   );
 
@@ -885,7 +870,6 @@ export function RoutineView() {
   return (
     <div className="flex h-full flex-col">
       {header}
-      {hudStrip}
       <div className="flex min-h-0 flex-1">
         {leftCol}
         {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}

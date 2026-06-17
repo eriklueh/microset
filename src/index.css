@@ -3,7 +3,15 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
-@import "@fontsource/pixelify-sans";
+
+/* Geist Pixel (Square) — the Marathon brand/numeral face. Self-hosted from Vercel's `geist`. */
+@font-face {
+  font-family: "Geist Pixel";
+  src: url("./assets/fonts/GeistPixel-Square.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -11,7 +19,7 @@
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', -apple-system, sans-serif;
     --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
-    --font-pixel: 'Pixelify Sans', 'Geist Mono Variable', monospace;
+    --font-pixel: 'Geist Pixel', 'Geist Mono Variable', monospace;
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -175,17 +183,4 @@
 }
 .ms-blink {
   animation: ms-blink 2.4s steps(1, end) infinite;
-}
-
-/* Marathon ticker: lime marquee scrolling the brand voice. */
-@keyframes ms-marq {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-.ms-marq {
-  animation: ms-marq 32s linear infinite;
 }

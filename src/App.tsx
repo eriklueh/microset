@@ -4,7 +4,7 @@ import { useScheduler } from "@/hooks/useScheduler";
 import { useT } from "@/lib/i18n";
 import { setPanelVisible } from "@/lib/windows";
 import { Titlebar } from "@/components/studio/Titlebar";
-import { RelayBar, Ticker } from "@/components/studio/hud";
+import { RelayBar } from "@/components/studio/hud";
 import { Sidebar, type Section } from "@/components/studio/Sidebar";
 import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
@@ -48,7 +48,6 @@ function App() {
         </main>
         <RelayBar />
       </div>
-      <Ticker />
       <UpdateBanner />
     </div>
   );
