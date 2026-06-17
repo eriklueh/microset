@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
 import { useMethodologies } from "@/domain/i18n";
@@ -72,6 +72,7 @@ export function RoutineView() {
   const [search, setSearch] = useState("");
   const [hoverEx, setHoverEx] = useState<string | null>(null);
   const [planView, setPlanView] = useState<"semana" | "mes">("semana");
+  const [renaming, setRenaming] = useState(false);
   const [calMonth, setCalMonth] = useState(() => {
     const d = new Date();
     return { y: d.getFullYear(), m0: d.getMonth() };
@@ -204,11 +205,31 @@ export function RoutineView() {
     <>
       {dayTypes.map((dt) => {
         const on = selected.id === dt.id;
+        // active tab in list mode = rename (double-click) + delete (×)
+        if (on && mode === "list" && renaming) {
+          return (
+            <input
+              key={dt.id}
+              autoFocus
+              value={dt.name}
+              onChange={(e) => renameDayType(dt.id, e.currentTarget.value)}
+              onBlur={() => setRenaming(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === "Escape") setRenaming(false);
+              }}
+              aria-label={t.routine.dayTypeNameAria}
+              className="border border-[var(--acc)] bg-transparent px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--fg)] outline-none"
+              style={{ width: `${Math.max(7, dt.name.length + 2)}ch` }}
+            />
+          );
+        }
         return (
           <button
             key={dt.id}
             onClick={() => setSelectedId(dt.id)}
-            className="border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
+            onDoubleClick={() => on && mode === "list" && setRenaming(true)}
+            title={on && mode === "list" ? t.routine.renameHint : undefined}
+            className="flex items-center gap-2 border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
             style={{
               borderColor: on ? "var(--acc)" : "var(--rule2)",
               background: on ? "var(--acc)" : "transparent",
@@ -216,6 +237,19 @@ export function RoutineView() {
             }}
           >
             {dt.name.toUpperCase()}
+            {on && mode === "list" && dayTypes.length > 1 && (
+              <span
+                role="button"
+                aria-label={t.routine.deleteDayTypeAria}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeDayType(dt.id);
+                }}
+                className="-mr-1 grid size-3.5 place-items-center hover:opacity-60"
+              >
+                <X className="size-3" />
+              </span>
+            )}
           </button>
         );
       })}
@@ -317,10 +351,27 @@ export function RoutineView() {
           )}
           {dayTypePills}
         </div>
-        <span className="hidden flex-none items-center gap-2.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)] md:flex">
-          <Barcode height={9} />
-          <span className="text-[var(--acc)]">UPTIME 0.978</span>
-        </span>
+        {mode === "list" && (
+          <div className="flex flex-none items-center gap-1.5">
+            {(["semana", "mes"] as const).map((v) => {
+              const on = planView === v;
+              return (
+                <button
+                  key={v}
+                  onClick={() => setPlanView(v)}
+                  className="border px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em]"
+                  style={{
+                    borderColor: on ? "var(--acc)" : "var(--rule2)",
+                    background: on ? "var(--acc)" : "transparent",
+                    color: on ? "var(--on)" : "var(--faint)",
+                  }}
+                >
+                  {v === "semana" ? t.cal.week : t.cal.month}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -341,15 +392,26 @@ export function RoutineView() {
             style={{ background: editing ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent" }}
           >
             {editing && <span className="absolute inset-x-0 top-0 h-0.5 bg-[var(--acc)]" />}
-            <button
-              onClick={() => !isRest && setSelectedId(slot)}
-              title={isRest ? undefined : t.routine.editDayHint}
-              className="block w-full text-left font-mono text-[9.5px] tracking-[0.14em]"
-              style={{ color: isToday ? "var(--acc)" : "var(--faint)", cursor: isRest ? "default" : "pointer" }}
-            >
-              {d}
-              {isToday ? " ·" : ""}
-            </button>
+            <div className="flex items-center justify-between gap-1">
+              <button
+                onClick={() => !isRest && setSelectedId(slot)}
+                title={isRest ? undefined : t.routine.editDayHint}
+                className="min-w-0 flex-1 truncate text-left font-mono text-[9.5px] tracking-[0.14em]"
+                style={{ color: isToday ? "var(--acc)" : "var(--faint)", cursor: isRest ? "default" : "pointer" }}
+              >
+                {d}
+                {isToday ? " ·" : ""}
+              </button>
+              <button
+                onClick={() => setDayKind(i, place === null ? "home" : place === "home" ? "office" : null)}
+                aria-label={`${t.week.place} ${d}`}
+                title={place === "home" ? t.week.home : place === "office" ? t.week.office : t.week.place}
+                className="grid size-4 flex-none place-items-center font-mono text-[9px] font-semibold hover:text-[var(--fg)]"
+                style={{ color: place ? "var(--acc)" : "var(--faint2)" }}
+              >
+                {place ? (place === "home" ? t.week.home : t.week.office).charAt(0).toUpperCase() : "·"}
+              </button>
+            </div>
             <select
               value={slot}
               onChange={(e) => setWeekDay(i, e.currentTarget.value)}
@@ -366,38 +428,7 @@ export function RoutineView() {
                 {t.today.rest.toUpperCase()}
               </option>
             </select>
-            <button
-              onClick={() => setDayKind(i, place === null ? "home" : place === "home" ? "office" : null)}
-              aria-label={`${t.week.place} ${d}`}
-              className="mt-1 w-full border border-[var(--rule2)] px-1 py-0.5 font-mono text-[9px] tracking-[0.08em] hover:border-[var(--fg)]"
-              style={{ color: place ? "var(--dim)" : "var(--faint2)" }}
-            >
-              {place === "home" ? t.week.home.toUpperCase() : place === "office" ? t.week.office.toUpperCase() : "—"}
-            </button>
           </div>
-        );
-      })}
-    </div>
-  );
-
-  // ----- plan toggle (Semana | Mes) ------------------------------------------
-  const planToggle = (
-    <div className="flex flex-none items-center gap-1.5 border-b border-[var(--rule2)] px-7 py-2">
-      {(["semana", "mes"] as const).map((v) => {
-        const on = planView === v;
-        return (
-          <button
-            key={v}
-            onClick={() => setPlanView(v)}
-            className="border px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em]"
-            style={{
-              borderColor: on ? "var(--acc)" : "var(--rule2)",
-              background: on ? "var(--acc)" : "transparent",
-              color: on ? "var(--on)" : "var(--faint)",
-            }}
-          >
-            {v === "semana" ? t.cal.week : t.cal.month}
-          </button>
         );
       })}
     </div>
@@ -611,31 +642,6 @@ export function RoutineView() {
   // ----- left cockpit (anchored across modes) --------------------------------
   const leftCol = (
     <aside className="ms-rutina-rail flex w-[384px] flex-none flex-col gap-5 overflow-y-auto border-r border-[var(--rule2)] p-6">
-      <div className="flex items-center gap-2">
-        <input
-          value={selected.name}
-          onChange={(e) => renameDayType(selected.id, e.currentTarget.value)}
-          aria-label={t.routine.dayTypeNameAria}
-          className="min-w-0 flex-1 border-b border-transparent bg-transparent text-[20px] font-bold tracking-[-0.02em] text-[var(--fg)] outline-none focus:border-[var(--rule2)]"
-        />
-        <button
-          disabled={dayTypes.length <= 1}
-          onClick={() => removeDayType(selected.id)}
-          aria-label={t.routine.deleteDayTypeAria}
-          className="flex-none text-[var(--faint2)] hover:text-[var(--destructive)] disabled:opacity-30"
-        >
-          <Trash2 className="size-4" />
-        </button>
-      </div>
-
-      <div className="-mt-2 flex gap-2 font-mono text-[10px] tracking-[0.06em]">
-        {t.routine.dow.map((d, i) => (
-          <span key={i} style={{ color: week[i] === selected.id ? "var(--acc)" : "var(--faint2)" }}>
-            {d}
-          </span>
-        ))}
-      </div>
-
       {/* scanner HUD header */}
       <div className="flex items-center justify-between border-b border-[var(--rule)] pb-2">
         <span className="flex min-w-0 items-center gap-2">
@@ -1172,7 +1178,6 @@ export function RoutineView() {
   return (
     <div className="flex h-full flex-col">
       {header}
-      {mode === "list" && planToggle}
       {mode === "list" && planView === "semana" && weekStrip}
       {mode === "list" && planView === "mes" ? (
         monthView
