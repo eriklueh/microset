@@ -1,145 +1,130 @@
-import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import Model, { type IExerciseData, type IMuscleStats } from "react-body-highlighter";
-import type { RoutineItem } from "@/lib/engine";
-import type { EquipmentId } from "@/domain/types";
+import { useMemo } from "react";
+import Model, { type IExerciseData } from "react-body-highlighter";
 import { isAvailable } from "@/domain/seed";
 import {
-  HEAT_COLORS,
-  loadBucket,
-  musclesForExercise,
-  REGIONS,
-  type BodyMuscle,
-} from "@/domain/muscleMap";
-import { useCatalog } from "@/hooks/useCatalog";
+  BODY_GROUPS,
+  GROUP_MUSCLES,
+  NONE_COLOR,
+  PRIMARY_COLOR,
+  rolesForExercise,
+  SECONDARY_COLOR,
+  type BodyGroup,
+  type Role,
+} from "@/domain/bodyGroups";
+import type { Exercise, EquipmentId } from "@/domain/types";
+import type { RoutineItem } from "@/lib/engine";
 import { useT } from "@/lib/i18n";
 
-const BODY_COLOR = "#2a2a27";
-const WARN = "#e0a400";
+export type RoleMap = Record<BodyGroup, Role>;
+const EMPTY: RoleMap = { chest: "none", back: "none", shoulders: "none", arms: "none", core: "none", legs: "none" };
 
-/**
- * Muscle coverage map for a day-type routine, powered by react-body-highlighter
- * (the SVG body only — styled to our palette). Load per muscle = sum of sets of
- * the exercises that work it, bucketed into a lime heatmap. Collapsed it shows a
- * one-line region readout; expanded, front+back figures + a coverage panel, and
- * clicking a muscle lists the exercises that train it (or flags it empty).
- */
-export function BodyMap({ routine, owned }: { routine: RoutineItem[]; owned: EquipmentId[] }) {
-  const t = useT();
-  const { byId, name } = useCatalog();
-  const [open, setOpen] = useState(false);
-  const [sel, setSel] = useState<BodyMuscle | null>(null);
+/** Roles for a single exercise (primary wins over secondary). */
+export function rolesState(ex: Exercise): RoleMap {
+  const { prim, sec } = rolesForExercise(ex);
+  const st: RoleMap = { ...EMPTY };
+  sec.forEach((g) => (st[g] = "secondary"));
+  prim.forEach((g) => (st[g] = "primary"));
+  return st;
+}
 
-  const { exForMuscle, modelData, regions, maxRegion, total } = useMemo(() => {
-    const load: Partial<Record<BodyMuscle, number>> = {};
-    const exForMuscle: Partial<Record<BodyMuscle, string[]>> = {};
-    let total = 0;
-    for (const r of routine) {
-      const ex = byId(r.exerciseId);
-      if (!ex || !isAvailable(ex, owned)) continue;
-      total += r.sets;
-      for (const m of musclesForExercise(ex)) {
-        load[m] = (load[m] ?? 0) + r.sets;
-        (exForMuscle[m] ??= []).push(name(r.exerciseId));
-      }
-    }
-    const modelData: IExerciseData[] = (Object.entries(load) as [BodyMuscle, number][])
-      .filter(([, n]) => n > 0)
-      .map(([m, n]) => ({ name: m, muscles: [m], frequency: loadBucket(n) }));
-    const regions = REGIONS.map((rg) => {
-      const sets = rg.muscles.reduce((s, m) => s + (load[m] ?? 0), 0);
-      return { id: rg.id, sets, bucket: loadBucket(sets) };
+/** Aggregate roles over a whole (doable) routine. */
+export function aggregateRoles(
+  routine: RoutineItem[],
+  byId: (id: string) => Exercise | undefined,
+  owned: EquipmentId[],
+): RoleMap {
+  const st: RoleMap = { ...EMPTY };
+  for (const r of routine) {
+    const ex = byId(r.exerciseId);
+    if (!ex || !isAvailable(ex, owned)) continue;
+    const { prim, sec } = rolesForExercise(ex);
+    sec.forEach((g) => {
+      if (st[g] !== "primary") st[g] = "secondary";
     });
-    const maxRegion = Math.max(1, ...regions.map((r) => r.sets));
-    return { exForMuscle, modelData, regions, maxRegion, total };
-  }, [routine, owned, byId, name]);
+    prim.forEach((g) => (st[g] = "primary"));
+  }
+  return st;
+}
 
-  if (total === 0) return null;
+// react-body-highlighter colors by frequency: index 0 = secondary, 1 = primary.
+const HIGHLIGHT = [SECONDARY_COLOR, PRIMARY_COLOR];
 
-  const heat = (b: number) => (b === 0 ? "var(--faint2)" : HEAT_COLORS[b - 1]);
-  const regionLabel = (id: string) => (t.body.regions as Record<string, string>)[id] ?? id;
-  const selExercises = sel ? exForMuscle[sel] ?? [] : [];
+function dataFor(state: RoleMap): IExerciseData[] {
+  const out: IExerciseData[] = [];
+  for (const g of BODY_GROUPS) {
+    const role = state[g];
+    if (role === "none") continue;
+    const freq = role === "primary" ? 2 : 1;
+    for (const m of GROUP_MUSCLES[g]) out.push({ name: g, muscles: [m], frequency: freq });
+  }
+  return out;
+}
 
+/** Front + back figures colored by group role (react-body-highlighter, our palette). */
+export function BodyFigures({ state, width = 150 }: { state: RoleMap; width?: number }) {
+  const t = useT();
+  const data = useMemo(() => dataFor(state), [state]);
   return (
-    <div className="mt-2 border border-[var(--rule2)]">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-4 py-2.5 hover:bg-[var(--bar1)]"
-      >
-        <span className="flex items-center gap-3">
-          <span className="font-mono text-[10px] tracking-[0.14em] text-[var(--faint)]">{t.body.title}</span>
-          <span className="flex items-center gap-1">
-            {regions.map((r) => (
-              <span key={r.id} title={regionLabel(r.id)} style={{ width: 8, height: 8, background: heat(r.bucket) }} />
-            ))}
-          </span>
-        </span>
-        <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.08em] text-[var(--faint2)]">
-          {t.body.open}
-          <ChevronDown className="size-4" style={{ transform: open ? "rotate(180deg)" : "none" }} />
-        </span>
-      </button>
-
-      {open && (
-        <div className="flex flex-wrap gap-6 border-t border-[var(--rule2)] p-4">
-          <div className="flex gap-3">
-            {(["anterior", "posterior"] as const).map((side) => (
-              <div key={side} className="flex flex-col items-center gap-1.5">
-                <div style={{ width: 124 }}>
-                  <Model
-                    data={modelData}
-                    type={side}
-                    bodyColor={BODY_COLOR}
-                    highlightedColors={HEAT_COLORS}
-                    onClick={(s: IMuscleStats) => setSel(s.muscle as BodyMuscle)}
-                    svgStyle={{ width: "100%" }}
-                  />
-                </div>
-                <span className="font-mono text-[9px] tracking-[0.12em] text-[var(--faint2)]">
-                  {side === "anterior" ? t.body.front : t.body.back}
-                </span>
-              </div>
-            ))}
+    <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+      {(["anterior", "posterior"] as const).map((side) => (
+        <div key={side} style={{ textAlign: "center" }}>
+          <div style={{ width }}>
+            <Model
+              data={data}
+              type={side}
+              bodyColor={NONE_COLOR}
+              highlightedColors={HIGHLIGHT}
+              svgStyle={{ width: "100%" }}
+            />
           </div>
-
-          <div className="min-w-[240px] flex-1">
-            <div className="mb-2 font-mono text-[10px] tracking-[0.14em] text-[var(--faint)]">{t.body.coverage}</div>
-            {regions.map((r) => (
-              <div key={r.id} className="flex items-center gap-3 border-b border-[var(--rule)] py-1.5">
-                <span className="w-[84px] text-[13px] text-[var(--fg)]">{regionLabel(r.id)}</span>
-                <span className="flex h-[6px] flex-1 bg-[var(--bar0)]">
-                  <span style={{ width: `${(r.sets / maxRegion) * 100}%`, background: heat(r.bucket) }} />
-                </span>
-                <span
-                  className="w-[64px] text-right font-mono text-[10px] tracking-[0.06em]"
-                  style={{ color: r.bucket === 0 ? WARN : "var(--faint)" }}
-                >
-                  {r.bucket === 0 ? t.body.levelNone : `${r.sets} ${t.body.sets}`}
-                </span>
-              </div>
-            ))}
-
-            {sel && (
-              <div className="mt-3 border border-[var(--rule2)] p-3">
-                <div className="font-mono text-[10px] tracking-[0.1em] text-[var(--acc)]">
-                  {sel.replace(/-/g, " ").toUpperCase()}
-                </div>
-                {selExercises.length > 0 ? (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {[...new Set(selExercises)].map((n) => (
-                      <span key={n} className="border border-[var(--rule2)] px-2 py-1 font-mono text-[10px] text-[var(--dim)]">
-                        {n.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-1.5 text-[12px] text-[var(--faint)]">{t.body.noExercises}</div>
-                )}
-              </div>
-            )}
+          <div className="mt-1 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">
+            {side === "anterior" ? t.body.front : t.body.back}
           </div>
         </div>
-      )}
+      ))}
+    </div>
+  );
+}
+
+/** Primario / secundario / sin trabajar legend. */
+export function BodyLegend() {
+  const t = useT();
+  const items: [string, string][] = [
+    [t.body.primary, "var(--acc)"],
+    [t.body.secondary, SECONDARY_COLOR],
+    [t.body.untrained.toUpperCase(), "#3a3a32"],
+  ];
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+      {items.map(([label, color]) => (
+        <span key={label} className="flex items-center gap-1.5">
+          <span style={{ width: 10, height: 10, background: color }} />
+          <span className="font-mono text-[9px] tracking-[0.1em] text-[var(--faint2)]">{label}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Primary/secondary muscle-group chips for an exercise row. */
+export function GroupChips({ ex }: { ex: Exercise }) {
+  const t = useT();
+  const { prim, sec } = rolesForExercise(ex);
+  const label = (g: BodyGroup) => (t.body.regions as Record<string, string>)[g].toUpperCase();
+  const chip = (g: BodyGroup, role: Role) => (
+    <span
+      key={role + g}
+      className="inline-flex items-center gap-1.5 font-mono text-[9.5px] tracking-[0.04em]"
+      style={{ color: role === "primary" ? "var(--fg)" : "var(--faint)" }}
+    >
+      <span style={{ width: 7, height: 7, background: role === "primary" ? "var(--acc)" : SECONDARY_COLOR, flex: "none" }} />
+      {label(g)}
+    </span>
+  );
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1">
+      {prim.map((g) => chip(g, "primary"))}
+      {sec.map((g) => chip(g, "secondary"))}
     </div>
   );
 }

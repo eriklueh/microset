@@ -28,6 +28,12 @@ const BAND_RESISTANCE: Variant[] = [
   { id: "b-mid", label: "Banda media", kind: "load" },
   { id: "b-wide", label: "Banda ancha", kind: "load" },
 ];
+// Bodyweight legs ladder (no equipment): assisted → bodyweight → loaded.
+const LEG_AXIS: Variant[] = [
+  { id: "assist", label: "Asistido", kind: "assist" },
+  { id: "bw", label: "Peso corporal", kind: "bodyweight" },
+  { id: "load", label: "Con peso", kind: "load" },
+];
 
 /** Catalog of exercises, each with its intensity axis. */
 export const EXERCISES: Exercise[] = [
@@ -147,6 +153,46 @@ export const EXERCISES: Exercise[] = [
     defaultSets: 2,
     defaultReps: "15",
     axis: BAND_RESISTANCE,
+  },
+  {
+    id: "squats",
+    name: "Sentadillas",
+    equipment: [],
+    muscle: "legs",
+    measure: "reps",
+    defaultSets: 3,
+    defaultReps: "15",
+    axis: LEG_AXIS,
+  },
+  {
+    id: "lunges",
+    name: "Zancadas",
+    equipment: [],
+    muscle: "legs",
+    measure: "reps",
+    defaultSets: 3,
+    defaultReps: "10",
+    axis: LEG_AXIS,
+  },
+  {
+    id: "bulgarian-split-squat",
+    name: "Sentadilla búlgara",
+    equipment: [],
+    muscle: "legs",
+    measure: "reps",
+    defaultSets: 3,
+    defaultReps: "8",
+    axis: LEG_AXIS,
+  },
+  {
+    id: "glute-bridge",
+    name: "Puente de glúteo",
+    equipment: [],
+    muscle: "legs",
+    measure: "reps",
+    defaultSets: 3,
+    defaultReps: "15",
+    axis: LEG_AXIS,
   },
 ];
 

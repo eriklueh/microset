@@ -13,16 +13,10 @@ import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
-import { BodyMap } from "./BodyMap";
+import { BodyFigures, BodyLegend, GroupChips, aggregateRoles, rolesState } from "./BodyMap";
 
 const MUSCLE_ORDER: MuscleGroup[] = ["pull", "push", "core", "legs"];
 const WARN = "#e0a400";
-const MUSCLE_COLOR: Record<MuscleGroup, string> = {
-  pull: "oklch(0.70 0.14 235)",
-  push: "oklch(0.80 0.15 75)",
-  core: "oklch(0.66 0.18 295)",
-  legs: "oklch(0.78 0.18 142)",
-};
 const input = "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
 const stepBtn =
   "grid size-8 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]";
@@ -51,6 +45,7 @@ export function RoutineView() {
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [hoverEx, setHoverEx] = useState<string | null>(null);
 
   const selected = dayTypes.find((d) => d.id === selectedId) ?? dayTypes[0];
   if (!selected) {
@@ -75,14 +70,14 @@ export function RoutineView() {
       e.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
-  const { totalSets, fits, allFit, balance } = analyzeRoutine(routine, owned, settings, byId);
-  const missing = MUSCLE_ORDER.filter((m) => balance[m] === 0);
-  const hasVol = MUSCLE_ORDER.some((m) => balance[m] > 0);
-  const balanceLabel = !hasVol
-    ? t.routine.noVolume
-    : missing.length
-      ? `${t.routine.missing} ${missing.map((m) => t.muscle[m].toUpperCase()).join(", ")}`
-      : t.routine.balanced;
+  const { totalSets, fits, allFit } = analyzeRoutine(routine, owned, settings, byId);
+  const aggregate = aggregateRoles(routine, byId, owned);
+  const hovered = hoverEx ? byId(hoverEx) : undefined;
+  const bodyState = hovered ? rolesState(hovered) : aggregate;
+  const legGap = totalSets > 0 && aggregate.legs === "none";
+  const legSuggestions = legGap
+    ? all.filter((e) => e.muscle === "legs" && isAvailable(e, owned) && !inRoutine.has(e.id))
+    : [];
 
   const handleCreate = (i: {
     name: string;
@@ -169,23 +164,6 @@ export function RoutineView() {
         >
           {totalSets === 0 ? t.routine.empty : allFit ? t.routine.fits : `${t.routine.fitsCount} ${fits}/${totalSets}`}
         </span>
-        {totalSets > 0 && (
-          <span className="flex items-center gap-2">
-            <span className="flex h-[6px] w-[80px] gap-px">
-              {MUSCLE_ORDER.map((m) =>
-                balance[m] > 0 ? (
-                  <span key={m} style={{ width: `${(balance[m] / totalSets) * 100}%`, background: MUSCLE_COLOR[m] }} />
-                ) : null,
-              )}
-            </span>
-            <span
-              className="font-mono text-[10px] tracking-[0.06em]"
-              style={{ color: balanceLabel.startsWith(t.routine.missing) ? WARN : "var(--faint)" }}
-            >
-              {balanceLabel}
-            </span>
-          </span>
-        )}
         <select
           value={methodologyId}
           onChange={(e) => applyMethodology(selected.id, e.currentTarget.value)}
@@ -201,8 +179,22 @@ export function RoutineView() {
         </select>
       </div>
 
-      {/* Muscle coverage body map (react-body-highlighter, styled to our palette) */}
-      <BodyMap routine={routine} owned={owned} />
+      {/* Cockpit: body coverage — hover an exercise to isolate it, else the day's aggregate */}
+      {totalSets > 0 && (
+        <div className="mt-3 border border-[var(--rule2)] p-4">
+          <div className="mb-3 flex items-center justify-between font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">
+            <span>{hovered ? `${t.body.isolated} · ${name(hoverEx!).toUpperCase()}` : t.body.aggregate}</span>
+            <span className="text-[var(--acc)]">SCAN</span>
+          </div>
+          <BodyFigures state={bodyState} />
+          <div className="mt-3">
+            <BodyLegend />
+          </div>
+          <div className="mt-2 text-center font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+            {t.body.hoverHint}
+          </div>
+        </div>
+      )}
 
       {/* Exercise list — the main content */}
       <div className="mt-5 border-t border-[var(--rule)]">
@@ -217,8 +209,13 @@ export function RoutineView() {
           return (
             <div
               key={r.exerciseId}
-              className="border-b border-[var(--rule)] py-3"
-              style={{ opacity: orphan ? 0.55 : 1 }}
+              onMouseEnter={() => setHoverEx(r.exerciseId)}
+              onMouseLeave={() => setHoverEx(null)}
+              className="border-b border-[var(--rule)] py-3 transition-colors"
+              style={{
+                opacity: orphan ? 0.55 : 1,
+                background: hoverEx === r.exerciseId ? "color-mix(in oklch, var(--acc) 5%, transparent)" : "transparent",
+              }}
             >
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
@@ -239,6 +236,11 @@ export function RoutineView() {
                     {ex && exerciseContext(ex) === "desk" ? ` · ${t.routine.deskTag}` : ""}
                     {orphan ? ` · ${t.routine.missingGearTag}` : ""}
                   </div>
+                  {ex && (
+                    <div className="mt-1.5">
+                      <GroupChips ex={ex} />
+                    </div>
+                  )}
                 </div>
 
                 <input
@@ -298,6 +300,42 @@ export function RoutineView() {
           );
         })}
       </div>
+
+      {/* Legs-gap card: suggest real leg exercises to fill the hole */}
+      {legGap && (
+        <div
+          className="mt-3 flex flex-wrap items-center gap-3 border p-3.5"
+          style={{ borderColor: "rgba(232,145,60,0.4)", background: "rgba(232,145,60,0.06)" }}
+        >
+          <AlertTriangle className="size-4 flex-none" style={{ color: WARN }} />
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-bold" style={{ color: WARN }}>
+              {t.body.regions.legs} {t.body.untrained}
+            </div>
+            <div className="font-mono text-[10px] tracking-[0.04em] text-[var(--faint)]">{t.body.gapSub}</div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {legSuggestions.slice(0, 3).map((e) => (
+              <button
+                key={e.id}
+                onClick={() =>
+                  addToRoutine(selected.id, {
+                    exerciseId: e.id,
+                    name: e.name,
+                    sets: e.defaultSets,
+                    target: e.defaultReps,
+                    variantId: defaultVariantId(e),
+                  })
+                }
+                className="flex items-center gap-1.5 border px-2.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.04em]"
+                style={{ borderColor: WARN, color: WARN }}
+              >
+                {name(e.id)} <Plus className="size-3" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Collapsible add-exercise picker */}
       <div className="mt-4">

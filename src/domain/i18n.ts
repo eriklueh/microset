@@ -17,6 +17,10 @@ export const EXERCISE_EN: Record<string, string> = {
   "band-rows": "Band rows",
   "band-pullaparts": "Band pull-aparts",
   "band-facepulls": "Band face pulls",
+  squats: "Squats",
+  lunges: "Lunges",
+  "bulgarian-split-squat": "Bulgarian split squat",
+  "glute-bridge": "Glute bridge",
 };
 
 export const VARIANT_EN: Record<string, string> = {
