@@ -346,7 +346,7 @@ export function RoutineView() {
         )}
       </div>
 
-      {/* Row 2 — day-type tabs + minimal HUD mark */}
+      {/* Row 2 — day-type tabs */}
       <div className="mt-2.5 flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {mode !== "list" && (
@@ -354,28 +354,31 @@ export function RoutineView() {
           )}
           {dayTypePills}
         </div>
-        {mode === "list" && (
-          <div className="flex flex-none items-center gap-1.5">
-            {(["semana", "mes"] as const).map((v) => {
-              const on = planView === v;
-              return (
-                <button
-                  key={v}
-                  onClick={() => setPlanView(v)}
-                  className="border px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em]"
-                  style={{
-                    borderColor: on ? "var(--acc)" : "var(--rule2)",
-                    background: on ? "var(--acc)" : "transparent",
-                    color: on ? "var(--on)" : "var(--faint)",
-                  }}
-                >
-                  {v === "semana" ? t.cal.week : t.cal.month}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
+    </div>
+  );
+
+  // [SEMANA | MES] toggle — lives at the top of the right working pane so the
+  // cockpit (left) stays anchored across modes (no UI shift on add-exercise).
+  const planBar = (
+    <div className="flex flex-none items-center gap-1.5 border-b border-[var(--rule2)] px-6 py-2">
+      {(["semana", "mes"] as const).map((v) => {
+        const on = planView === v;
+        return (
+          <button
+            key={v}
+            onClick={() => setPlanView(v)}
+            className="border px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em]"
+            style={{
+              borderColor: on ? "var(--acc)" : "var(--rule2)",
+              background: on ? "var(--acc)" : "transparent",
+              color: on ? "var(--on)" : "var(--faint)",
+            }}
+          >
+            {v === "semana" ? t.cal.week : t.cal.month}
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -444,7 +447,7 @@ export function RoutineView() {
     const wd = (new Date(yy, mm - 1, dd).getDay() + 6) % 7;
     return `${t.routine.dow[wd]} ${dd} · ${months[mm - 1].slice(0, 3).toUpperCase()}`;
   };
-  const monthView = (() => {
+  const monthInner = (() => {
     const { y, m0 } = calMonth;
     const firstWeekday = (new Date(y, m0, 1).getDay() + 6) % 7;
     const start = new Date(y, m0, 1 - firstWeekday);
@@ -453,8 +456,8 @@ export function RoutineView() {
     const selKind = selDate ? effectiveKind(dayKind, dayOverrides, selDate) : null;
     const selHasOv = selDate ? selDate in dayOverrides : false;
     return (
-      <div className="flex min-h-0 flex-1">
-        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+      <>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
           <div className="flex items-center justify-between">
             <button onClick={prevMonth} aria-label={t.cal.prev} className="grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:text-[var(--fg)]">
               ‹
@@ -518,73 +521,61 @@ export function RoutineView() {
           </div>
         </div>
 
-        <aside className="w-[300px] flex-none border-l border-[var(--rule2)] p-5">
-          {!selDate ? (
-            <p className="mt-4 text-center font-mono text-[11px] tracking-[0.04em] text-[var(--faint2)]">{t.cal.pickDate}</p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div>
-                <div className="font-mono text-[9px] tracking-[0.16em] text-[var(--acc)]">{t.cal.dayPlan}</div>
-                <div className="mt-1 text-[20px] font-bold tracking-[-0.02em] text-[var(--fg)] uppercase">{fmtDate(selDate)}</div>
-              </div>
-
-              <div>
-                <div className="mb-1.5 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">{t.routine.type}</div>
-                <select
-                  value={selSlot}
-                  onChange={(e) => setDayOverride(selDate, { slot: e.currentTarget.value })}
-                  className={`${input} w-full appearance-none px-2.5 py-2 font-mono text-[12px]`}
-                >
-                  {dayTypes.map((x) => (
-                    <option key={x.id} value={x.id} className="bg-[var(--ink2)]">
-                      {x.name.toUpperCase()}
-                    </option>
-                  ))}
-                  <option value={REST} className="bg-[var(--ink2)]">
-                    {t.today.rest.toUpperCase()}
+        {selDate && (
+          <div className="flex-none border-t border-[var(--rule2)] px-5 py-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="font-mono text-[9px] tracking-[0.16em] text-[var(--acc)]">{t.cal.dayPlan}</span>
+              <span className="text-[15px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">{fmtDate(selDate)}</span>
+              <select
+                value={selSlot}
+                onChange={(e) => setDayOverride(selDate, { slot: e.currentTarget.value })}
+                aria-label={t.routine.type}
+                className={`${input} appearance-none px-2.5 py-1.5 font-mono text-[11.5px]`}
+              >
+                {dayTypes.map((x) => (
+                  <option key={x.id} value={x.id} className="bg-[var(--ink2)]">
+                    {x.name.toUpperCase()}
                   </option>
-                </select>
+                ))}
+                <option value={REST} className="bg-[var(--ink2)]">
+                  {t.today.rest.toUpperCase()}
+                </option>
+              </select>
+              <div className="flex gap-1.5">
+                {([null, "home", "office"] as const).map((k) => {
+                  const on = selKind === k;
+                  return (
+                    <button
+                      key={String(k)}
+                      onClick={() => setDayOverride(selDate, { kind: k })}
+                      aria-label={t.week.place}
+                      className="border px-2.5 py-1.5 font-mono text-[10px] tracking-[0.04em]"
+                      style={{
+                        borderColor: on ? "var(--acc)" : "var(--rule2)",
+                        color: on ? "var(--acc)" : "var(--faint)",
+                        background: on ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent",
+                      }}
+                    >
+                      {k === null ? "—" : k === "home" ? t.week.home.toUpperCase() : t.week.office.toUpperCase()}
+                    </button>
+                  );
+                })}
               </div>
-
-              <div>
-                <div className="mb-1.5 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">{t.week.place}</div>
-                <div className="flex gap-1.5">
-                  {([null, "home", "office"] as const).map((k) => {
-                    const on = selKind === k;
-                    return (
-                      <button
-                        key={String(k)}
-                        onClick={() => setDayOverride(selDate, { kind: k })}
-                        className="flex-1 border px-2 py-1.5 font-mono text-[10px] tracking-[0.04em]"
-                        style={{
-                          borderColor: on ? "var(--acc)" : "var(--rule2)",
-                          color: on ? "var(--acc)" : "var(--faint)",
-                          background: on ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent",
-                        }}
-                      >
-                        {k === null ? "—" : k === "home" ? t.week.home.toUpperCase() : t.week.office.toUpperCase()}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
+              <span className="flex-1" />
               {selHasOv ? (
                 <button
                   onClick={() => clearDayOverride(selDate)}
-                  className="flex items-center justify-center gap-2 border border-[var(--rule2)] px-3 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
+                  className="flex items-center gap-1.5 border border-[var(--rule2)] px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
                 >
                   <Trash2 className="size-3.5" /> {t.cal.useWeekly}
                 </button>
               ) : (
-                <p className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">
-                  ◆ {t.cal.weeklyDefault}
-                </p>
+                <span className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">◆ {t.cal.weeklyDefault}</span>
               )}
             </div>
-          )}
-        </aside>
-      </div>
+          </div>
+        )}
+      </>
     );
   })();
 
@@ -819,26 +810,37 @@ export function RoutineView() {
     );
   };
 
+  // The right working pane in list mode: plan toggle, then either the week strip +
+  // exercise list (SEMANA) or the month calendar (MES). The cockpit stays anchored
+  // on the left; switching to create/browse just swaps THIS pane's content.
   const listPane = (
     <section className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-none items-center justify-between border-b border-[var(--rule2)] px-6 py-3">
-        <span className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--faint)]">
-          {t.routine.exercises} · {routine.length}
-        </span>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-1.5 bg-[var(--acc)] px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)]"
-        >
-          <Plus className="size-3.5" /> {t.routine.addExercise}
-        </button>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-3">
-        {routine.length === 0 ? (
-          <p className="py-6 text-center text-[13px] text-[var(--faint)]">{t.routine.emptyList}</p>
-        ) : (
-          routine.map((r, i) => exRow(r, i))
-        )}
-      </div>
+      {planBar}
+      {planView === "mes" ? (
+        monthInner
+      ) : (
+        <>
+          {weekStrip}
+          <div className="flex flex-none items-center justify-between border-b border-[var(--rule2)] px-6 py-3">
+            <span className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--faint)]">
+              {t.routine.exercises} · {routine.length}
+            </span>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-1.5 bg-[var(--acc)] px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)]"
+            >
+              <Plus className="size-3.5" /> {t.routine.addExercise}
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-3">
+            {routine.length === 0 ? (
+              <p className="py-6 text-center text-[13px] text-[var(--faint)]">{t.routine.emptyList}</p>
+            ) : (
+              routine.map((r, i) => exRow(r, i))
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 
@@ -1181,15 +1183,10 @@ export function RoutineView() {
   return (
     <div className="flex h-full flex-col">
       {header}
-      {mode === "list" && planView === "semana" && weekStrip}
-      {mode === "list" && planView === "mes" ? (
-        monthView
-      ) : (
-        <div className="flex min-h-0 flex-1">
-          {leftCol}
-          {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}
-        </div>
-      )}
+      <div className="flex min-h-0 flex-1">
+        {leftCol}
+        {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}
+      </div>
     </div>
   );
 }
