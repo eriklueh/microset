@@ -21,16 +21,17 @@ import {
   groupWorked,
   singleState,
   workedGroupCount,
-  type BodyGroup,
+  type MuscleState,
   type Role,
 } from "@/domain/bodyGroups";
 import { BodyFigures, BodyLegend, GroupChips } from "./BodyMap";
 
-function seedGroupRoles(m: MuscleGroup): Record<BodyGroup, Role> {
+/** Pre-seed the create-form picker: the coarse group's template, expanded to fine muscles. */
+function seedMuscleRoles(m: MuscleGroup): Record<string, Role> {
   const { primary, secondary } = defaultGroupsFor(m);
-  const r: Record<BodyGroup, Role> = { chest: "none", back: "none", shoulders: "none", arms: "none", core: "none", legs: "none" };
-  secondary.forEach((g) => (r[g] = "secondary"));
-  primary.forEach((g) => (r[g] = "primary"));
+  const r: Record<string, Role> = {};
+  secondary.forEach((g) => GROUP_MUSCLES[g].forEach((mu) => (r[mu] = "secondary")));
+  primary.forEach((g) => GROUP_MUSCLES[g].forEach((mu) => (r[mu] = "primary")));
   return r;
 }
 
@@ -475,16 +476,22 @@ function CreateExerciseForm({
   const [reps, setReps] = useState("8");
   const [equipment, setEquipment] = useState<EquipmentId[]>([]);
   const [context, setContext] = useState<ExerciseContext>("space");
-  const [groupRoles, setGroupRoles] = useState<Record<BodyGroup, Role>>(() => seedGroupRoles("push"));
+  const [muscleRoles, setMuscleRoles] = useState<Record<string, Role>>(() => seedMuscleRoles("push"));
   const { allEquipment, eqName } = useCatalog();
   const t = useT();
 
-  useEffect(() => setGroupRoles(seedGroupRoles(muscle)), [muscle]);
-  const cycleGroup = (g: BodyGroup) =>
-    setGroupRoles((r) => ({
-      ...r,
-      [g]: r[g] === "none" ? "primary" : r[g] === "primary" ? "secondary" : "none",
-    }));
+  useEffect(() => setMuscleRoles(seedMuscleRoles(muscle)), [muscle]);
+  const cycleMuscle = (mu: string) =>
+    setMuscleRoles((r) => {
+      const cur = r[mu] ?? "none";
+      return { ...r, [mu]: cur === "none" ? "primary" : cur === "primary" ? "secondary" : "none" };
+    });
+  const muscleName = (mu: string) => (t.body.muscleNames as Record<string, string>)[mu] ?? mu;
+  const previewState = Object.fromEntries(
+    Object.entries(muscleRoles)
+      .filter(([, r]) => r !== "none")
+      .map(([m, r]) => [m, { role: r, level: 3 as const }]),
+  ) as MuscleState;
 
   const toggleEq = (id: EquipmentId) =>
     setEquipment((eq) => (eq.includes(id) ? eq.filter((e) => e !== id) : [...eq, id]));
@@ -528,31 +535,40 @@ function CreateExerciseForm({
         />
       </div>
       <div>
-        <div className="mb-1.5 font-mono text-[9.5px] tracking-[0.1em] text-[var(--faint)]">{t.routine.muscles}</div>
-        <div className="flex flex-wrap gap-1.5">
-          {BODY_GROUPS.map((g) => {
-            const role = groupRoles[g];
-            const c = role === "primary" ? "var(--acc)" : role === "secondary" ? SECONDARY_COLOR : "var(--rule2)";
-            return (
-              <button
-                key={g}
-                onClick={() => cycleGroup(g)}
-                className="flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[10.5px] tracking-[0.04em]"
-                style={{ borderColor: c, color: role === "none" ? "var(--faint)" : c }}
-              >
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    flex: "none",
-                    background: role === "none" ? "transparent" : c,
-                    border: role === "none" ? "1px solid var(--rule2)" : "none",
-                  }}
-                />
-                {(t.body.regions as Record<string, string>)[g].toUpperCase()}
-              </button>
-            );
-          })}
+        <div className="mb-2 font-mono text-[9.5px] tracking-[0.1em] text-[var(--faint)]">{t.routine.muscles}</div>
+        <div className="flex gap-4">
+          <div className="flex-none">
+            <BodyFigures state={previewState} width={66} />
+          </div>
+          <div className="min-w-0 flex-1">
+            {BODY_GROUPS.map((g) => (
+              <div key={g} className="flex items-start gap-2 border-b border-[var(--rule)] py-1.5">
+                <span className="w-[64px] flex-none pt-1 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+                  {(t.body.regions as Record<string, string>)[g].toUpperCase()}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {GROUP_MUSCLES[g].map((mu) => {
+                    const role = muscleRoles[mu] ?? "none";
+                    const c = role === "primary" ? "var(--acc)" : role === "secondary" ? SECONDARY_COLOR : "var(--rule2)";
+                    return (
+                      <button
+                        key={mu}
+                        onClick={() => cycleMuscle(mu)}
+                        className="flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] tracking-[0.02em]"
+                        style={{ borderColor: c, color: role === "none" ? "var(--faint)" : c }}
+                      >
+                        <span style={{ width: 6, height: 6, flex: "none", background: role === "none" ? "transparent" : c, border: role === "none" ? "1px solid var(--rule2)" : "none" }} />
+                        {muscleName(mu)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="mt-2">
+              <BodyLegend />
+            </div>
+          </div>
         </div>
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -588,8 +604,8 @@ function CreateExerciseForm({
       <button
         disabled={!name.trim()}
         onClick={() => {
-          const primary = BODY_GROUPS.filter((g) => groupRoles[g] === "primary").flatMap((g) => GROUP_MUSCLES[g]);
-          const secondary = BODY_GROUPS.filter((g) => groupRoles[g] === "secondary").flatMap((g) => GROUP_MUSCLES[g]);
+          const primary = Object.keys(muscleRoles).filter((m) => muscleRoles[m] === "primary");
+          const secondary = Object.keys(muscleRoles).filter((m) => muscleRoles[m] === "secondary");
           onCreate({
             name: name.trim(),
             muscle,
