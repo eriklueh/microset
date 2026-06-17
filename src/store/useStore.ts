@@ -47,6 +47,9 @@ export interface CustomExerciseInput {
   measure: Measure;
   context: ExerciseContext;
   defaultReps: string;
+  /** Specific muscles worked (react-body-highlighter ids), for the body map. */
+  primary?: string[];
+  secondary?: string[];
 }
 
 export type CoachProviderId = "anthropic" | "local";
@@ -325,6 +328,8 @@ export const useStore = create<State>()(
           name: input.name,
           equipment: input.equipment,
           muscle: input.muscle,
+          primary: input.primary,
+          secondary: input.secondary,
           measure: input.measure,
           context: input.context,
           defaultSets: 3,

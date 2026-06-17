@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
@@ -12,7 +12,27 @@ import {
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
-import { BodyFigures, BodyLegend, GroupChips, aggregateRoles, rolesState } from "./BodyMap";
+import {
+  BODY_GROUPS,
+  GROUP_MUSCLES,
+  SECONDARY_COLOR,
+  aggregateState,
+  defaultGroupsFor,
+  groupWorked,
+  singleState,
+  workedGroupCount,
+  type BodyGroup,
+  type Role,
+} from "@/domain/bodyGroups";
+import { BodyFigures, BodyLegend, GroupChips } from "./BodyMap";
+
+function seedGroupRoles(m: MuscleGroup): Record<BodyGroup, Role> {
+  const { primary, secondary } = defaultGroupsFor(m);
+  const r: Record<BodyGroup, Role> = { chest: "none", back: "none", shoulders: "none", arms: "none", core: "none", legs: "none" };
+  secondary.forEach((g) => (r[g] = "secondary"));
+  primary.forEach((g) => (r[g] = "primary"));
+  return r;
+}
 
 const MUSCLE_ORDER: MuscleGroup[] = ["pull", "push", "core", "legs"];
 const WARN = "#e0a400";
@@ -70,11 +90,11 @@ export function RoutineView() {
   );
 
   const { totalSets, fits, allFit } = analyzeRoutine(routine, owned, settings, byId);
-  const aggregate = aggregateRoles(routine, byId, owned);
-  const worked = Object.values(aggregate).filter((r) => r !== "none").length;
+  const aggState = aggregateState(routine, byId, owned);
+  const worked = workedGroupCount(aggState);
   const hovered = hoverEx ? byId(hoverEx) : undefined;
-  const bodyState = hovered ? rolesState(hovered) : aggregate;
-  const legGap = totalSets > 0 && aggregate.legs === "none";
+  const bodyState = hovered ? singleState(hovered) : aggState;
+  const legGap = totalSets > 0 && !groupWorked(aggState, "legs");
   const legSuggestions = legGap
     ? all.filter((e) => e.muscle === "legs" && isAvailable(e, owned) && !inRoutine.has(e.id))
     : [];
@@ -82,6 +102,8 @@ export function RoutineView() {
   const handleCreate = (i: {
     name: string;
     muscle: MuscleGroup;
+    primary?: string[];
+    secondary?: string[];
     equipment: EquipmentId[];
     measure: Measure;
     context: ExerciseContext;
@@ -439,6 +461,8 @@ function CreateExerciseForm({
   onCreate: (i: {
     name: string;
     muscle: MuscleGroup;
+    primary?: string[];
+    secondary?: string[];
     equipment: EquipmentId[];
     measure: Measure;
     context: ExerciseContext;
@@ -451,8 +475,16 @@ function CreateExerciseForm({
   const [reps, setReps] = useState("8");
   const [equipment, setEquipment] = useState<EquipmentId[]>([]);
   const [context, setContext] = useState<ExerciseContext>("space");
+  const [groupRoles, setGroupRoles] = useState<Record<BodyGroup, Role>>(() => seedGroupRoles("push"));
   const { allEquipment, eqName } = useCatalog();
   const t = useT();
+
+  useEffect(() => setGroupRoles(seedGroupRoles(muscle)), [muscle]);
+  const cycleGroup = (g: BodyGroup) =>
+    setGroupRoles((r) => ({
+      ...r,
+      [g]: r[g] === "none" ? "primary" : r[g] === "primary" ? "secondary" : "none",
+    }));
 
   const toggleEq = (id: EquipmentId) =>
     setEquipment((eq) => (eq.includes(id) ? eq.filter((e) => e !== id) : [...eq, id]));
@@ -495,6 +527,34 @@ function CreateExerciseForm({
           aria-label={t.routine.repsOrDurationAria}
         />
       </div>
+      <div>
+        <div className="mb-1.5 font-mono text-[9.5px] tracking-[0.1em] text-[var(--faint)]">{t.routine.muscles}</div>
+        <div className="flex flex-wrap gap-1.5">
+          {BODY_GROUPS.map((g) => {
+            const role = groupRoles[g];
+            const c = role === "primary" ? "var(--acc)" : role === "secondary" ? SECONDARY_COLOR : "var(--rule2)";
+            return (
+              <button
+                key={g}
+                onClick={() => cycleGroup(g)}
+                className="flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[10.5px] tracking-[0.04em]"
+                style={{ borderColor: c, color: role === "none" ? "var(--faint)" : c }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    flex: "none",
+                    background: role === "none" ? "transparent" : c,
+                    border: role === "none" ? "1px solid var(--rule2)" : "none",
+                  }}
+                />
+                {(t.body.regions as Record<string, string>)[g].toUpperCase()}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <div className="flex flex-wrap gap-1.5">
         {allEquipment.map((eq) => {
           const on = equipment.includes(eq.id);
@@ -527,16 +587,20 @@ function CreateExerciseForm({
       </div>
       <button
         disabled={!name.trim()}
-        onClick={() =>
+        onClick={() => {
+          const primary = BODY_GROUPS.filter((g) => groupRoles[g] === "primary").flatMap((g) => GROUP_MUSCLES[g]);
+          const secondary = BODY_GROUPS.filter((g) => groupRoles[g] === "secondary").flatMap((g) => GROUP_MUSCLES[g]);
           onCreate({
             name: name.trim(),
             muscle,
+            primary: primary.length ? primary : undefined,
+            secondary: secondary.length ? secondary : undefined,
             equipment,
             measure,
             context,
             defaultReps: reps.trim() || (measure === "hold" ? "20s" : "8"),
-          })
-        }
+          });
+        }}
         className="bg-[var(--acc)] px-4 py-2.5 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--on)] disabled:opacity-40"
       >
         {t.routine.createAndAdd}

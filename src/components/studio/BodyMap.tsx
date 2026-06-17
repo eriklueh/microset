@@ -1,67 +1,28 @@
 import { useMemo } from "react";
 import Model, { type IExerciseData } from "react-body-highlighter";
-import { isAvailable } from "@/domain/seed";
 import {
-  BODY_GROUPS,
-  GROUP_MUSCLES,
+  exerciseGroupRoles,
+  freqFor,
+  HEAT_RAMP,
   NONE_COLOR,
-  PRIMARY_COLOR,
-  rolesForExercise,
   SECONDARY_COLOR,
   type BodyGroup,
+  type MuscleState,
   type Role,
 } from "@/domain/bodyGroups";
-import type { Exercise, EquipmentId } from "@/domain/types";
-import type { RoutineItem } from "@/lib/engine";
+import type { Exercise } from "@/domain/types";
 import { useT } from "@/lib/i18n";
 
-export type RoleMap = Record<BodyGroup, Role>;
-const EMPTY: RoleMap = { chest: "none", back: "none", shoulders: "none", arms: "none", core: "none", legs: "none" };
-
-/** Roles for a single exercise (primary wins over secondary). */
-export function rolesState(ex: Exercise): RoleMap {
-  const { prim, sec } = rolesForExercise(ex);
-  const st: RoleMap = { ...EMPTY };
-  sec.forEach((g) => (st[g] = "secondary"));
-  prim.forEach((g) => (st[g] = "primary"));
-  return st;
+function dataFor(state: MuscleState): IExerciseData[] {
+  return Object.entries(state).map(([m, s]) => ({
+    name: m,
+    muscles: [m as IExerciseData["muscles"][number]],
+    frequency: freqFor(s.role, s.level),
+  }));
 }
 
-/** Aggregate roles over a whole (doable) routine. */
-export function aggregateRoles(
-  routine: RoutineItem[],
-  byId: (id: string) => Exercise | undefined,
-  owned: EquipmentId[],
-): RoleMap {
-  const st: RoleMap = { ...EMPTY };
-  for (const r of routine) {
-    const ex = byId(r.exerciseId);
-    if (!ex || !isAvailable(ex, owned)) continue;
-    const { prim, sec } = rolesForExercise(ex);
-    sec.forEach((g) => {
-      if (st[g] !== "primary") st[g] = "secondary";
-    });
-    prim.forEach((g) => (st[g] = "primary"));
-  }
-  return st;
-}
-
-// react-body-highlighter colors by frequency: index 0 = secondary, 1 = primary.
-const HIGHLIGHT = [SECONDARY_COLOR, PRIMARY_COLOR];
-
-function dataFor(state: RoleMap): IExerciseData[] {
-  const out: IExerciseData[] = [];
-  for (const g of BODY_GROUPS) {
-    const role = state[g];
-    if (role === "none") continue;
-    const freq = role === "primary" ? 2 : 1;
-    for (const m of GROUP_MUSCLES[g]) out.push({ name: g, muscles: [m], frequency: freq });
-  }
-  return out;
-}
-
-/** Front + back figures colored by group role (react-body-highlighter, our palette). */
-export function BodyFigures({ state, width = 150 }: { state: RoleMap; width?: number }) {
+/** Front + back figures painted by role (lime/amber) and volume shade. */
+export function BodyFigures({ state, width = 150 }: { state: MuscleState; width?: number }) {
   const t = useT();
   const data = useMemo(() => dataFor(state), [state]);
   return (
@@ -73,7 +34,7 @@ export function BodyFigures({ state, width = 150 }: { state: RoleMap; width?: nu
               data={data}
               type={side}
               bodyColor={NONE_COLOR}
-              highlightedColors={HIGHLIGHT}
+              highlightedColors={HEAT_RAMP}
               svgStyle={{ width: "100%" }}
             />
           </div>
@@ -106,10 +67,10 @@ export function BodyLegend() {
   );
 }
 
-/** Primary/secondary muscle-group chips for an exercise row. */
+/** Primary/secondary muscle-group chips for an exercise row (derived from its muscles). */
 export function GroupChips({ ex }: { ex: Exercise }) {
   const t = useT();
-  const { prim, sec } = rolesForExercise(ex);
+  const { primary, secondary } = exerciseGroupRoles(ex);
   const label = (g: BodyGroup) => (t.body.regions as Record<string, string>)[g].toUpperCase();
   const chip = (g: BodyGroup, role: Role) => (
     <span
@@ -123,8 +84,8 @@ export function GroupChips({ ex }: { ex: Exercise }) {
   );
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1">
-      {prim.map((g) => chip(g, "primary"))}
-      {sec.map((g) => chip(g, "secondary"))}
+      {primary.map((g) => chip(g, "primary"))}
+      {secondary.map((g) => chip(g, "secondary"))}
     </div>
   );
 }

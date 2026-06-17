@@ -196,6 +196,31 @@ export const EXERCISES: Exercise[] = [
   },
 ];
 
+/** Specific muscles worked per seed exercise (react-body-highlighter ids). */
+const SEED_TARGETING: Record<string, { primary: string[]; secondary: string[] }> = {
+  pullups: { primary: ["upper-back", "biceps"], secondary: ["forearm", "back-deltoids"] },
+  chinups: { primary: ["biceps", "upper-back"], secondary: ["forearm", "abs"] },
+  "hanging-leg-raises": { primary: ["abs"], secondary: ["obliques", "forearm"] },
+  dips: { primary: ["chest", "triceps"], secondary: ["front-deltoids"] },
+  lsit: { primary: ["abs"], secondary: ["triceps"] },
+  "parallette-pushups": { primary: ["chest", "triceps"], secondary: ["front-deltoids", "abs"] },
+  "tuck-planche": { primary: ["front-deltoids", "abs"], secondary: ["chest", "triceps"] },
+  "band-rows": { primary: ["upper-back", "biceps"], secondary: ["back-deltoids"] },
+  "band-pullaparts": { primary: ["back-deltoids", "trapezius"], secondary: ["upper-back"] },
+  "band-facepulls": { primary: ["back-deltoids", "trapezius"], secondary: ["upper-back"] },
+  squats: { primary: ["quadriceps", "gluteal"], secondary: ["hamstring", "abs"] },
+  lunges: { primary: ["quadriceps", "gluteal"], secondary: ["hamstring"] },
+  "bulgarian-split-squat": { primary: ["quadriceps", "gluteal"], secondary: ["hamstring", "abs"] },
+  "glute-bridge": { primary: ["gluteal", "hamstring"], secondary: ["abs"] },
+};
+for (const e of EXERCISES) {
+  const tg = SEED_TARGETING[e.id];
+  if (tg) {
+    e.primary = tg.primary;
+    e.secondary = tg.secondary;
+  }
+}
+
 export function exerciseById(id: string): Exercise | undefined {
   return EXERCISES.find((e) => e.id === id);
 }

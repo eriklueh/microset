@@ -50,7 +50,16 @@ export interface Exercise {
   name: string;
   /** Equipment required to perform it — the user must own all of these. */
   equipment: EquipmentId[];
+  /** Coarse group — drives scheduling/balance. */
   muscle: MuscleGroup;
+  /**
+   * Specific muscles worked, for the body map (react-body-highlighter muscle ids,
+   * e.g. "chest", "biceps", "upper-back"). Set precisely per exercise by the seed,
+   * the coach, or the create form. When absent, the body map falls back to a
+   * generic template derived from `muscle`.
+   */
+  primary?: string[];
+  secondary?: string[];
   measure: Measure;
   /** Where it can be done; defaults to "space" when unset. */
   context?: ExerciseContext;

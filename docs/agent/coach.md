@@ -44,8 +44,15 @@ ver `src/coach/tools.ts`) y la **edición de archivo de config** (modo Claude Co
 |---|---|---|
 | `add_equipment {name}` | addCustomEquipment | `equipment.json`: push a `custom` + a `owned` |
 | `set_equipment_owned {id,owned}` | toggleEquipment | `equipment.json`: agregar/quitar id en `owned` |
-| `add_exercise {name,muscle,equipment,measure,context,defaultReps}` | addCustomExercise | `exercises.json`: push a `custom` (con `axis:[{id:"bw",label:"Peso corporal",kind:"bodyweight"}]`) |
+| `add_exercise {name,muscle,primary,secondary,equipment,measure,context,defaultReps}` | addCustomExercise | `exercises.json`: push a `custom` (con `axis:[{id:"bw",label:"Peso corporal",kind:"bodyweight"}]`) |
 | `add_to_routine {dayTypeId,exerciseId,sets,target,variantId}` | addToRoutine | `routine.json`: push al `routine` del day-type |
+
+> **Targeting muscular (`primary`/`secondary`):** al crear un ejercicio, marcá los músculos
+> ESPECÍFICOS que trabaja — el mapa corporal de Rutina los pinta (lima primario, ámbar
+> secundario, intensidad por volumen de series). Ids válidos: `chest, abs, obliques, biceps,
+> triceps, forearm, front-deltoids, back-deltoids, trapezius, upper-back, lower-back,
+> quadriceps, hamstring, gluteal, calves, adductor, abductors`. Si se omiten, cae a una
+> plantilla genérica por `muscle`. En CC mode son arrays en el objeto del ejercicio en `exercises.json`.
 | `remove_from_routine {dayTypeId,exerciseId}` | removeFromRoutine | `routine.json`: filtrar del `routine` |
 | `set_routine_sets/target/variant` | setRoutine* | `routine.json`: editar el item |
 | `add/rename/remove_day_type` | *DayType | `routine.json`: editar `dayTypes` (mín. 1) |

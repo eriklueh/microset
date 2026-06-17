@@ -51,22 +51,27 @@ export const COACH_TOOLS: CoachTool[] = [
   },
   {
     name: "add_exercise",
-    description: "Create a custom exercise. context 'desk' = silent/no-setup (OK during meetings); 'space' = needs room.",
+    description:
+      "Create a custom exercise. context 'desk' = silent/no-setup (OK during meetings); 'space' = needs room. Set the SPECIFIC muscles it works in `primary`/`secondary` (used by the body map) — valid ids: chest, abs, obliques, biceps, triceps, forearm, front-deltoids, back-deltoids, trapezius, upper-back, lower-back, quadriceps, hamstring, gluteal, calves, adductor, abductors.",
     params: obj(
       {
         name: str("Exercise name"),
-        muscle: enm(["pull", "push", "core", "legs"], "Muscle group"),
+        muscle: enm(["pull", "push", "core", "legs"], "Coarse group (scheduling/balance)"),
+        primary: { type: "array", items: { type: "string" }, description: "Primary muscles worked (specific ids)" },
+        secondary: { type: "array", items: { type: "string" }, description: "Secondary muscles worked (specific ids)" },
         equipment: { type: "array", items: { type: "string" }, description: "Required equipment ids (user must own all)" },
         measure: enm(["reps", "hold"], "Reps or timed hold"),
         context: enm(["desk", "space"], "Where it can be done"),
         defaultReps: str("Default reps/duration, e.g. '8' or '20s'"),
       },
-      ["name", "muscle", "measure", "context"],
+      ["name", "muscle", "primary", "measure", "context"],
     ),
-    apply: ({ name, muscle, equipment, measure, context, defaultReps }) => {
+    apply: ({ name, muscle, primary, secondary, equipment, measure, context, defaultReps }) => {
       const ex = useStore.getState().addCustomExercise({
         name,
         muscle,
+        primary: primary ?? undefined,
+        secondary: secondary ?? undefined,
         equipment: equipment ?? [],
         measure: measure ?? "reps",
         context: context ?? "space",
