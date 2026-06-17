@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
+import { Barcode, Corners } from "@/components/studio/hud";
 
 /** Surface the quick actions only when the set is due or this many minutes away. */
 const ACTION_THRESHOLD_MIN = 5;
@@ -115,8 +116,8 @@ export function FloatingPanel() {
         </span>
         <div className="flex items-baseline gap-1.5">
           <span
-            className="font-mono leading-[0.8] font-semibold tabular-nums tracking-[-0.04em]"
-            style={{ fontSize: soon ? "38px" : "44px", color: soon ? "var(--acc)" : "var(--fg)" }}
+            className="font-pixel leading-[0.8] tabular-nums tracking-[-0.01em]"
+            style={{ fontSize: soon ? "34px" : "40px", color: soon ? "var(--acc)" : "var(--fg)" }}
           >
             {heroNum}
           </span>
@@ -175,8 +176,8 @@ function Shell({ isNow, children }: { isNow: boolean; children: ReactNode }) {
         className="flex h-[26px] flex-none cursor-grab items-center justify-between px-2.5 active:cursor-grabbing"
         style={{ borderBottom: `1px solid ${isNow ? BLACK_A(0.15) : "var(--rule2)"}` }}
       >
-        <div className="pointer-events-none flex items-center gap-1.5">
-          <span className="size-2" style={{ background: isNow ? "var(--on)" : "var(--acc)" }} />
+        <div className="pointer-events-none flex items-center gap-2">
+          <Barcode color={isNow ? "var(--on)" : "var(--acc)"} height={8} />
           <span
             className="font-mono text-[9px] font-bold tracking-[0.2em]"
             style={{ color: isNow ? "var(--on)" : "var(--faint)" }}
@@ -193,7 +194,22 @@ function Shell({ isNow, children }: { isNow: boolean; children: ReactNode }) {
           <X className="size-3" />
         </button>
       </div>
-      {children}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {!isNow && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle, color-mix(in oklch, var(--faint2) 13%, transparent) 1px, transparent 1.5px)",
+                backgroundSize: "13px 13px",
+              }}
+            />
+            <Corners />
+          </>
+        )}
+        <div className="relative z-[1] flex min-h-0 flex-1 flex-col">{children}</div>
+      </div>
     </div>
   );
 }

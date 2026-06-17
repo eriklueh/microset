@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import { exerciseContext } from "@/domain/seed";
@@ -6,6 +6,7 @@ import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { closeToastWindow, openToastWindow } from "@/lib/windows";
+import { Barcode } from "@/components/studio/hud";
 
 /** Auto-dismiss the toast if there's no answer after this long. */
 const AUTO_DISMISS_MS = 45_000;
@@ -27,6 +28,7 @@ export function Toast() {
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const { byId, name, variantLabel } = useCatalog();
   const t = useT();
+  const [deplete, setDeplete] = useState(false);
 
   const block = day?.blocks.find(
     (b) => b.id === toastBlockId && b.status !== "done" && b.status !== "skipped",
@@ -41,6 +43,14 @@ export function Toast() {
     const handle = setTimeout(() => dismissToast(), AUTO_DISMISS_MS);
     return () => clearTimeout(handle);
   }, [block?.id, dismissToast]);
+
+  // Drive the auto-dismiss hairline: full on a new block, then deplete to 0 over the timeout.
+  useEffect(() => {
+    if (!block) return;
+    setDeplete(false);
+    const handle = setTimeout(() => setDeplete(true), 40);
+    return () => clearTimeout(handle);
+  }, [block?.id]);
 
   if (!block) return <div className="h-screen w-screen bg-[var(--bg)]" />;
 
@@ -63,14 +73,23 @@ export function Toast() {
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden border border-[var(--rule2)] bg-[var(--bg)] text-[var(--fg)] select-none">
-      <div className="absolute inset-y-0 left-0 w-1.5 bg-[var(--acc)]" />
+      <div className="absolute inset-y-0 left-0 z-[2] w-1.5 bg-[var(--acc)]" />
+      {/* faint telemetry field behind the content */}
+      <div
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, color-mix(in oklch, var(--faint2) 13%, transparent) 1px, transparent 1.5px)",
+          backgroundSize: "13px 13px",
+        }}
+      />
 
       <div
         data-tauri-drag-region
-        className="flex h-[22px] flex-none cursor-grab items-center justify-between pr-2 pl-3.5 active:cursor-grabbing"
+        className="relative z-[1] flex h-[22px] flex-none cursor-grab items-center justify-between pr-2 pl-3.5 active:cursor-grabbing"
       >
-        <div className="pointer-events-none flex items-center gap-1.5">
-          <span className="size-2 bg-[var(--acc)]" />
+        <div className="pointer-events-none flex items-center gap-2">
+          <Barcode color="var(--acc)" height={8} />
           <span className="font-mono text-[9px] font-bold tracking-[0.2em] text-[var(--faint)]">
             microset
           </span>
@@ -84,7 +103,7 @@ export function Toast() {
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-0.5 py-1.5 pr-3 pl-3.5">
+      <div className="relative z-[1] flex flex-1 flex-col gap-0.5 py-1.5 pr-3 pl-3.5">
         <div className="font-mono text-[9px] font-semibold tracking-[0.2em] text-[var(--acc)]">
           {t.toast.now} · {formatMinute(block.time)}
         </div>
@@ -117,6 +136,14 @@ export function Toast() {
             {t.toast.notNow}
           </button>
         </div>
+      </div>
+
+      {/* auto-dismiss countdown hairline (depletes over AUTO_DISMISS_MS) */}
+      <div className="absolute bottom-0 left-1.5 right-0 z-[2] h-[2px] bg-[var(--bar0)]">
+        <div
+          className="h-full bg-[var(--acc)]"
+          style={{ width: deplete ? "0%" : "100%", transition: `width ${AUTO_DISMISS_MS}ms linear` }}
+        />
       </div>
     </div>
   );
