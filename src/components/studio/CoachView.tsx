@@ -233,10 +233,10 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
           <>
             <button
               onClick={onSettings}
-              title={t.coach.configureInSettings}
-              className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
+              title={`${t.coach.configureInSettings} · ${coach.model}`}
+              className="max-w-[180px] truncate border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
             >
-              {coach.provider === "local" ? "LOCAL" : "API"} · {coach.model}
+              {coach.provider === "local" ? "LOCAL" : "API"} · {coach.model.replace(/^claude-/, "")}
             </button>
             <button
               onClick={() => void openCoach()}
@@ -248,91 +248,106 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
         }
       />
 
-      <div className="flex min-h-0 flex-1 flex-col px-7 py-6">
-      {/* Actionable status strip */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Insight label={`${t.coach.week} · ${snap.activeDays}`} />
-        {snap.feasibilityOk ? (
-          <Insight label={t.coach.allFits} tone="ok" />
-        ) : (
-          <Insight
-            label={`${t.coach.wontFit}: ${snap.overflow.join(", ")}`}
-            tone="warn"
-            onClick={() => void send(t.coach.promptFitVolume)}
-          />
-        )}
-        {snap.readyToLevel.length > 0 ? (
-          <Insight
-            label={`${t.coach.ready}: ${snap.readyToLevel[0]}`}
-            tone="ok"
-            onClick={() => void send(`${t.coach.promptLevelUpPrefix} ${snap.readyToLevel[0]}?`)}
-          />
-        ) : (
-          <Insight label={`${snap.thisWeekSets} ${t.coach.setsSevenDays}`} />
-        )}
-        {snap.balanceLabel.startsWith("Falta") ? (
-          <Insight
-            label={snap.balanceLabel}
-            tone="warn"
-            onClick={() => void send(t.coach.promptBalance)}
-          />
-        ) : (
-          <Insight label={t.coach.balanced} />
-        )}
-      </div>
+      <div className="flex min-h-0 flex-1">
+        {/* LEFT RAIL — coach readout + conversations (anchored cockpit) */}
+        <aside className="flex w-[340px] flex-none flex-col border-r border-[var(--rule2)]">
+          {/* DIAGNÓSTICO — the coach's live read of your state; warn rows are click-to-fix */}
+          <div className="flex flex-col border-b border-[var(--rule2)] px-5 pt-5 pb-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.coach.diagnostic}</span>
+              <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+                <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+                {t.body.live}
+              </span>
+            </div>
+            <Readout label={t.coach.week} value={`${snap.activeDays} ${t.coach.activeDaysUnit}`} />
+            <Readout
+              label={t.coach.feasibility}
+              value={snap.feasibilityOk ? t.coach.allFits : `${t.coach.wontFit}: ${snap.overflow.join(", ")}`}
+              tone={snap.feasibilityOk ? "ok" : "warn"}
+              onClick={snap.feasibilityOk ? undefined : () => void send(t.coach.promptFitVolume)}
+            />
+            <Readout
+              label={t.coach.progression}
+              value={
+                snap.readyToLevel.length
+                  ? `${t.coach.ready}: ${snap.readyToLevel[0]}`
+                  : `${snap.thisWeekSets} ${t.coach.setsSevenDays}`
+              }
+              tone={snap.readyToLevel.length ? "ok" : undefined}
+              onClick={
+                snap.readyToLevel.length
+                  ? () => void send(`${t.coach.promptLevelUpPrefix} ${snap.readyToLevel[0]}?`)
+                  : undefined
+              }
+            />
+            <Readout
+              label={t.coach.balanceTitle}
+              value={snap.balanceLabel.startsWith("Falta") ? snap.balanceLabel : t.coach.balanced}
+              tone={snap.balanceLabel.startsWith("Falta") ? "warn" : "ok"}
+              onClick={snap.balanceLabel.startsWith("Falta") ? () => void send(t.coach.promptBalance) : undefined}
+            />
+          </div>
 
-      {/* Threads rail + chat */}
-      <div className="mt-3.5 flex min-h-0 flex-1 border border-[var(--rule2)]">
-        <aside className="flex w-[180px] flex-none flex-col border-r border-[var(--rule2)]">
-          <button
-            onClick={newChat}
-            className="flex items-center gap-1.5 border-b border-[var(--rule2)] px-3 py-2.5 font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--acc)] hover:bg-[var(--bar0)]"
-          >
-            <Plus className="size-3.5" /> {t.coach.new}
-          </button>
-          <div className="flex flex-1 flex-col overflow-y-auto">
-            {threads.length === 0 && (
-              <div className="px-3 py-3 font-mono text-[10px] leading-[1.5] tracking-[0.04em] text-[var(--faint2)]">
-                {t.coach.noChatsYet}
-              </div>
-            )}
-            {threads.map((c) => {
-              const isCC = c.source === "claude-code";
-              const active = isCC ? ccConv?.id === c.id : conv?.id === c.id;
-              return (
-                <button
-                  key={`${c.source}-${c.id}`}
-                  onClick={() => (isCC ? void openCC(c) : void openConv(c.id))}
-                  title={isCC ? t.coach.resumeInClaudeCode : undefined}
-                  className="group flex items-center gap-1.5 border-b border-[var(--rule)] px-3 py-2.5 text-left"
-                  style={{ background: active ? "var(--bar0)" : "transparent" }}
-                >
-                  <span
-                    className="min-w-0 flex-1 truncate text-[12px]"
-                    style={{ color: active ? "var(--fg)" : "var(--dim)" }}
+          {/* CONVERSACIONES */}
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex items-center justify-between px-5 py-3">
+              <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--faint)]">
+                {t.coach.conversations}
+              </span>
+              <button
+                onClick={newChat}
+                className="flex items-center gap-1 font-mono text-[10px] font-semibold tracking-[0.08em] text-[var(--acc)] hover:opacity-70"
+              >
+                <Plus className="size-3" /> {t.coach.new}
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-[var(--rule2)]">
+              {threads.length === 0 && (
+                <div className="px-5 py-3 font-mono text-[10px] leading-[1.5] tracking-[0.04em] text-[var(--faint2)]">
+                  {t.coach.noChatsYet}
+                </div>
+              )}
+              {threads.map((c) => {
+                const isCC = c.source === "claude-code";
+                const active = isCC ? ccConv?.id === c.id : conv?.id === c.id;
+                return (
+                  <button
+                    key={`${c.source}-${c.id}`}
+                    onClick={() => (isCC ? void openCC(c) : void openConv(c.id))}
+                    title={isCC ? t.coach.resumeInClaudeCode : undefined}
+                    className="group relative flex items-center gap-1.5 border-b border-[var(--rule)] px-5 py-2.5 text-left"
+                    style={{ background: active ? "var(--bar0)" : "transparent" }}
                   >
-                    {c.title}
-                  </span>
-                  {isCC ? (
-                    <span className="flex-none font-mono text-[8px] font-bold tracking-[0.12em] text-[var(--faint2)]">
-                      CC
+                    {active && <span className="absolute inset-y-0 left-0 w-[3px] bg-[var(--acc)]" />}
+                    <span
+                      className="min-w-0 flex-1 truncate text-[12px]"
+                      style={{ color: active ? "var(--fg)" : "var(--dim)" }}
+                    >
+                      {c.title}
                     </span>
-                  ) : (
-                    <Trash2
-                      onClick={(e) => void removeConv(c.id, e)}
-                      className="size-3.5 flex-none text-[var(--faint2)] opacity-0 group-hover:opacity-100 hover:text-[var(--destructive)]"
-                    />
-                  )}
-                </button>
-              );
-            })}
+                    {isCC ? (
+                      <span className="flex-none font-mono text-[8px] font-bold tracking-[0.12em] text-[var(--faint2)]">
+                        CC
+                      </span>
+                    ) : (
+                      <Trash2
+                        onClick={(e) => void removeConv(c.id, e)}
+                        className="size-3.5 flex-none text-[var(--faint2)] opacity-0 group-hover:opacity-100 hover:text-[var(--destructive)]"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* RIGHT PANE — chat (anchored, borderless like the other views) */}
+        <section className="flex min-w-0 flex-1 flex-col">
           {ccConv ? (
             <>
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--rule2)] px-4 py-2.5">
+              <div className="flex flex-none items-center justify-between gap-3 border-b border-[var(--rule2)] px-5 py-3">
                 <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--fg)]">
                   {ccConv.title}
                 </span>
@@ -340,7 +355,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                   {t.coach.claudeCodeReadOnly}
                 </span>
               </div>
-              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
+              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
                 {ccConv.messages.length === 0 && (
                   <div className="m-auto font-mono text-[11px] tracking-[0.06em] text-[var(--faint)]">
                     {t.coach.emptyOrUnreadable}
@@ -350,7 +365,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                   <Bubble key={i} role={m.role} text={m.text} />
                 ))}
               </div>
-              <div className="flex items-center justify-between gap-2 border-t border-[var(--rule2)] p-2.5">
+              <div className="flex flex-none items-center justify-between gap-2 border-t border-[var(--rule2)] px-5 py-3">
                 <span className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">
                   {t.coach.conversationLivesInClaudeCode}
                 </span>
@@ -364,21 +379,22 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
             </>
           ) : (
             <>
-              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
+              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
                 {messages.length === 0 && !error ? (
-                  <div className="m-auto max-w-[420px] text-center">
-                    <div className="text-[16px] font-semibold text-[var(--fg)]">{t.coach.onboardingTitle}</div>
-                    <p className="mt-2 text-[13px] leading-[1.6] text-[var(--faint)]">
+                  <div className="m-auto max-w-[440px] text-center">
+                    <div className="text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)]">{t.coach.onboardingTitle}</div>
+                    <p className="mx-auto mt-2 max-w-[380px] text-[13px] leading-[1.6] text-[var(--faint)]">
                       {t.coach.onboardingBody}
                     </p>
-                    <div className="mt-4 flex flex-col gap-2">
+                    <div className="mt-5 flex flex-col gap-2 text-left">
                       {t.coach.starters.map((s) => (
                         <button
                           key={s}
                           onClick={() => void send(s)}
-                          className="border border-[var(--rule2)] px-3 py-2 text-[12.5px] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--fg)]"
+                          className="group flex items-center gap-2.5 border border-[var(--rule2)] px-3.5 py-2.5 text-[12.5px] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--fg)]"
                         >
-                          {s}
+                          <span className="font-mono text-[var(--faint2)] group-hover:text-[var(--acc)]">›</span>
+                          <span>{s}</span>
                         </button>
                       ))}
                     </div>
@@ -389,7 +405,8 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                       <Bubble key={i} role={m.role} text={m.content} />
                     ))}
                     {busy && (
-                      <div className="font-mono text-[11px] tracking-[0.1em] text-[var(--faint)]">
+                      <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)]">
+                        <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
                         {t.coach.thinking}
                       </div>
                     )}
@@ -404,7 +421,7 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
                 <div ref={endRef} />
               </div>
 
-              <div className="flex items-center gap-2 border-t border-[var(--rule2)] p-2.5">
+              <div className="flex flex-none items-center gap-2 border-t border-[var(--rule2)] px-5 py-3">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.currentTarget.value)}
@@ -424,26 +441,47 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
               </div>
             </>
           )}
-        </div>
-      </div>
+        </section>
       </div>
     </div>
   );
 }
 
-function Insight({ label, tone, onClick }: { label: string; tone?: "ok" | "warn"; onClick?: () => void }) {
-  const color = tone === "warn" ? WARN : tone === "ok" ? "var(--acc)" : "var(--faint)";
-  const cls =
-    "max-w-full truncate border px-2.5 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.06em] uppercase";
-  const style = { borderColor: tone ? color : "var(--rule2)", color };
+/** One row of the coach's state readout. Warn/ok rows that carry an onClick are tappable
+ *  shortcuts that fire a fix prompt at the coach (shown with a › affordance). */
+function Readout({
+  label,
+  value,
+  tone,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  tone?: "ok" | "warn";
+  onClick?: () => void;
+}) {
+  const color = tone === "warn" ? WARN : tone === "ok" ? "var(--acc)" : "var(--fg)";
+  const inner = (
+    <>
+      <span className="flex-none font-mono text-[9.5px] tracking-[0.1em] text-[var(--faint2)]">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-right font-mono text-[11px] tracking-[0.02em]" style={{ color }}>
+        {value}
+      </span>
+      <span
+        className="w-2 flex-none text-right font-mono text-[11px] text-[var(--acc)]"
+        style={{ opacity: onClick ? 1 : 0 }}
+        aria-hidden
+      >
+        ›
+      </span>
+    </>
+  );
   return onClick ? (
-    <button onClick={onClick} className={`${cls} hover:bg-[var(--bar0)]`} style={style}>
-      {label}
+    <button onClick={onClick} className="-mx-2 flex items-center gap-2 px-2 py-[5px] text-left hover:bg-[var(--bar0)]">
+      {inner}
     </button>
   ) : (
-    <span className={cls} style={style}>
-      {label}
-    </span>
+    <div className="-mx-2 flex items-center gap-2 px-2 py-[5px]">{inner}</div>
   );
 }
 
