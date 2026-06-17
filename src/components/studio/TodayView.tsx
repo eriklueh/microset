@@ -144,7 +144,7 @@ export function TodayView() {
               </div>
             </div>
             <div className="flex-none text-right">
-              <div className="font-mono text-[52px] leading-[0.8] font-semibold tabular-nums tracking-[-0.03em] text-[var(--fg)]">
+              <div className="font-pixel text-[52px] leading-[0.8] text-[var(--fg)]">
                 {heroNum}
               </div>
               <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
@@ -211,7 +211,7 @@ function Mast({
           </div>
         </div>
         <div className="text-right">
-          <div className="font-mono text-[52px] leading-[0.8] font-semibold tracking-[-0.02em] text-[var(--fg)]">
+          <div className="font-pixel text-[52px] leading-[0.8] text-[var(--fg)]">
             {pad(done)}
             <span className="text-[var(--faint2)]">/{pad(total)}</span>
           </div>

@@ -238,7 +238,7 @@ function Metric({
         {label}
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="font-mono text-[50px] leading-[0.8] font-semibold tracking-[-0.03em] text-[var(--fg)]">
+        <span className="font-pixel text-[50px] leading-[0.8] text-[var(--fg)]">
           {value}
         </span>
         {delta !== undefined && <Delta value={delta} />}

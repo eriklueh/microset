@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
+@import "@fontsource/pixelify-sans";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,6 +11,7 @@
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', -apple-system, sans-serif;
     --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+    --font-pixel: 'Pixelify Sans', 'Geist Mono Variable', monospace;
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -173,4 +175,17 @@
 }
 .ms-blink {
   animation: ms-blink 2.4s steps(1, end) infinite;
+}
+
+/* Marathon ticker: lime marquee scrolling the brand voice. */
+@keyframes ms-marq {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.ms-marq {
+  animation: ms-marq 32s linear infinite;
 }

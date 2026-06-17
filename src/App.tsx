@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useScheduler } from "@/hooks/useScheduler";
+import { useT } from "@/lib/i18n";
 import { setPanelVisible } from "@/lib/windows";
 import { Titlebar } from "@/components/studio/Titlebar";
+import { RelayBar, Ticker } from "@/components/studio/hud";
 import { Sidebar, type Section } from "@/components/studio/Sidebar";
 import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
@@ -15,6 +17,7 @@ import { UpdateBanner } from "@/components/studio/UpdateBanner";
 
 function App() {
   const [section, setSection] = useState<Section>("today");
+  const t = useT();
   const ensureToday = useStore((s) => s.ensureToday);
   const panelEnabled = useStore((s) => s.panelEnabled);
 
@@ -31,7 +34,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-[var(--bg)] text-[var(--fg)]">
-      <Titlebar />
+      <Titlebar label={t.nav[section]} />
       <div className="flex min-h-0 flex-1">
         <Sidebar active={section} onSelect={setSection} />
         <main className="min-h-0 flex-1 overflow-y-auto">
@@ -43,7 +46,9 @@ function App() {
           {section === "progress" && <ProgressView />}
           {section === "settings" && <SettingsView />}
         </main>
+        <RelayBar />
       </div>
+      <Ticker />
       <UpdateBanner />
     </div>
   );

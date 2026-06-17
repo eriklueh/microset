@@ -31,10 +31,10 @@ export function Sidebar({
   return (
     <aside className="flex w-[210px] shrink-0 flex-col border-r border-[var(--rule2)] bg-[var(--bg)]">
       <div className="flex items-center gap-2.5 border-b border-[var(--rule2)] px-[18px] py-5">
-        <div className="grid size-[26px] place-items-center bg-[var(--acc)] text-[16px] font-extrabold text-[var(--on)]">
+        <div className="grid size-[26px] place-items-center bg-[var(--acc)] font-pixel text-[18px] font-bold text-[var(--on)]">
           m
         </div>
-        <span className="text-[16px] font-extrabold tracking-[-0.03em] text-[var(--fg)]">
+        <span className="font-pixel text-[19px] font-semibold tracking-[0.01em] text-[var(--fg)]">
           microset
         </span>
       </div>

@@ -25,6 +25,7 @@ import {
   type Role,
 } from "@/domain/bodyGroups";
 import { BodyFigures, BodyLegend, GroupChips } from "./BodyMap";
+import { Barcode, Corners, RegMark } from "./hud";
 
 type Mode = "list" | "crear" | "buscar";
 
@@ -37,34 +38,6 @@ const input =
   "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
 const stepBtn =
   "grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]";
-
-/** Lime L-shaped register brackets around the cockpit body box. */
-function Corners() {
-  const pos: [string, string][] = [
-    ["top-1 left-1", "border-t border-l"],
-    ["top-1 right-1", "border-t border-r"],
-    ["bottom-1 left-1", "border-b border-l"],
-    ["bottom-1 right-1", "border-b border-r"],
-  ];
-  return (
-    <>
-      {pos.map(([p, b]) => (
-        <span key={p} className={`pointer-events-none absolute z-[2] size-2.5 ${p} ${b} border-[var(--acc)]`} />
-      ))}
-    </>
-  );
-}
-
-/** Thin barcode mark for the HUD strip. */
-function Barcode() {
-  return (
-    <span className="flex items-end gap-px" style={{ height: 11 }}>
-      {[2, 1, 3, 1, 2, 4, 1, 2, 1, 3].map((w, i) => (
-        <span key={i} style={{ width: w, height: 11, background: "var(--faint2)" }} />
-      ))}
-    </span>
-  );
-}
 
 export function RoutineView() {
   const t = useT();
@@ -393,8 +366,8 @@ export function RoutineView() {
         </span>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-[30px] leading-[0.8] font-extrabold tracking-[-0.03em] text-[var(--fg)]">{card.big}</span>
-        <span className="text-[17px] font-extrabold text-[var(--faint2)]">/6</span>
+        <span className="font-pixel text-[34px] leading-[0.8] text-[var(--fg)]">{card.big}</span>
+        <span className="font-pixel text-[18px] text-[var(--faint2)]">/6</span>
         <span className="ml-auto self-end font-mono text-[9px] tracking-[0.08em]" style={{ color: toneStyle.fg }}>
           {card.tag}
         </span>
@@ -458,9 +431,7 @@ export function RoutineView() {
         style={{ background: "radial-gradient(ellipse at 50% 32%, color-mix(in oklch, var(--acc) 5%, transparent), transparent 62%)" }}
       >
         <Corners />
-        <span className="pointer-events-none absolute top-2 left-2.5 z-[2] text-[15px] leading-none font-light text-[var(--rule2)]">
-          +
-        </span>
+        <RegMark className="top-2 left-2.5" />
         <BodyFigures state={bodyState} width={158} onPick={creating ? cycleMuscle : undefined} />
       </div>
 
