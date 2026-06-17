@@ -248,6 +248,28 @@ const es = {
     apply: "APLICAR",
     discard: "DESCARTAR",
   },
+  body: {
+    title: "MAPA MUSCULAR",
+    coverage: "COBERTURA",
+    open: "VER CUERPO",
+    front: "FRENTE",
+    back: "ESPALDA",
+    load: "CARGA",
+    sets: "series",
+    noExercises: "sin ejercicios que lo trabajen",
+    levelNone: "SIN CARGA",
+    levelLow: "BAJA",
+    levelMid: "MEDIA",
+    levelHigh: "ALTA",
+    regions: {
+      chest: "Pecho",
+      back: "Espalda",
+      shoulders: "Hombros",
+      arms: "Brazos",
+      core: "Core",
+      legs: "Piernas",
+    },
+  },
 };
 
 export type Dict = typeof es;
@@ -493,6 +515,28 @@ const en: Dict = {
     proposedChanges: "PROPOSED CHANGES",
     apply: "APPLY",
     discard: "DISCARD",
+  },
+  body: {
+    title: "MUSCLE MAP",
+    coverage: "COVERAGE",
+    open: "VIEW BODY",
+    front: "FRONT",
+    back: "BACK",
+    load: "LOAD",
+    sets: "sets",
+    noExercises: "no exercises work it",
+    levelNone: "NO LOAD",
+    levelLow: "LOW",
+    levelMid: "MED",
+    levelHigh: "HIGH",
+    regions: {
+      chest: "Chest",
+      back: "Back",
+      shoulders: "Shoulders",
+      arms: "Arms",
+      core: "Core",
+      legs: "Legs",
+    },
   },
 };
 

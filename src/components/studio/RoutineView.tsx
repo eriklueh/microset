@@ -13,6 +13,7 @@ import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
 import { Masthead } from "./Masthead";
+import { BodyMap } from "./BodyMap";
 
 const MUSCLE_ORDER: MuscleGroup[] = ["pull", "push", "core", "legs"];
 const WARN = "#e0a400";
@@ -199,6 +200,9 @@ export function RoutineView() {
           ))}
         </select>
       </div>
+
+      {/* Muscle coverage body map (react-body-highlighter, styled to our palette) */}
+      <BodyMap routine={routine} owned={owned} />
 
       {/* Exercise list — the main content */}
       <div className="mt-5 border-t border-[var(--rule)]">
