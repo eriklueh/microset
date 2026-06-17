@@ -202,6 +202,35 @@ export const COACH_TOOLS: CoachTool[] = [
     },
   },
   {
+    name: "set_day_override",
+    description:
+      "Plan a SPECIFIC calendar date, overriding the weekly pattern just for that day. date = 'YYYY-M-D' (e.g. '2026-6-23'). slot = a day-type id or 'rest'. kind = home/office/none. Use for one-offs: travel, a deload day, swapping a workout. Omit slot or kind to keep that aspect from the weekly pattern.",
+    params: obj(
+      {
+        date: str("Date as 'YYYY-M-D'"),
+        slot: str("Day-type id or 'rest'"),
+        kind: enm(["home", "office", "none"], "Place for that date"),
+      },
+      ["date"],
+    ),
+    apply: ({ date, slot, kind }) => {
+      const patch: { slot?: string; kind?: "home" | "office" | null } = {};
+      if (slot != null) patch.slot = slot === "rest" ? REST : slot;
+      if (kind != null) patch.kind = kind === "none" ? null : kind;
+      useStore.getState().setDayOverride(date, patch);
+      return `Override ${date}: ${patch.slot ?? "(patrón)"}${patch.kind !== undefined ? " · " + (patch.kind ?? "sin lugar") : ""}`;
+    },
+  },
+  {
+    name: "clear_day_override",
+    description: "Remove a per-date override — that date reverts to the weekly pattern.",
+    params: obj({ date: str("Date as 'YYYY-M-D'") }, ["date"]),
+    apply: ({ date }) => {
+      useStore.getState().clearDayOverride(date);
+      return `Override quitado: ${date} (vuelve al patrón semanal)`;
+    },
+  },
+  {
     name: "set_methodology",
     description: "Apply a methodology preset to a day-type (adjusts sets + min rest).",
     params: obj({ dayTypeId: str("Day-type id"), methodologyId: enm(["gtg", "volume", "strength", "maintenance", "free"], "Methodology id") }, ["dayTypeId", "methodologyId"]),

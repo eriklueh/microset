@@ -6,7 +6,7 @@ import { useMethodologies } from "@/domain/i18n";
 import type { EquipmentId, ExerciseContext, Measure, MuscleGroup } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
-import { REST, useStore } from "@/store/useStore";
+import { REST, dateKey, effectiveKind, effectiveSlot, useStore } from "@/store/useStore";
 import {
   BODY_GROUPS,
   GROUP_MUSCLES,
@@ -47,6 +47,9 @@ export function RoutineView() {
   const dayKind = useStore((s) => s.dayKind);
   const setWeekDay = useStore((s) => s.setWeekDay);
   const setDayKind = useStore((s) => s.setDayKind);
+  const dayOverrides = useStore((s) => s.dayOverrides);
+  const setDayOverride = useStore((s) => s.setDayOverride);
+  const clearDayOverride = useStore((s) => s.clearDayOverride);
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
   const methodologyId = useStore((s) => s.methodologyId);
@@ -68,6 +71,16 @@ export function RoutineView() {
   const [mode, setMode] = useState<Mode>("list");
   const [search, setSearch] = useState("");
   const [hoverEx, setHoverEx] = useState<string | null>(null);
+  const [planView, setPlanView] = useState<"semana" | "mes">("semana");
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date();
+    return { y: d.getFullYear(), m0: d.getMonth() };
+  });
+  const [selDate, setSelDate] = useState<string | null>(null);
+  const today = new Date();
+  const todayK = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  const prevMonth = () => setCalMonth((c) => (c.m0 === 0 ? { y: c.y - 1, m0: 11 } : { y: c.y, m0: c.m0 - 1 }));
+  const nextMonth = () => setCalMonth((c) => (c.m0 === 11 ? { y: c.y + 1, m0: 0 } : { y: c.y, m0: c.m0 + 1 }));
 
   // create-form state (lifted so the cockpit body can both preview and edit it)
   const [cName, setCName] = useState("");
@@ -367,6 +380,180 @@ export function RoutineView() {
     </div>
   );
 
+  // ----- plan toggle (Semana | Mes) ------------------------------------------
+  const planToggle = (
+    <div className="flex flex-none items-center gap-1.5 border-b border-[var(--rule2)] px-7 py-2">
+      {(["semana", "mes"] as const).map((v) => {
+        const on = planView === v;
+        return (
+          <button
+            key={v}
+            onClick={() => setPlanView(v)}
+            className="border px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em]"
+            style={{
+              borderColor: on ? "var(--acc)" : "var(--rule2)",
+              background: on ? "var(--acc)" : "transparent",
+              color: on ? "var(--on)" : "var(--faint)",
+            }}
+          >
+            {v === "semana" ? t.cal.week : t.cal.month}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  // ----- month calendar (per-date overrides over the weekly pattern) ---------
+  const months = t.cal.months as string[];
+  const fmtDate = (key: string) => {
+    const [yy, mm, dd] = key.split("-").map(Number);
+    const wd = (new Date(yy, mm - 1, dd).getDay() + 6) % 7;
+    return `${t.routine.dow[wd]} ${dd} · ${months[mm - 1].slice(0, 3).toUpperCase()}`;
+  };
+  const monthView = (() => {
+    const { y, m0 } = calMonth;
+    const firstWeekday = (new Date(y, m0, 1).getDay() + 6) % 7;
+    const start = new Date(y, m0, 1 - firstWeekday);
+    const cells = Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+    const selSlot = selDate ? effectiveSlot(week, dayOverrides, selDate) : REST;
+    const selKind = selDate ? effectiveKind(dayKind, dayOverrides, selDate) : null;
+    const selHasOv = selDate ? selDate in dayOverrides : false;
+    return (
+      <div className="flex min-h-0 flex-1">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
+          <div className="flex items-center justify-between">
+            <button onClick={prevMonth} aria-label={t.cal.prev} className="grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:text-[var(--fg)]">
+              ‹
+            </button>
+            <span className="font-pixel text-[18px] tracking-[0.02em] text-[var(--fg)]">
+              {months[m0]} {y}
+            </span>
+            <button onClick={nextMonth} aria-label={t.cal.next} className="grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:text-[var(--fg)]">
+              ›
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-7 gap-1">
+            {t.routine.dow.map((d) => (
+              <span key={d} className="text-center font-mono text-[9px] tracking-[0.1em] text-[var(--faint2)]">
+                {d}
+              </span>
+            ))}
+          </div>
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {cells.map((dt) => {
+              const key = dateKey(dt.getFullYear(), dt.getMonth(), dt.getDate());
+              const outMonth = dt.getMonth() !== m0;
+              const slot = effectiveSlot(week, dayOverrides, key);
+              const rest = slot === REST;
+              const dtName = dayTypes.find((x) => x.id === slot)?.name ?? slot;
+              const hasOv = key in dayOverrides;
+              const isToday = key === todayK;
+              const isSel = key === selDate;
+              const place = effectiveKind(dayKind, dayOverrides, key);
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelDate(key)}
+                  className="relative flex h-[62px] flex-col border p-1.5 text-left"
+                  style={{
+                    borderColor: isSel ? "var(--acc)" : isToday ? "color-mix(in oklch, var(--acc) 45%, transparent)" : "var(--rule)",
+                    background: isSel ? "color-mix(in oklch, var(--acc) 9%, transparent)" : "transparent",
+                    opacity: outMonth ? 0.4 : 1,
+                  }}
+                >
+                  <span className="flex items-center justify-between">
+                    <span className="font-mono text-[10px]" style={{ color: isToday ? "var(--acc)" : "var(--faint)" }}>
+                      {dt.getDate()}
+                    </span>
+                    {hasOv && <span title={t.cal.overrideTag} className="size-1.5 flex-none bg-[var(--acc)]" />}
+                  </span>
+                  <span
+                    className="mt-auto truncate text-[10px] font-semibold uppercase"
+                    style={{ color: rest ? "var(--faint2)" : "var(--fg)" }}
+                  >
+                    {rest ? t.today.rest : dtName}
+                  </span>
+                  {place && (
+                    <span className="font-mono text-[8px] tracking-[0.06em] text-[var(--faint2)]">
+                      {place === "home" ? t.week.home : t.week.office}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <aside className="w-[300px] flex-none border-l border-[var(--rule2)] p-5">
+          {!selDate ? (
+            <p className="mt-4 text-center font-mono text-[11px] tracking-[0.04em] text-[var(--faint2)]">{t.cal.pickDate}</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div>
+                <div className="font-mono text-[9px] tracking-[0.16em] text-[var(--acc)]">{t.cal.dayPlan}</div>
+                <div className="mt-1 text-[20px] font-bold tracking-[-0.02em] text-[var(--fg)] uppercase">{fmtDate(selDate)}</div>
+              </div>
+
+              <div>
+                <div className="mb-1.5 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">{t.routine.type}</div>
+                <select
+                  value={selSlot}
+                  onChange={(e) => setDayOverride(selDate, { slot: e.currentTarget.value })}
+                  className={`${input} w-full appearance-none px-2.5 py-2 font-mono text-[12px]`}
+                >
+                  {dayTypes.map((x) => (
+                    <option key={x.id} value={x.id} className="bg-[var(--ink2)]">
+                      {x.name.toUpperCase()}
+                    </option>
+                  ))}
+                  <option value={REST} className="bg-[var(--ink2)]">
+                    {t.today.rest.toUpperCase()}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <div className="mb-1.5 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">{t.week.place}</div>
+                <div className="flex gap-1.5">
+                  {([null, "home", "office"] as const).map((k) => {
+                    const on = selKind === k;
+                    return (
+                      <button
+                        key={String(k)}
+                        onClick={() => setDayOverride(selDate, { kind: k })}
+                        className="flex-1 border px-2 py-1.5 font-mono text-[10px] tracking-[0.04em]"
+                        style={{
+                          borderColor: on ? "var(--acc)" : "var(--rule2)",
+                          color: on ? "var(--acc)" : "var(--faint)",
+                          background: on ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent",
+                        }}
+                      >
+                        {k === null ? "—" : k === "home" ? t.week.home.toUpperCase() : t.week.office.toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selHasOv ? (
+                <button
+                  onClick={() => clearDayOverride(selDate)}
+                  className="flex items-center justify-center gap-2 border border-[var(--rule2)] px-3 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
+                >
+                  <Trash2 className="size-3.5" /> {t.cal.useWeekly}
+                </button>
+              ) : (
+                <p className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">
+                  ◆ {t.cal.weeklyDefault}
+                </p>
+              )}
+            </div>
+          )}
+        </aside>
+      </div>
+    );
+  })();
+
   // ----- gap / coverage card (mode-aware) ------------------------------------
   type Tone = "acc" | "warn" | "neutral";
   const card: { tone: Tone; title: string; big: number; tag: string; sub?: string; ok: boolean } = creating
@@ -449,14 +636,17 @@ export function RoutineView() {
         ))}
       </div>
 
-      {/* label above body */}
-      <div className="flex items-center justify-between">
-        <span className="truncate font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">
-          {creating
-            ? t.body.musclesNew
-            : hovered
-              ? `${t.body.isolated} · ${name(hoverEx!).toUpperCase()}`
-              : t.body.coverageDay}
+      {/* scanner HUD header */}
+      <div className="flex items-center justify-between border-b border-[var(--rule)] pb-2">
+        <span className="flex min-w-0 items-center gap-2">
+          <Barcode height={8} />
+          <span className="truncate font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">
+            {creating
+              ? t.body.musclesNew
+              : hovered
+                ? `${t.body.isolated} · ${name(hoverEx!).toUpperCase()}`
+                : t.body.coverageDay}
+          </span>
         </span>
         <span className="flex flex-none items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
           {creating ? (
@@ -470,14 +660,46 @@ export function RoutineView() {
         </span>
       </div>
 
-      {/* body box with register chrome */}
-      <div
-        className="relative flex justify-center border border-[var(--rule2)] p-4"
-        style={{ background: "radial-gradient(ellipse at 50% 32%, color-mix(in oklch, var(--acc) 5%, transparent), transparent 62%)" }}
-      >
+      {/* body scanner: dot-grid texture · tick ruler · sweep line · register chrome */}
+      <div className="relative overflow-hidden border border-[var(--rule2)]">
+        {/* telemetry dot grid */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, color-mix(in oklch, var(--faint2) 22%, transparent) 1px, transparent 1.5px)",
+            backgroundSize: "13px 13px",
+          }}
+        />
+        {/* center glow */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse at 50% 34%, color-mix(in oklch, var(--acc) 7%, transparent), transparent 60%)" }}
+        />
+        {/* top tick ruler */}
+        <div className="pointer-events-none absolute inset-x-3 top-1.5 z-[1] flex justify-between">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <span key={i} className="w-px bg-[var(--rule2)]" style={{ height: i % 3 === 0 ? 6 : 3 }} />
+          ))}
+        </div>
+        {/* center divider (FRENTE | ESPALDA) */}
+        <span
+          className="pointer-events-none absolute inset-y-6 left-1/2 z-[1] w-px -translate-x-1/2"
+          style={{ background: "color-mix(in oklch, var(--rule) 70%, transparent)" }}
+        />
+        {/* sweeping scan line */}
+        <span
+          className="ms-scan pointer-events-none absolute inset-x-2 z-[1] h-px"
+          style={{
+            background: "linear-gradient(90deg, transparent, var(--acc), transparent)",
+            boxShadow: "0 0 6px color-mix(in oklch, var(--acc) 70%, transparent)",
+          }}
+        />
         <Corners />
-        <RegMark className="top-2 left-2.5" />
-        <BodyFigures state={bodyState} width={158} onPick={creating ? cycleMuscle : undefined} />
+        <RegMark className="top-3 left-1/2 -translate-x-1/2" />
+        <div className="relative z-[1] flex justify-center px-3 pt-6 pb-3">
+          <BodyFigures state={bodyState} width={158} onPick={creating ? cycleMuscle : undefined} />
+        </div>
       </div>
 
       <BodyLegend />
@@ -950,11 +1172,16 @@ export function RoutineView() {
   return (
     <div className="flex h-full flex-col">
       {header}
-      {mode === "list" && weekStrip}
-      <div className="flex min-h-0 flex-1">
-        {leftCol}
-        {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}
-      </div>
+      {mode === "list" && planToggle}
+      {mode === "list" && planView === "semana" && weekStrip}
+      {mode === "list" && planView === "mes" ? (
+        monthView
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          {leftCol}
+          {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}
+        </div>
+      )}
     </div>
   );
 }

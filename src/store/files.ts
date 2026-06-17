@@ -47,7 +47,7 @@ function groups(s: State): Record<string, unknown> {
       snoozeMinutes: s.snoozeMinutes,
       demoMode: s.demoMode,
     },
-    [FILES.routine]: { dayTypes: s.dayTypes, week: s.week, dayKind: s.dayKind },
+    [FILES.routine]: { dayTypes: s.dayTypes, week: s.week, dayKind: s.dayKind, dayOverrides: s.dayOverrides },
     [FILES.equipment]: { owned: s.ownedEquipment, custom: s.customEquipment },
     [FILES.exercises]: { custom: s.customExercises },
     [FILES.profile]: s.profile,
@@ -97,6 +97,8 @@ async function readAll(): Promise<Partial<State>> {
     if (Array.isArray(r.dayTypes)) patch.dayTypes = r.dayTypes;
     if (Array.isArray(r.week)) patch.week = r.week;
     if (Array.isArray(r.dayKind)) patch.dayKind = r.dayKind;
+    if (r.dayOverrides && typeof r.dayOverrides === "object" && !Array.isArray(r.dayOverrides))
+      patch.dayOverrides = r.dayOverrides;
   }
   const eq = await readJSON(FILES.equipment);
   if (eq) {
@@ -145,6 +147,15 @@ function sanitize(patch: Partial<State>): Partial<State> {
     out.dayKind = Array.from({ length: 7 }, (_, i) =>
       k[i] === "home" || k[i] === "office" ? k[i] : null,
     );
+  }
+  if (out.dayOverrides !== undefined) {
+    const src = (out.dayOverrides ?? {}) as Record<string, any>;
+    const clean: Record<string, { slot: string; kind: "home" | "office" | null }> = {};
+    for (const [date, o] of Object.entries(src)) {
+      if (!o || typeof o !== "object" || !valid.has(o.slot)) continue;
+      clean[date] = { slot: o.slot, kind: o.kind === "home" || o.kind === "office" ? o.kind : null };
+    }
+    out.dayOverrides = clean;
   }
   for (const key of ["ownedEquipment", "customEquipment", "customExercises", "logs"] as const) {
     if (out[key] !== undefined && !Array.isArray(out[key])) delete out[key];

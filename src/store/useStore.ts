@@ -75,11 +75,6 @@ const DEFAULT_DAYTYPES: DayType[] = [
 const DEFAULT_WEEK: string[] = Array(7).fill(DEFAULT_DAYTYPE_ID);
 const DEFAULT_DAYKIND: (WeekKind | null)[] = Array(7).fill(null);
 
-/** Monday-first weekday index for today (0 = Mon … 6 = Sun). */
-function weekdayIndex(): number {
-  return (new Date().getDay() + 6) % 7;
-}
-
 function newId(): string {
   return crypto.randomUUID();
 }
@@ -87,6 +82,42 @@ function newId(): string {
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+/** Canonical date key `YYYY-M-D` (matches todayKey) from numeric parts. */
+export function dateKey(y: number, month0: number, day: number): string {
+  return `${y}-${month0 + 1}-${day}`;
+}
+
+/** Mon-first weekday (0=Mon … 6=Sun) for a stored date key. */
+function weekdayOfKey(key: string): number {
+  const [y, m, d] = key.split("-").map(Number);
+  return (new Date(y, (m ?? 1) - 1, d ?? 1).getDay() + 6) % 7;
+}
+
+/** A per-date plan override on top of the recurring weekly pattern. */
+export interface DayOverride {
+  slot: string; // dayTypeId or REST
+  kind: WeekKind | null;
+}
+
+/** Day-type slot in effect for a date: the per-date override, else the weekly pattern. */
+export function effectiveSlot(
+  week: string[],
+  overrides: Record<string, DayOverride>,
+  key: string,
+): string {
+  return overrides[key]?.slot ?? week[weekdayOfKey(key)];
+}
+
+/** Place (home/office/none) in effect for a date: override, else the weekly pattern. */
+export function effectiveKind(
+  dayKind: (WeekKind | null)[],
+  overrides: Record<string, DayOverride>,
+  key: string,
+): WeekKind | null {
+  const o = overrides[key];
+  return o ? o.kind : dayKind[weekdayOfKey(key)];
 }
 
 /** Current wall-clock time as minutes since midnight (the engine stays pure). */
@@ -119,6 +150,7 @@ interface State {
   dayTypes: DayType[];
   week: string[]; // length 7, Mon-first: dayTypeId or REST
   dayKind: (WeekKind | null)[]; // length 7, Mon-first
+  dayOverrides: Record<string, DayOverride>; // per-date exceptions over the weekly pattern
   customExercises: Exercise[];
   customEquipment: Equipment[];
   settings: Settings;
@@ -169,6 +201,10 @@ interface State {
   // week
   setWeekDay: (index: number, slot: string) => void;
   setDayKind: (index: number, kind: WeekKind | null) => void;
+  /** Set/merge a per-date override (date key = `YYYY-M-D`). Seeds from the weekly pattern. */
+  setDayOverride: (date: string, patch: Partial<DayOverride>) => void;
+  /** Drop a per-date override — that date reverts to the weekly pattern. */
+  clearDayOverride: (date: string) => void;
 
   // equipment / settings
   toggleEquipment: (id: EquipmentId) => void;
@@ -229,6 +265,7 @@ export const useStore = create<State>()(
       dayTypes: DEFAULT_DAYTYPES,
       week: DEFAULT_WEEK,
       dayKind: DEFAULT_DAYKIND,
+      dayOverrides: {},
       customExercises: [],
       customEquipment: [],
       settings: DEFAULT_SETTINGS,
@@ -416,6 +453,25 @@ export const useStore = create<State>()(
       setDayKind: (index, kind) =>
         set((s) => ({ dayKind: s.dayKind.map((v, i) => (i === index ? kind : v)) })),
 
+      setDayOverride: (date, patch) => {
+        set((s) => {
+          const wd = weekdayOfKey(date);
+          const base = s.dayOverrides[date] ?? { slot: s.week[wd], kind: s.dayKind[wd] };
+          return { dayOverrides: { ...s.dayOverrides, [date]: { ...base, ...patch } } };
+        });
+        if (date === todayKey()) get().replan();
+      },
+
+      clearDayOverride: (date) => {
+        set((s) => {
+          if (!(date in s.dayOverrides)) return {};
+          const next = { ...s.dayOverrides };
+          delete next[date];
+          return { dayOverrides: next };
+        });
+        if (date === todayKey()) get().replan();
+      },
+
       toggleEquipment: (id) => {
         set((s) => ({
           ownedEquipment: s.ownedEquipment.includes(id)
@@ -473,6 +529,7 @@ export const useStore = create<State>()(
           dayTypes: DEFAULT_DAYTYPES,
           week: DEFAULT_WEEK,
           dayKind: DEFAULT_DAYKIND,
+          dayOverrides: {},
           customExercises: [],
           customEquipment: [],
           settings: DEFAULT_SETTINGS,
@@ -499,8 +556,8 @@ export const useStore = create<State>()(
       },
 
       replan: () => {
-        const { dayTypes, week, settings, ownedEquipment, demoMode } = get();
-        const slot = week[weekdayIndex()];
+        const { dayTypes, week, dayOverrides, settings, ownedEquipment, demoMode } = get();
+        const slot = effectiveSlot(week, dayOverrides, todayKey());
         const rest = slot === REST;
         const dayType = rest ? undefined : dayTypeById(dayTypes, slot);
         const routine = dayType?.routine ?? [];
@@ -579,7 +636,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => {
         const p = persisted as Record<string, unknown>;
         if (p && (version < 1 || !p.dayTypes)) {
@@ -589,6 +646,7 @@ export const useStore = create<State>()(
           p.dayKind = Array(7).fill(null);
           delete p.routine;
         }
+        if (p && (!p.dayOverrides || typeof p.dayOverrides !== "object")) p.dayOverrides = {};
         return p;
       },
       partialize: (s) => ({
@@ -596,6 +654,7 @@ export const useStore = create<State>()(
         dayTypes: s.dayTypes,
         week: s.week,
         dayKind: s.dayKind,
+        dayOverrides: s.dayOverrides,
         customExercises: s.customExercises,
         customEquipment: s.customEquipment,
         settings: s.settings,

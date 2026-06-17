@@ -345,6 +345,19 @@ const es = {
     online: "EN LÍNEA",
     relay: "PAUSA ACTIVA RELAY",
   },
+  cal: {
+    week: "SEMANA",
+    month: "MES",
+    months: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    prev: "Mes anterior",
+    next: "Mes siguiente",
+    today: "HOY",
+    dayPlan: "PLAN DEL DÍA",
+    useWeekly: "Usar patrón semanal",
+    overrideTag: "EXCEPCIÓN",
+    weeklyDefault: "patrón semanal",
+    pickDate: "Elegí un día para planearlo",
+  },
 };
 
 export type Dict = typeof es;
@@ -687,6 +700,19 @@ const en: Dict = {
   shell: {
     online: "ONLINE",
     relay: "ACTIVE BREAK RELAY",
+  },
+  cal: {
+    week: "WEEK",
+    month: "MONTH",
+    months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    prev: "Previous month",
+    next: "Next month",
+    today: "TODAY",
+    dayPlan: "DAY PLAN",
+    useWeekly: "Use weekly pattern",
+    overrideTag: "EXCEPTION",
+    weeklyDefault: "weekly pattern",
+    pickDate: "Pick a day to plan it",
   },
 };
 

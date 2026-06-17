@@ -59,6 +59,8 @@ ver `src/coach/tools.ts`) y la **edición de archivo de config** (modo Claude Co
 | `add/rename/remove_day_type` | *DayType | `routine.json`: editar `dayTypes` (mín. 1) |
 | `set_week {index,slot}` | setWeekDay | `routine.json`: `week[index]` = dayTypeId o `"rest"` |
 | `set_day_kind {index,kind}` | setDayKind | `routine.json`: `dayKind[index]` = `home`/`office`/`null` |
+| `set_day_override {date,slot,kind}` | setDayOverride | `routine.json`: `dayOverrides["YYYY-M-D"] = {slot,kind}` |
+| `clear_day_override {date}` | clearDayOverride | `routine.json`: borrar la key de `dayOverrides` |
 | `set_methodology {dayTypeId,methodologyId}` | applyMethodology | `routine.json` + `settings.json` (ajusta sets y minRest) |
 | `set_settings {workWindowStart,workWindowEnd,minRest}` | setSettings | `settings.json`: `settings.*` |
 | `set_profile {goals,diet,constraints}` | setProfile | `profile.json` |
@@ -74,7 +76,7 @@ Excluido del coach: `resetAll`, `resetSettings`, tema/acento.
 ## Archivos de config (Claude Code mode)
 Carpeta: `%APPDATA%/com.microset.app/` (Win) · `~/.config/com.microset.app/` (Linux).
 - `settings.json` — `{ settings:{workWindow,minRest,avoidWindows}, theme, methodologyId, panelEnabled, notificationsEnabled, snoozeMinutes, demoMode }`
-- `routine.json` — `{ dayTypes:[{id,name,routine:[{exerciseId,name,sets,target?,variantId?}]}], week:[7], dayKind:[7] }`
+- `routine.json` — `{ dayTypes:[{id,name,routine:[{exerciseId,name,sets,target?,variantId?}]}], week:[7], dayKind:[7], dayOverrides:{ "YYYY-M-D": {slot,kind} } }`. El orden del array `routine` es la secuencia diaria; `week` es el patrón recurrente y `dayOverrides` son excepciones por fecha (el motor usa override de la fecha, si no, el patrón semanal).
 - `equipment.json` — `{ owned:string[], custom:[{id,name}] }`
 - `exercises.json` — `{ custom: Exercise[] }`
 - `profile.json` — `{ goals, diet, constraints }`
