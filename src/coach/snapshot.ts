@@ -1,6 +1,7 @@
 import { EXERCISES, defaultVariantId } from "@/domain/seed";
 import { MUSCLE_LABEL, type Exercise, type MuscleGroup } from "@/domain/types";
-import { useStore } from "@/store/useStore";
+import { DEFAULT_INTENSITY, scaleSets } from "@/domain/intensity";
+import { useStore, type DayType } from "@/store/useStore";
 import { analyzeRoutine } from "./analysis";
 
 const REST = "rest";
@@ -31,17 +32,23 @@ export function coachSnapshot(): CoachSnapshot {
   const todayDT = todaySlot === REST ? undefined : s.dayTypes.find((d) => d.id === todaySlot);
   const todayName = todaySlot === REST ? "Descanso" : (todayDT?.name ?? null);
 
+  // Judge feasibility/balance on the SCHEDULED sets (after intensity), like the engine and
+  // the coach context do — not the raw configured sets. Otherwise the badge disagrees with
+  // what the day actually schedules (e.g. a deload day reads as "won't fit" when it does).
+  const analyzeDay = (dt: DayType) => {
+    const scheduled = dt.routine.map((r) => ({ ...r, sets: scaleSets(r.sets, dt.intensity ?? DEFAULT_INTENSITY) }));
+    return analyzeRoutine(scheduled, s.ownedEquipment, s.settings, byId);
+  };
+
   const usedIds = new Set(s.week.filter((w) => w !== REST));
   const overflow: string[] = [];
   for (const dt of s.dayTypes) {
     if (!usedIds.has(dt.id)) continue;
-    if (!analyzeRoutine(dt.routine, s.ownedEquipment, s.settings, byId).allFit) overflow.push(dt.name);
+    if (!analyzeDay(dt).allFit) overflow.push(dt.name);
   }
 
   const balDT = todayDT ?? s.dayTypes.find((d) => usedIds.has(d.id)) ?? s.dayTypes[0];
-  const balance = balDT
-    ? analyzeRoutine(balDT.routine, s.ownedEquipment, s.settings, byId).balance
-    : { pull: 0, push: 0, core: 0, legs: 0 };
+  const balance = balDT ? analyzeDay(balDT).balance : { pull: 0, push: 0, core: 0, legs: 0 };
   const missing = GROUPS.filter((g) => balance[g] === 0);
   const hasAny = GROUPS.some((g) => balance[g] > 0);
   const balanceLabel = !hasAny
