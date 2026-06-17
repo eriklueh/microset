@@ -55,6 +55,7 @@ ver `src/coach/tools.ts`) y la **edición de archivo de config** (modo Claude Co
 > plantilla genérica por `muscle`. En CC mode son arrays en el objeto del ejercicio en `exercises.json`.
 | `remove_from_routine {dayTypeId,exerciseId}` | removeFromRoutine | `routine.json`: filtrar del `routine` |
 | `set_routine_sets/target/variant` | setRoutine* | `routine.json`: editar el item |
+| `set_routine_order {dayTypeId,exerciseIds}` | setRoutineOrder | `routine.json`: reordenar el array `routine` del day-type |
 | `add/rename/remove_day_type` | *DayType | `routine.json`: editar `dayTypes` (mín. 1) |
 | `set_week {index,slot}` | setWeekDay | `routine.json`: `week[index]` = dayTypeId o `"rest"` |
 | `set_day_kind {index,kind}` | setDayKind | `routine.json`: `dayKind[index]` = `home`/`office`/`null` |

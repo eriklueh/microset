@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
 import { useMethodologies } from "@/domain/i18n";
@@ -51,6 +51,7 @@ export function RoutineView() {
   const setRoutineTarget = useStore((s) => s.setRoutineTarget);
   const setRoutineVariant = useStore((s) => s.setRoutineVariant);
   const removeFromRoutine = useStore((s) => s.removeFromRoutine);
+  const moveRoutineItem = useStore((s) => s.moveRoutineItem);
   const addToRoutine = useStore((s) => s.addToRoutine);
   const addDayType = useStore((s) => s.addDayType);
   const renameDayType = useStore((s) => s.renameDayType);
@@ -432,10 +433,12 @@ export function RoutineView() {
   );
 
   // ----- right pane: list / create / browse ----------------------------------
-  const exRow = (r: (typeof routine)[number]) => {
+  const exRow = (r: (typeof routine)[number], i: number) => {
     const ex = byId(r.exerciseId);
     const orphan = ex ? !isAvailable(ex, owned) : false;
     const active = hoverEx === r.exerciseId;
+    const moveBtn =
+      "grid h-3.5 w-6 place-items-center text-[var(--faint2)] hover:text-[var(--fg)] disabled:opacity-25 disabled:hover:text-[var(--faint2)]";
     return (
       <div
         key={r.exerciseId}
@@ -459,6 +462,24 @@ export function RoutineView() {
             )}
           </div>
           <div className="flex flex-none items-center gap-2">
+            <div className="mr-0.5 flex flex-col">
+              <button
+                onClick={() => moveRoutineItem(selected.id, r.exerciseId, -1)}
+                disabled={i === 0}
+                aria-label={t.routine.moveUpAria}
+                className={moveBtn}
+              >
+                <ChevronUp className="size-3.5" />
+              </button>
+              <button
+                onClick={() => moveRoutineItem(selected.id, r.exerciseId, 1)}
+                disabled={i === routine.length - 1}
+                aria-label={t.routine.moveDownAria}
+                className={moveBtn}
+              >
+                <ChevronDown className="size-3.5" />
+              </button>
+            </div>
             <button onClick={() => setRoutineSets(selected.id, r.exerciseId, r.sets - 1)} aria-label={t.routine.fewerSetsAria} className={stepBtn}>
               <Minus className="size-3" />
             </button>
@@ -525,7 +546,7 @@ export function RoutineView() {
         {routine.length === 0 ? (
           <p className="py-6 text-center text-[13px] text-[var(--faint)]">{t.routine.emptyList}</p>
         ) : (
-          routine.map(exRow)
+          routine.map((r, i) => exRow(r, i))
         )}
       </div>
     </section>

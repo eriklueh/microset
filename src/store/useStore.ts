@@ -143,6 +143,10 @@ interface State {
   setRoutineTarget: (dayTypeId: string, exerciseId: string, target: string) => void;
   setRoutineVariant: (dayTypeId: string, exerciseId: string, variantId: string) => void;
   removeFromRoutine: (dayTypeId: string, exerciseId: string) => void;
+  /** Move one exercise up (-1) or down (+1) in the day-type's routine — the basic daily order. */
+  moveRoutineItem: (dayTypeId: string, exerciseId: string, dir: -1 | 1) => void;
+  /** Set the full exercise order for a day-type (coach). Unlisted items keep their relative order at the end. */
+  setRoutineOrder: (dayTypeId: string, orderedExerciseIds: string[]) => void;
   applyMethodology: (dayTypeId: string, id: string) => void;
 
   // day-type management
@@ -281,6 +285,34 @@ export const useStore = create<State>()(
           dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
             r.filter((x) => x.exerciseId !== exerciseId),
           ),
+        }));
+        get().replan();
+      },
+
+      moveRoutineItem: (dayTypeId, exerciseId, dir) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) => {
+            const i = r.findIndex((x) => x.exerciseId === exerciseId);
+            const j = i + dir;
+            if (i < 0 || j < 0 || j >= r.length) return r;
+            const next = [...r];
+            [next[i], next[j]] = [next[j], next[i]];
+            return next;
+          }),
+        }));
+        get().replan();
+      },
+
+      setRoutineOrder: (dayTypeId, orderedExerciseIds) => {
+        set((s) => ({
+          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) => {
+            const rank = new Map(orderedExerciseIds.map((id, i) => [id, i]));
+            const at = (x: RoutineItem) => rank.get(x.exerciseId) ?? Number.POSITIVE_INFINITY;
+            return [...r]
+              .map((x, i) => ({ x, i }))
+              .sort((a, b) => at(a.x) - at(b.x) || a.i - b.i)
+              .map((e) => e.x);
+          }),
         }));
         get().replan();
       },

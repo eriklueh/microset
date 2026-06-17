@@ -141,6 +141,22 @@ export const COACH_TOOLS: CoachTool[] = [
     },
   },
   {
+    name: "set_routine_order",
+    description:
+      "Set the order exercises are cycled through the day for a day-type (the basic daily sequence). Pass exerciseIds in the desired order — the engine spreads them in that order (round-robin) and still reschedules dynamically when the user snoozes/declines.",
+    params: obj(
+      {
+        dayTypeId: str("Day-type id"),
+        exerciseIds: { type: "array", items: { type: "string" }, description: "Exercise ids in the desired order" },
+      },
+      ["dayTypeId", "exerciseIds"],
+    ),
+    apply: ({ dayTypeId, exerciseIds }) => {
+      useStore.getState().setRoutineOrder(dayTypeId, exerciseIds ?? []);
+      return `Orden de ${dayTypeId}: ${(exerciseIds ?? []).map(exName).join(" · ")}`;
+    },
+  },
+  {
     name: "add_day_type",
     description: "Create a new day-type (routine template). Returns its id.",
     params: obj({ name: str("Day-type name, e.g. 'Oficina'") }, ["name"]),
