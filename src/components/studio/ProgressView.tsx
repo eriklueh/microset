@@ -1,10 +1,26 @@
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import { defaultVariantId } from "@/domain/seed";
+import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
+import type { RoutineItem } from "@/lib/engine";
 import type { Exercise, LogEntry } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
-import { Masthead } from "./Masthead";
+import { BodyFigures, BodyLegend } from "./BodyMap";
+import { Corners, RegMark } from "./hud";
+
+/** Compact masthead shared by the empty + populated states. */
+function Header() {
+  const t = useT();
+  return (
+    <div className="flex-none border-b border-[var(--rule2)] px-7 pt-5 pb-4">
+      <div className="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-[var(--faint)]">{t.progress.sub}</div>
+      <h1 className="m-0 text-[40px] leading-[0.85] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
+        {t.progress.title}
+      </h1>
+    </div>
+  );
+}
 
 const DAY = 86_400_000;
 const WARN = "#e0a400";
@@ -22,17 +38,20 @@ function shortDate(iso: string): string {
 
 export function ProgressView() {
   const logs = useStore((s) => s.logs);
+  const owned = useStore((s) => s.ownedEquipment);
   const { byId } = useCatalog();
   const t = useT();
 
   if (logs.length === 0) {
     return (
-      <div className="flex flex-col px-[34px] py-[30px]">
-        <Masthead title={t.progress.title} sub={t.progress.sub} />
-        <div className="border border-[var(--rule2)] p-8 text-center text-[13px] leading-[1.6] text-[var(--faint)]">
-          {t.progress.emptyBefore}{" "}
-          <span className="font-semibold text-[var(--fg)]">{t.progress.emptyDoneWord}</span>{" "}
-          {t.progress.emptyAfter}
+      <div className="flex h-full flex-col">
+        <Header />
+        <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+          <div className="max-w-md border border-[var(--rule2)] p-8 text-center text-[13px] leading-[1.6] text-[var(--faint)]">
+            {t.progress.emptyBefore}{" "}
+            <span className="font-semibold text-[var(--fg)]">{t.progress.emptyDoneWord}</span>{" "}
+            {t.progress.emptyAfter}
+          </div>
         </div>
       </div>
     );
@@ -59,41 +78,79 @@ export function ProgressView() {
 
   const ids = Array.from(new Set(logs.map((l) => l.exerciseId)));
 
+  // Last-7-days muscle heatmap: one item per exercise, sets = sets logged this week.
+  const counts7: Record<string, number> = {};
+  for (const l of logs) if (inLast7(l)) counts7[l.exerciseId] = (counts7[l.exerciseId] ?? 0) + 1;
+  const load7: RoutineItem[] = Object.entries(counts7).map(([exerciseId, sets]) => ({ exerciseId, name: "", sets }));
+  const aggState = aggregateState(load7, byId, owned);
+  const worked = workedGroupCount(aggState);
+
   return (
-    <div className="flex flex-col px-[34px] py-[30px]">
-      <Masthead title={t.progress.title} sub={t.progress.sub} />
+    <div className="flex h-full flex-col">
+      <Header />
+      <div className="flex min-h-0 flex-1">
+        {/* LEFT RAIL — what you trained in the last 7 days (anchored) */}
+        <aside className="flex w-[340px] flex-none flex-col gap-4 overflow-y-auto border-r border-[var(--rule2)] p-6">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.progress.last7days}</span>
+            <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+              <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+              {t.body.live}
+            </span>
+          </div>
+          <div
+            className="relative flex justify-center border border-[var(--rule2)] p-4"
+            style={{ background: "radial-gradient(ellipse at 50% 32%, color-mix(in oklch, var(--acc) 5%, transparent), transparent 62%)" }}
+          >
+            <Corners />
+            <RegMark className="top-2 left-2.5" />
+            <BodyFigures state={aggState} width={150} />
+          </div>
+          <BodyLegend />
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="font-pixel text-[30px] leading-[0.8] text-[var(--fg)]">{worked}</span>
+            <span className="font-pixel text-[16px] text-[var(--faint2)]">/6</span>
+            <span className="ml-auto self-end font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+              {t.body.coverage}
+            </span>
+          </div>
+        </aside>
 
-      <div className="grid grid-cols-3 border border-[var(--rule2)]">
-        <Metric
-          label={t.progress.weekLabel}
-          value={thisWeek}
-          unit={t.progress.sets}
-          delta={thisWeek - lastWeek}
-          first
-        />
-        <Metric
-          label={t.progress.streakLabel}
-          value={streak}
-          unit={streak === 1 ? t.progress.day : t.progress.days}
-        />
-        <Metric label={t.progress.activeLabel} value={activeExercises} unit={t.progress.exercises} />
-      </div>
-
-      <div className="mt-3 flex flex-col gap-3">
-        {ids.map((id) => {
-          const ex = byId(id);
-          if (!ex) return null;
-          return (
-            <ExerciseProgress
-              key={id}
-              ex={ex}
-              logs={logs.filter((l) => l.exerciseId === id)}
-              now={now}
-              inLast7={inLast7}
-              inPrev7={inPrev7}
+        {/* RIGHT PANE — metrics + per-exercise progress (scrolls) */}
+        <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
+          <div className="grid grid-cols-3 border border-[var(--rule2)]">
+            <Metric
+              label={t.progress.weekLabel}
+              value={thisWeek}
+              unit={t.progress.sets}
+              delta={thisWeek - lastWeek}
+              first
             />
-          );
-        })}
+            <Metric
+              label={t.progress.streakLabel}
+              value={streak}
+              unit={streak === 1 ? t.progress.day : t.progress.days}
+            />
+            <Metric label={t.progress.activeLabel} value={activeExercises} unit={t.progress.exercises} />
+          </div>
+
+          <div className="mt-3 flex flex-col gap-3">
+            {ids.map((id) => {
+              const ex = byId(id);
+              if (!ex) return null;
+              return (
+                <ExerciseProgress
+                  key={id}
+                  ex={ex}
+                  logs={logs.filter((l) => l.exerciseId === id)}
+                  now={now}
+                  inLast7={inLast7}
+                  inPrev7={inPrev7}
+                />
+              );
+            })}
+          </div>
+        </section>
       </div>
     </div>
   );
