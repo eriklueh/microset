@@ -7,6 +7,11 @@ export function useT(): Dict {
   return STRINGS[useStore((s) => s.lang)];
 }
 
+/** The current language code (for localizing domain content by id). */
+export function useLang(): Lang {
+  return useStore((s) => s.lang);
+}
+
 /** ES / EN segmented selector (used in Ajustes). */
 export function LangSelect() {
   const lang = useStore((s) => s.lang);

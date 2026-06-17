@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import type { Block, Settings } from "@/lib/engine";
-import { exerciseContext, variantLabel } from "@/domain/seed";
+import { exerciseContext } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
@@ -19,7 +19,7 @@ export function TodayView() {
   const done = useStore((s) => s.done);
   const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
-  const { byId } = useCatalog();
+  const { byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
 
@@ -97,7 +97,7 @@ export function TodayView() {
                 {isDue ? t.today.now : `${t.today.in} ${eta} ${t.today.min}`} — {formatMinute(next.time)}
               </div>
               <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
-                {next.name}
+                {name(next.exerciseId)}
               </div>
               <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">
                 {nextMeta}
@@ -137,7 +137,7 @@ export function TodayView() {
                 {t.today.next} — {formatMinute(next.time)}
               </div>
               <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
-                {next.name}
+                {name(next.exerciseId)}
               </div>
               <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] text-[var(--faint)]">
                 {nextMeta}
@@ -172,6 +172,7 @@ export function TodayView() {
           idx={i + 1}
           isNext={b.id === next?.id}
           nextDue={showActions}
+          name={name(b.exerciseId)}
           muscle={muscleOf(b)}
           reps={repsOf(b)}
         />
@@ -233,6 +234,7 @@ function DayRow({
   idx,
   isNext,
   nextDue,
+  name,
   muscle,
   reps,
 }: {
@@ -240,6 +242,7 @@ function DayRow({
   idx: number;
   isNext: boolean;
   nextDue: boolean;
+  name: string;
   muscle: string;
   reps: string;
 }) {
@@ -279,7 +282,7 @@ function DayRow({
           textDecoration: skip ? "line-through" : "none",
         }}
       >
-        {block.name}
+        {name}
       </span>
       <span className="w-[74px] flex-none font-mono text-[10.5px] tracking-[0.1em] text-[var(--faint2)]">
         {muscle}

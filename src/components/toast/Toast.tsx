@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
-import { exerciseContext, variantLabel } from "@/domain/seed";
+import { exerciseContext } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
@@ -25,7 +25,7 @@ export function Toast() {
   const decline = useStore((s) => s.decline);
   const dismissToast = useStore((s) => s.dismissToast);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
-  const { byId } = useCatalog();
+  const { byId, name, variantLabel } = useCatalog();
   const t = useT();
 
   const block = day?.blocks.find(
@@ -89,7 +89,7 @@ export function Toast() {
           {t.toast.now} · {formatMinute(block.time)}
         </div>
         <div className="truncate text-[24px] leading-[0.95] font-extrabold tracking-[-0.02em] uppercase">
-          {block.name}
+          {name(block.exerciseId)}
         </div>
         {meta && (
           <div className="truncate font-mono text-[9.5px] tracking-[0.04em] text-[var(--faint)]">

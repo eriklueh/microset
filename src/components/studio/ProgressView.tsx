@@ -113,6 +113,7 @@ function ExerciseProgress({
   inPrev7: (l: LogEntry) => boolean;
 }) {
   const t = useT();
+  const { name, variantLabel } = useCatalog();
   const sorted = [...logs].sort((a, b) => (a.at < b.at ? -1 : 1));
   const lastLog = sorted[sorted.length - 1];
   const currentVariantId = lastLog?.variantId ?? defaultVariantId(ex);
@@ -120,8 +121,9 @@ function ExerciseProgress({
     0,
     ex.axis.findIndex((v) => v.id === currentVariantId),
   );
-  const currentLabel = ex.axis[currentIdx]?.label ?? "";
-  const nextLabel = ex.axis[currentIdx + 1]?.label;
+  const currentLabel = ex.axis[currentIdx] ? variantLabel(ex.id, ex.axis[currentIdx].id) : "";
+  const nextVariantId = ex.axis[currentIdx + 1]?.id;
+  const nextLabel = nextVariantId ? variantLabel(ex.id, nextVariantId) : undefined;
 
   let reachedAt: string | undefined;
   for (let i = sorted.length - 1; i >= 0; i--) {
@@ -144,7 +146,7 @@ function ExerciseProgress({
     <div className="border border-[var(--rule2)] p-4">
       <div className="flex items-center justify-between">
         <span className="text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
-          {ex.name}
+          {name(ex.id)}
         </span>
         <span className="font-mono text-[11px] text-[var(--faint)]">
           {logs.length} {t.progress.sets}

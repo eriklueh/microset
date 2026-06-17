@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, ChevronDown, Minus, Plus, Search, Trash2 } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
 import { defaultVariantId, exerciseContext, isAvailable } from "@/domain/seed";
-import { METHODOLOGIES, methodologyById } from "@/domain/methodologies";
+import { useMethodologies } from "@/domain/i18n";
 import {
   type EquipmentId,
   type ExerciseContext,
@@ -44,7 +44,8 @@ export function RoutineView() {
   const removeDayType = useStore((s) => s.removeDayType);
   const addCustomExercise = useStore((s) => s.addCustomExercise);
 
-  const { all, byId } = useCatalog();
+  const { all, byId, name, variantLabel } = useCatalog();
+  const methodologies = useMethodologies();
   const [selectedId, setSelectedId] = useState(dayTypes[0]?.id ?? "");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
@@ -62,7 +63,7 @@ export function RoutineView() {
     );
   }
   const routine = selected.routine;
-  const method = methodologyById(methodologyId) ?? METHODOLOGIES[0];
+  const method = methodologies.byId(methodologyId) ?? methodologies.all[0];
   const usedDays = t.routine.dow.filter((_, i) => week[i] === selected.id);
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
@@ -191,7 +192,7 @@ export function RoutineView() {
           title={method.description}
           className={`${input} ml-auto appearance-none px-2.5 py-1 font-mono text-[11px]`}
         >
-          {METHODOLOGIES.map((m) => (
+          {methodologies.all.map((m) => (
             <option key={m.id} value={m.id} className="bg-[var(--ink2)]">
               {m.name}
             </option>
@@ -219,7 +220,7 @@ export function RoutineView() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
-                      {r.name}
+                      {name(r.exerciseId)}
                     </span>
                     {orphan && (
                       <AlertTriangle
@@ -273,7 +274,7 @@ export function RoutineView() {
                   >
                     {ex.axis.map((v) => (
                       <option key={v.id} value={v.id} className="bg-[var(--ink2)]">
-                        {v.label}
+                        {variantLabel(r.exerciseId, v.id)}
                       </option>
                     ))}
                   </select>
@@ -343,7 +344,7 @@ export function RoutineView() {
                     {group.map((e) => (
                       <div key={e.id} className="flex items-center gap-3 border-b border-[var(--rule)] py-2.5">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-[15px] font-semibold text-[var(--fg)]">{e.name}</div>
+                          <div className="truncate text-[15px] font-semibold text-[var(--fg)]">{name(e.id)}</div>
                           <div className="font-mono text-[10.5px] text-[var(--faint2)]">{e.defaultReps}</div>
                         </div>
                         <button
@@ -398,7 +399,7 @@ function CreateExerciseForm({
   const [reps, setReps] = useState("8");
   const [equipment, setEquipment] = useState<EquipmentId[]>([]);
   const [context, setContext] = useState<ExerciseContext>("space");
-  const { allEquipment } = useCatalog();
+  const { allEquipment, eqName } = useCatalog();
   const t = useT();
 
   const toggleEq = (id: EquipmentId) =>
@@ -455,7 +456,7 @@ function CreateExerciseForm({
                 color: on ? "var(--acc)" : "var(--faint)",
               }}
             >
-              {eq.name.toUpperCase()}
+              {eqName(eq.id).toUpperCase()}
             </button>
           );
         })}

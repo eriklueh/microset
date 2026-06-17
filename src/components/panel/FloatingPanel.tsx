@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Check, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { variantLabel } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
@@ -23,7 +22,7 @@ export function FloatingPanel() {
   const done = useStore((s) => s.done);
   const decline = useStore((s) => s.decline);
   const ensureToday = useStore((s) => s.ensureToday);
-  const { byId } = useCatalog();
+  const { byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
 
@@ -69,7 +68,7 @@ export function FloatingPanel() {
         <div className="flex flex-1 flex-col gap-1 p-2.5">
           <span className="font-mono text-[9px] font-bold tracking-[0.22em]">{t.panel.now}</span>
           <span className="truncate text-[22px] leading-[0.95] font-extrabold tracking-[-0.02em] uppercase">
-            {next.name}
+            {name(next.exerciseId)}
           </span>
           {caption && (
             <span className="truncate font-mono text-[9px] tracking-[0.04em] opacity-70">{caption}</span>
@@ -126,7 +125,7 @@ export function FloatingPanel() {
           </span>
         </div>
         <span className="truncate text-[13px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
-          {next.name}
+          {name(next.exerciseId)}
         </span>
         {caption && (
           <span className="truncate font-mono text-[8.5px] tracking-[0.04em] text-[var(--faint2)]">

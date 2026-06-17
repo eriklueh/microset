@@ -15,7 +15,7 @@ export function EquipmentView() {
   const toggle = useStore((s) => s.toggleEquipment);
   const addCustomEquipment = useStore((s) => s.addCustomEquipment);
   const removeCustomEquipment = useStore((s) => s.removeCustomEquipment);
-  const { all, byId, allEquipment } = useCatalog();
+  const { all, byId, allEquipment, eqName } = useCatalog();
   const t = useT();
   const [name, setName] = useState("");
 
@@ -45,7 +45,7 @@ export function EquipmentView() {
             >
               <div className="min-w-0">
                 <div className="truncate text-[17px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
-                  {eq.name}
+                  {eqName(eq.id)}
                 </div>
                 <div className="mt-[5px] font-mono text-[10.5px] tracking-[0.08em] text-[var(--faint)]">
                   {custom ? `${t.equipment.custom} · ` : ""}
