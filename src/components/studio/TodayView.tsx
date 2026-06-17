@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
-import type { Block, Settings } from "@/lib/engine";
+import type { Block, RoutineItem, Settings } from "@/lib/engine";
 import { exerciseContext } from "@/domain/seed";
+import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
+import { BodyFigures, BodyLegend } from "./BodyMap";
+import { Corners, RegMark } from "./hud";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const hh = (min: number) => pad(Math.round(min / 60));
@@ -16,6 +19,7 @@ const ACTION_THRESHOLD_MIN = 5;
 export function TodayView() {
   const day = useStore((s) => s.day);
   const settings = useStore((s) => s.settings);
+  const owned = useStore((s) => s.ownedEquipment);
   const done = useStore((s) => s.done);
   const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
@@ -33,14 +37,16 @@ export function TodayView() {
 
   if (day.rest) {
     return (
-      <div className="flex flex-col px-[34px] py-[30px]">
-        <Mast weekday={weekday} dayType={t.today.rest} settings={settings} done={0} total={0} pct={0} />
-        <div className="mt-2 border border-[var(--rule2)] p-10 text-center">
-          <div className="text-[34px] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
-            {t.today.restTitle}
-          </div>
-          <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)] uppercase">
-            {t.today.restSub}
+      <div className="flex h-full flex-col">
+        <Header weekday={weekday} dayType={t.today.rest} settings={settings} done={0} total={0} pct={0} showScore={false} />
+        <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+          <div className="border border-[var(--rule2)] p-10 text-center">
+            <div className="text-[34px] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
+              {t.today.restTitle}
+            </div>
+            <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)] uppercase">
+              {t.today.restSub}
+            </div>
           </div>
         </div>
       </div>
@@ -59,6 +65,13 @@ export function TodayView() {
     return ex ? t.muscle[ex.muscle].toUpperCase() : "";
   };
   const repsOf = (b: Block) => b.target ?? byId(b.exerciseId)?.defaultReps ?? "";
+
+  // Today's aggregate muscle load — one routine item per exercise, sets = blocks of it.
+  const counts: Record<string, number> = {};
+  for (const b of day.blocks) counts[b.exerciseId] = (counts[b.exerciseId] ?? 0) + b.sets;
+  const todayLoad: RoutineItem[] = Object.entries(counts).map(([exerciseId, sets]) => ({ exerciseId, name: "", sets }));
+  const aggState = aggregateState(todayLoad, byId, owned);
+  const worked = workedGroupCount(aggState);
 
   const eta = next ? next.time - now : 0;
   const isDue = eta <= 0;
@@ -79,115 +92,143 @@ export function TodayView() {
     : "";
 
   return (
-    <div className="flex flex-col px-[34px] py-[30px]">
-      <Mast
+    <div className="flex h-full flex-col">
+      <Header
         weekday={weekday}
         dayType={(day.dayTypeName ?? "").toUpperCase()}
         settings={settings}
         done={doneCount}
         total={total}
         pct={pct}
+        showScore
       />
 
-      {next ? (
-        showActions ? (
-          <div className="flex items-center justify-between gap-6 bg-[var(--acc)] px-[26px] py-[22px] text-[var(--on)]">
-            <div className="min-w-0">
-              <div className="font-mono text-[11px] font-semibold tracking-[0.2em]">
-                {isDue ? t.today.now : `${t.today.in} ${eta} ${t.today.min}`} — {formatMinute(next.time)}
-              </div>
-              <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
-                {name(next.exerciseId)}
-              </div>
-              <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">
-                {nextMeta}
-              </div>
-            </div>
-            <div className="flex flex-none flex-col gap-2">
-              <button
-                onClick={() => done(next.id)}
-                className="flex items-center justify-center gap-2 bg-[var(--on)] px-[26px] py-[13px] font-mono text-[13px] font-semibold tracking-[0.08em] text-[var(--acc)]"
-              >
-                <Check className="size-4" strokeWidth={3} /> {t.today.done}
-              </button>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => snooze(next.id, 30)}
-                  className="flex-1 border-2 border-[var(--on)] px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
-                >
-                  {t.today.snooze}
-                </button>
-                <button
-                  onClick={() => decline(next.id)}
-                  className="flex-1 border-2 px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
-                  style={{ borderColor: "rgba(10,10,10,0.35)" }}
-                >
-                  {t.today.notNow}
-                </button>
-              </div>
-            </div>
+      <div className="flex min-h-0 flex-1">
+        {/* LEFT RAIL — today's muscle load (anchored cockpit) */}
+        <aside className="flex w-[340px] flex-none flex-col gap-4 overflow-y-auto border-r border-[var(--rule2)] p-6">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">{t.today.loadToday}</span>
+            <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+              <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+              {t.body.live}
+            </span>
           </div>
-        ) : (
           <div
-            className="flex items-center justify-between gap-6 border border-[var(--rule2)] px-[26px] py-[22px]"
-            style={{ borderLeft: "3px solid var(--acc)" }}
+            className="relative flex justify-center border border-[var(--rule2)] p-4"
+            style={{ background: "radial-gradient(ellipse at 50% 32%, color-mix(in oklch, var(--acc) 5%, transparent), transparent 62%)" }}
           >
-            <div className="min-w-0">
-              <div className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[var(--faint)]">
-                {t.today.next} — {formatMinute(next.time)}
-              </div>
-              <div className="mt-2 text-[46px] leading-[0.95] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
-                {name(next.exerciseId)}
-              </div>
-              <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] text-[var(--faint)]">
-                {nextMeta}
-              </div>
-            </div>
-            <div className="flex-none text-right">
-              <div className="font-pixel text-[52px] leading-[0.8] text-[var(--fg)]">
-                {heroNum}
-              </div>
-              <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
-                {heroIsMin ? t.today.minutes : t.today.hours}
-              </div>
-            </div>
+            <Corners />
+            <RegMark className="top-2 left-2.5" />
+            <BodyFigures state={aggState} width={150} />
           </div>
-        )
-      ) : (
-        <div className="border border-[var(--rule2)] p-5 font-mono text-[12px] tracking-[0.04em] text-[var(--faint)]">
-          {total > 0 ? t.today.outOfHours : t.today.noRoutine}
-        </div>
-      )}
+          <BodyLegend />
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="font-pixel text-[30px] leading-[0.8] text-[var(--fg)]">{worked}</span>
+            <span className="font-pixel text-[16px] text-[var(--faint2)]">/6</span>
+            <span className="ml-auto self-end font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
+              {t.body.coverage}
+            </span>
+          </div>
+        </aside>
 
-      <div className="mt-[26px] flex items-center justify-between">
-        <span className="font-mono text-[11px] font-semibold tracking-[0.18em] text-[var(--faint)]">
-          {t.today.theDay} — {total} {t.today.sets}
-        </span>
+        {/* RIGHT PANE — next set + the day timeline (scrolls) */}
+        <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
+          {next ? (
+            showActions ? (
+              <div className="flex items-center justify-between gap-6 bg-[var(--acc)] px-[26px] py-[22px] text-[var(--on)]">
+                <div className="min-w-0">
+                  <div className="font-mono text-[11px] font-semibold tracking-[0.2em]">
+                    {isDue ? t.today.now : `${t.today.in} ${eta} ${t.today.min}`} — {formatMinute(next.time)}
+                  </div>
+                  <div className="mt-2 text-[40px] leading-[0.95] font-extrabold tracking-[-0.04em] uppercase">
+                    {name(next.exerciseId)}
+                  </div>
+                  <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] opacity-70">{nextMeta}</div>
+                </div>
+                <div className="flex flex-none flex-col gap-2">
+                  <button
+                    onClick={() => done(next.id)}
+                    className="flex items-center justify-center gap-2 bg-[var(--on)] px-[26px] py-[13px] font-mono text-[13px] font-semibold tracking-[0.08em] text-[var(--acc)]"
+                  >
+                    <Check className="size-4" strokeWidth={3} /> {t.today.done}
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => snooze(next.id, 30)}
+                      className="flex-1 border-2 border-[var(--on)] px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
+                    >
+                      {t.today.snooze}
+                    </button>
+                    <button
+                      onClick={() => decline(next.id)}
+                      className="flex-1 border-2 px-4 py-[11px] font-mono text-[11.5px] font-semibold tracking-[0.06em]"
+                      style={{ borderColor: "rgba(10,10,10,0.35)" }}
+                    >
+                      {t.today.notNow}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="flex items-center justify-between gap-6 border border-[var(--rule2)] px-[26px] py-[22px]"
+                style={{ borderLeft: "3px solid var(--acc)" }}
+              >
+                <div className="min-w-0">
+                  <div className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[var(--faint)]">
+                    {t.today.next} — {formatMinute(next.time)}
+                  </div>
+                  <div className="mt-2 text-[40px] leading-[0.95] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
+                    {name(next.exerciseId)}
+                  </div>
+                  <div className="mt-2 font-mono text-[12.5px] tracking-[0.04em] text-[var(--faint)]">{nextMeta}</div>
+                </div>
+                <div className="flex-none text-right">
+                  <div className="font-pixel text-[52px] leading-[0.8] text-[var(--fg)]">{heroNum}</div>
+                  <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
+                    {heroIsMin ? t.today.minutes : t.today.hours}
+                  </div>
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="border border-[var(--rule2)] p-5 font-mono text-[12px] tracking-[0.04em] text-[var(--faint)]">
+              {total > 0 ? t.today.outOfHours : t.today.noRoutine}
+            </div>
+          )}
+
+          <div className="mt-[26px] flex items-center justify-between">
+            <span className="font-mono text-[11px] font-semibold tracking-[0.18em] text-[var(--faint)]">
+              {t.today.theDay} — {total} {t.today.sets}
+            </span>
+          </div>
+          <div className="mt-3 h-px bg-[var(--rule2)]" />
+          {day.blocks.map((b, i) => (
+            <DayRow
+              key={b.id}
+              block={b}
+              idx={i + 1}
+              isNext={b.id === next?.id}
+              nextDue={showActions}
+              name={name(b.exerciseId)}
+              muscle={muscleOf(b)}
+              reps={repsOf(b)}
+            />
+          ))}
+        </section>
       </div>
-      <div className="mt-3 h-px bg-[var(--rule2)]" />
-      {day.blocks.map((b, i) => (
-        <DayRow
-          key={b.id}
-          block={b}
-          idx={i + 1}
-          isNext={b.id === next?.id}
-          nextDue={showActions}
-          name={name(b.exerciseId)}
-          muscle={muscleOf(b)}
-          reps={repsOf(b)}
-        />
-      ))}
     </div>
   );
 }
 
-function Mast({
+function Header({
   weekday,
   dayType,
   settings,
   done,
   total,
   pct,
+  showScore,
 }: {
   weekday: string;
   dayType: string;
@@ -195,37 +236,37 @@ function Mast({
   done: number;
   total: number;
   pct: number;
+  showScore: boolean;
 }) {
   const t = useT();
   return (
-    <>
+    <div className="flex-none border-b border-[var(--rule2)] px-7 pt-5 pb-4">
       <div className="flex items-end justify-between gap-5">
         <div>
-          <h2 className="text-[68px] leading-[0.82] font-extrabold tracking-[-0.05em] text-[var(--fg)]">
+          <div className="mb-1.5 font-mono text-[10px] tracking-[0.14em] text-[var(--faint)]">
+            {[weekday, dayType, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`].filter(Boolean).join(" · ")}
+          </div>
+          <h1 className="m-0 text-[40px] leading-[0.85] font-extrabold tracking-[-0.04em] text-[var(--fg)] uppercase">
             {t.today.title}
-          </h2>
-          <div className="mt-3.5 font-mono text-[10.5px] tracking-[0.12em] text-[var(--faint)]">
-            {[weekday, dayType, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`]
-              .filter(Boolean)
-              .join(" · ")}
-          </div>
+          </h1>
         </div>
-        <div className="text-right">
-          <div className="font-pixel text-[52px] leading-[0.8] text-[var(--fg)]">
-            {pad(done)}
-            <span className="text-[var(--faint2)]">/{pad(total)}</span>
+        {showScore && (
+          <div className="flex-none text-right">
+            <div className="font-pixel text-[44px] leading-[0.8] text-[var(--fg)]">
+              {pad(done)}
+              <span className="text-[var(--faint2)]">/{pad(total)}</span>
+            </div>
+            <div className="mt-1.5 font-mono text-[9.5px] tracking-[0.2em] text-[var(--faint)]">{t.today.setsDone}</div>
           </div>
-          <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-[var(--faint)]">
-            {t.today.setsDone}
-          </div>
+        )}
+      </div>
+      {showScore && (
+        <div className="mt-4 flex h-[4px]">
+          <div className="bg-[var(--acc)]" style={{ width: `${pct}%` }} />
+          <div className="flex-1 bg-[var(--bar0)]" />
         </div>
-      </div>
-      <div className="mt-5 h-[3px] bg-[var(--fg)]" />
-      <div className="mb-[22px] flex h-[5px]">
-        <div className="bg-[var(--acc)]" style={{ width: `${pct}%` }} />
-        <div className="flex-1 bg-[var(--bar0)]" />
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
