@@ -9,6 +9,12 @@ const DAY = 86_400_000;
 const LEVEL_UP = 8; // sets at the current level (14d) to suggest the next
 const GROUPS: MuscleGroup[] = ["pull", "push", "core", "legs"];
 
+/** A pattern the coach noticed in your real logs, worth a proactive nudge. */
+export type CoachAlert =
+  | { kind: "inactive"; days: number } // n days since the last logged set
+  | { kind: "neglected"; group: MuscleGroup } // planned but untrained in 14d
+  | { kind: "volumeDown"; pct: number }; // this week vs the previous one
+
 /** A compact, actionable read of the user's state for the Coach view header. */
 export interface CoachSnapshot {
   activeDays: number;
@@ -19,6 +25,7 @@ export interface CoachSnapshot {
   balanceLabel: string;
   readyToLevel: string[]; // exercise names ready to level up
   thisWeekSets: number;
+  alerts: CoachAlert[]; // proactive nudges derived from logs + plan
 }
 
 export function coachSnapshot(): CoachSnapshot {
@@ -75,6 +82,29 @@ export function coachSnapshot(): CoachSnapshot {
 
   const thisWeekSets = s.logs.filter((l) => Date.parse(l.at) >= now - 7 * DAY).length;
 
+  // ----- proactive alerts: patterns worth nudging about, all from real logs + plan -----
+  const recent14 = s.logs.filter((l) => Date.parse(l.at) >= now - 14 * DAY);
+  const lastWeekSets = s.logs.filter((l) => {
+    const x = Date.parse(l.at);
+    return x >= now - 14 * DAY && x < now - 7 * DAY;
+  }).length;
+
+  // Groups the user actually plans (any day-type routine) vs groups trained in the last 14d.
+  const plannedGroups = new Set<MuscleGroup>();
+  for (const dt of s.dayTypes) for (const r of dt.routine) byId(r.exerciseId) && plannedGroups.add(byId(r.exerciseId)!.muscle);
+  const loggedGroups = new Set<MuscleGroup>();
+  for (const l of recent14) byId(l.exerciseId) && loggedGroups.add(byId(l.exerciseId)!.muscle);
+  const neglected = GROUPS.filter((g) => plannedGroups.has(g) && !loggedGroups.has(g));
+
+  const lastLogAt = s.logs.reduce((m, l) => Math.max(m, Date.parse(l.at)), 0);
+  const daysSinceLast = lastLogAt ? Math.floor((now - lastLogAt) / DAY) : undefined;
+
+  const alerts: CoachAlert[] = [];
+  if (daysSinceLast !== undefined && daysSinceLast >= 2) alerts.push({ kind: "inactive", days: daysSinceLast });
+  if (recent14.length > 0 && neglected.length) alerts.push({ kind: "neglected", group: neglected[0] });
+  if (lastWeekSets >= 4 && thisWeekSets < lastWeekSets * 0.6)
+    alerts.push({ kind: "volumeDown", pct: Math.round((1 - thisWeekSets / lastWeekSets) * 100) });
+
   return {
     activeDays,
     todayName,
@@ -84,5 +114,6 @@ export function coachSnapshot(): CoachSnapshot {
     balanceLabel,
     readyToLevel,
     thisWeekSets,
+    alerts,
   };
 }

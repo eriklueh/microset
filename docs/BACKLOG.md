@@ -17,7 +17,7 @@ picked up.
 | **Hoy = timeline/relay** | Hoy rebuilt as a vertical HUD relay track: spine of nodes, a "NOW" marker head above the next set, done/skipped/pending nodes, the next set as the live node (countdown when ahead, inline actions when due). | M | ✅ |
 | **Quick-log free sets** | A "+ registrar" affordance (panel + Hoy) to log a set done off-schedule. Feeds progression + balance. HUD stamp on log. | M | 💡 |
 | **Focus / DND window** | Tray/panel toggle that silences reminders for N min (meeting, deep work) without breaking the day's plan. `FOCO` state, dimmed chrome + pixel countdown. | S–M | 💡 |
-| **Proactive coach diagnostics** | Extend the coach readout with real patterns from logs (broken streak, "you postpone 15h", neglected groups) as one-tap actions. Reuses `analysis.ts` + logs, almost no new UI. | S–M | 💡 |
+| **Proactive coach diagnostics** | The Coach onboarding greets you with a "WHAT I NOTICED" section: data-driven alerts from your logs (inactivity, planned-but-neglected group over 14d, volume drop vs last week) as one-tap fix prompts. Computed in `snapshot.ts`. (Decline/postpone patterns deferred — logs only store completed sets.) | S–M | ✅ |
 | **One-tap level up** | The "ready to level up" nudge exists in Progreso; add the button that applies the variant change directly (today you must go to Rutina). | S | 💡 |
 | **Weekly review ritual** | A Sunday coach-generated summary: done vs planned, with one-tap tweaks to next week. Closes the coach + logs + week loop. | M | 💡 |
 | **RPE quick feedback** | Optional "fácil / justo / duro" tap after DONE; feeds progression (ready-to-level today uses raw counts). | M | 💡 |

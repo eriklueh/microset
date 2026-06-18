@@ -14,8 +14,9 @@ import { ViewHeader } from "./shell";
 import { Corners, RegMark } from "./hud";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
-import { coachSnapshot } from "@/coach/snapshot";
+import { coachSnapshot, type CoachAlert } from "@/coach/snapshot";
 import { useT } from "@/lib/i18n";
+import type { Dict } from "@/lib/strings";
 import {
   deleteConversation,
   listConversations,
@@ -363,22 +364,57 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
             <>
               <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
                 {messages.length === 0 && !error ? (
-                  <div className="m-auto max-w-[440px] text-center">
-                    <div className="text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)]">{t.coach.onboardingTitle}</div>
-                    <p className="mx-auto mt-2 max-w-[380px] text-[13px] leading-[1.6] text-[var(--faint)]">
-                      {t.coach.onboardingBody}
-                    </p>
-                    <div className="mt-5 flex flex-col gap-2 text-left">
-                      {t.coach.starters.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => void send(s)}
-                          className="group flex items-center gap-2.5 border border-[var(--rule2)] px-3.5 py-2.5 text-[12.5px] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--fg)]"
-                        >
-                          <span className="font-mono text-[var(--faint2)] group-hover:text-[var(--acc)]">›</span>
-                          <span>{s}</span>
-                        </button>
-                      ))}
+                  <div className="m-auto w-full max-w-[460px]">
+                    <div className="text-center">
+                      <div className="text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)]">
+                        {t.coach.onboardingTitle}
+                      </div>
+                      <p className="mx-auto mt-2 max-w-[380px] text-[13px] leading-[1.6] text-[var(--faint)]">
+                        {t.coach.onboardingBody}
+                      </p>
+                    </div>
+
+                    {snap.alerts.length > 0 && (
+                      <div className="mt-6">
+                        <div className="mb-2 flex items-center gap-2 font-mono text-[9.5px] tracking-[0.16em] text-[var(--acc)]">
+                          <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+                          {t.coach.attention}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {snap.alerts.map((a, i) => {
+                            const { label, prompt } = alertText(a, t);
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => void send(prompt)}
+                                className="group flex items-center gap-2.5 border border-[var(--rule2)] px-3.5 py-2.5 text-left hover:border-[var(--acc)]"
+                                style={{ borderLeft: `3px solid ${WARN}` }}
+                              >
+                                <span className="font-mono text-[11px] text-[var(--faint2)] group-hover:text-[var(--acc)]">›</span>
+                                <span className="font-mono text-[11.5px] tracking-[0.02em] text-[var(--fg)] uppercase">{label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-6">
+                      <div className="mb-2 font-mono text-[9.5px] tracking-[0.16em] text-[var(--faint)]">
+                        {t.coach.startersTitle}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {t.coach.starters.map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => void send(s)}
+                            className="group flex items-center gap-2.5 border border-[var(--rule2)] px-3.5 py-2.5 text-left text-[12.5px] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--fg)]"
+                          >
+                            <span className="font-mono text-[var(--faint2)] group-hover:text-[var(--acc)]">›</span>
+                            <span>{s}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -532,6 +568,27 @@ function Seg({
   ) : (
     <span className={cls}>{inner}</span>
   );
+}
+
+/** Render a proactive alert into a short HUD label + the full prompt sent to the coach. */
+function alertText(a: CoachAlert, t: Dict): { label: string; prompt: string } {
+  switch (a.kind) {
+    case "inactive":
+      return {
+        label: `${a.days} ${t.coach.alertInactive}`,
+        prompt: t.coach.promptInactive.replace("{n}", String(a.days)),
+      };
+    case "neglected":
+      return {
+        label: `${t.muscle[a.group].toUpperCase()} · ${t.coach.alertNeglected}`,
+        prompt: t.coach.promptNeglected.replace("{g}", t.muscle[a.group]),
+      };
+    case "volumeDown":
+      return {
+        label: `−${a.pct}% ${t.coach.alertVolumeDown}`,
+        prompt: t.coach.promptVolumeDown.replace("{n}", String(a.pct)),
+      };
+  }
 }
 
 function Bubble({ role, text }: { role: "user" | "assistant"; text: string }) {
