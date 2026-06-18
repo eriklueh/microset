@@ -8,6 +8,7 @@ import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
 import { BodyLegend, ModelRail } from "./BodyMap";
+import { FeasibilityHint } from "./Feasibility";
 import { ViewHeader } from "./shell";
 
 const metaLine = (parts: (string | false)[]) => parts.filter(Boolean).join(" · ");
@@ -185,12 +186,13 @@ export function TodayView() {
 
           {unscheduled.length > 0 && (
             <>
-              <div className="mt-5 mb-1 flex items-center gap-3">
+              <div className="mt-5 mb-1.5 flex items-center gap-3">
                 <span className="font-mono text-[10px] tracking-[0.14em] text-[var(--faint2)]">
-                  {t.today.stWontFit}
+                  {t.feasibility.wontFit}
                 </span>
                 <span className="h-px flex-1 bg-[var(--rule2)]" />
               </div>
+              <FeasibilityHint className="mb-2" />
               {unscheduled.map((b) => (
                 <TrackRow key={b.id} block={b} name={name(b.exerciseId)} muscle={muscleOf(b)} />
               ))}
@@ -242,7 +244,7 @@ function TrackRow({ block, name, muscle }: { block: Block; name: string; muscle:
   let statusColor = "var(--faint)";
   if (isDone) [status, statusColor] = [t.today.stDone, "var(--faint2)"];
   else if (skip) [status, statusColor] = [t.today.stSkipped, "var(--faint2)"];
-  else if (unsched) [status, statusColor] = [t.today.stWontFit, "var(--faint2)"];
+  else if (unsched) [status, statusColor] = [t.feasibility.wontFit, "var(--faint2)"];
 
   const node = isDone ? (
     <span className="block size-2.5 bg-[var(--acc)]" />

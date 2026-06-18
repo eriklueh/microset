@@ -20,7 +20,7 @@ export interface CoachSnapshot {
   activeDays: number;
   todayName: string | null;
   feasibilityOk: boolean;
-  overflow: string[]; // day-type names whose volume doesn't fit
+  overflow: { name: string; fits: number; total: number }[]; // day-types whose volume doesn't fit
   balance: Record<MuscleGroup, number>; // today's (or first active) day-type
   balanceLabel: string;
   readyToLevel: string[]; // exercise names ready to level up
@@ -48,10 +48,11 @@ export function coachSnapshot(): CoachSnapshot {
   };
 
   const usedIds = new Set(s.week.filter((w) => w !== REST));
-  const overflow: string[] = [];
+  const overflow: CoachSnapshot["overflow"] = [];
   for (const dt of s.dayTypes) {
     if (!usedIds.has(dt.id)) continue;
-    if (!analyzeDay(dt).allFit) overflow.push(dt.name);
+    const a = analyzeDay(dt);
+    if (!a.allFit) overflow.push({ name: dt.name, fits: a.fits, total: a.totalSets });
   }
 
   const balDT = todayDT ?? s.dayTypes.find((d) => usedIds.has(d.id)) ?? s.dayTypes[0];

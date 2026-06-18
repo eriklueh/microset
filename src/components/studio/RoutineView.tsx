@@ -26,6 +26,7 @@ import {
   type Role,
 } from "@/domain/bodyGroups";
 import { BodyLegend, GroupChips, ModelRail } from "./BodyMap";
+import { FeasibilityHint, FeasibilityTag } from "./Feasibility";
 import { ViewHeader } from "./shell";
 
 type Mode = "list" | "crear" | "buscar";
@@ -119,7 +120,7 @@ export function RoutineView() {
       e.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
-  const { totalSets, fits, allFit } = analyzeRoutine(effRoutine, owned, settings, byId);
+  const { totalSets, fits } = analyzeRoutine(effRoutine, owned, settings, byId);
   const aggState = aggregateState(effRoutine, byId, owned);
   const worked = workedGroupCount(aggState);
   const legGap = totalSets > 0 && !groupWorked(aggState, "legs");
@@ -297,13 +298,7 @@ export function RoutineView() {
               <span className="text-[var(--faint)]">{t.routine.sets} </span>
               <span className="font-semibold text-[var(--fg)]">{totalSets}</span>
             </span>
-            <span
-              className="font-mono text-[11px] font-semibold tracking-[0.06em]"
-              title={allFit ? undefined : t.routine.fitHint}
-              style={{ color: totalSets === 0 ? "var(--faint2)" : allFit ? "var(--acc)" : WARN }}
-            >
-              {totalSets === 0 ? t.routine.empty : allFit ? t.routine.fits : `${t.routine.fitsCount} ${fits}/${totalSets}`}
-            </span>
+            <FeasibilityTag fits={fits} total={totalSets} />
             <select
               value={dayIntensity}
               onChange={(e) => setIntensity(selected.id, e.currentTarget.value as "deload" | "normal" | "push")}
@@ -639,6 +634,11 @@ export function RoutineView() {
       <div className="text-center font-mono text-[9px] tracking-[0.06em] text-[var(--faint2)]">
         {creating ? t.body.pickHint : t.body.spreadHint}
       </div>
+      {!creating && totalSets > 0 && fits < totalSets && (
+        <div className="border-l-2 px-2.5 py-2" style={{ borderColor: WARN }}>
+          <FeasibilityHint />
+        </div>
+      )}
       <div className="flex-1" />
       {gapCard}
     </ModelRail>

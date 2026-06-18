@@ -233,7 +233,11 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
     { label: t.coach.week, value: `${snap.activeDays} ${t.coach.activeDaysUnit}` },
     {
       label: t.coach.feasibility,
-      value: snap.feasibilityOk ? t.coach.allFits : `${t.coach.wontFit}: ${snap.overflow.join(", ")}`,
+      value: snap.feasibilityOk
+        ? t.feasibility.all
+        : snap.overflow.length === 1
+          ? `${t.feasibility.wontFit}: ${snap.overflow[0].name} · ${snap.overflow[0].fits}/${snap.overflow[0].total}`
+          : `${t.feasibility.wontFit}: ${snap.overflow.map((o) => o.name).join(", ")}`,
       tone: snap.feasibilityOk ? "ok" : "warn",
       onClick: snap.feasibilityOk ? undefined : () => void send(t.coach.promptFitVolume),
     },
