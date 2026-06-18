@@ -23,7 +23,7 @@ export function Toast() {
   const toastBlockId = useStore((s) => s.toastBlockId);
   const done = useStore((s) => s.done);
   const snooze = useStore((s) => s.snooze);
-  const decline = useStore((s) => s.decline);
+  const skip = useStore((s) => s.skip);
   const dismissToast = useStore((s) => s.dismissToast);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const { byId, name, variantLabel } = useCatalog();
@@ -121,19 +121,19 @@ export function Toast() {
             onClick={() => act(done)}
             className="flex flex-1 items-center justify-center gap-1 bg-[var(--acc)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--on)]"
           >
-            <Check className="size-3" strokeWidth={3} /> {t.toast.done}
+            <Check className="size-3" strokeWidth={3} /> {t.actions.done}
           </button>
           <button
             onClick={() => act((id) => snooze(id, snoozeMinutes))}
             className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
           >
-            {t.toast.snooze}
+            {t.actions.later}
           </button>
           <button
-            onClick={() => act(decline)}
+            onClick={() => act(skip)}
             className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
           >
-            {t.toast.notNow}
+            {t.actions.skip}
           </button>
         </div>
       </div>

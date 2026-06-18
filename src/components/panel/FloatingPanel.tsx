@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Check, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { formatMinute } from "@/lib/engine";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { nowMinutes, useStore } from "@/store/useStore";
@@ -21,17 +22,33 @@ const BLACK_A = (a: number) => `rgba(10,10,10,${a})`;
 export function FloatingPanel() {
   const day = useStore((s) => s.day);
   const done = useStore((s) => s.done);
-  const decline = useStore((s) => s.decline);
+  const snooze = useStore((s) => s.snooze);
+  const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const ensureToday = useStore((s) => s.ensureToday);
   const { byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
+  const [outcome, setOutcome] = useState<string | null>(null);
 
   useEffect(() => {
     ensureToday();
     const handle = setInterval(() => setNow(nowMinutes()), 20_000);
     return () => clearInterval(handle);
   }, [ensureToday]);
+
+  // After "MÁS TARDE", briefly confirm where the set went so it never reads as "skipped".
+  if (outcome) {
+    return (
+      <Shell isNow={false}>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
+          <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+          <span className="font-mono text-[10.5px] leading-[1.4] tracking-[0.06em] text-[var(--fg)] uppercase">
+            {outcome}
+          </span>
+        </div>
+      </Shell>
+    );
+  }
 
   const next = day?.blocks
     .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
@@ -62,6 +79,19 @@ export function FloatingPanel() {
     .filter(Boolean)
     .join(" · ");
 
+  // HECHO advances silently; MÁS TARDE reschedules (snooze) and flashes where it landed.
+  const act = (kind: "done" | "later") => {
+    const exName = name(next.exerciseId);
+    if (kind === "done") {
+      done(next.id);
+      return;
+    }
+    snooze(next.id, snoozeMinutes);
+    const moved = useStore.getState().day?.blocks.find((b) => b.id === next.id);
+    setOutcome(moved && moved.time >= 0 ? `${exName} → ${formatMinute(moved.time)}` : exName);
+    window.setTimeout(() => setOutcome(null), 1800);
+  };
+
   // ----- Now: full lime takeover ------------------------------------------
   if (isNow) {
     return (
@@ -76,17 +106,17 @@ export function FloatingPanel() {
           )}
           <div className="mt-auto flex gap-1.5">
             <button
-              onClick={() => done(next.id)}
+              onClick={() => act("done")}
               className="flex flex-1 items-center justify-center gap-1 bg-[var(--on)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--acc)]"
             >
-              <Check className="size-3" strokeWidth={3} /> {t.panel.done}
+              <Check className="size-3" strokeWidth={3} /> {t.actions.done}
             </button>
             <button
-              onClick={() => decline(next.id)}
+              onClick={() => act("later")}
               className="border px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--on)]"
               style={{ borderColor: BLACK_A(0.4) }}
             >
-              {t.panel.notNow}
+              {t.actions.later}
             </button>
           </div>
         </div>
@@ -137,16 +167,16 @@ export function FloatingPanel() {
         {soon ? (
           <div className="mt-auto flex gap-1.5">
             <button
-              onClick={() => done(next.id)}
+              onClick={() => act("done")}
               className="flex flex-1 items-center justify-center gap-1 bg-[var(--acc)] py-1.5 font-mono text-[10px] font-bold tracking-[0.06em] text-[var(--on)]"
             >
-              <Check className="size-3" strokeWidth={3} /> {t.panel.done}
+              <Check className="size-3" strokeWidth={3} /> {t.actions.done}
             </button>
             <button
-              onClick={() => decline(next.id)}
+              onClick={() => act("later")}
               className="border border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
             >
-              {t.panel.notNow}
+              {t.actions.later}
             </button>
           </div>
         ) : (

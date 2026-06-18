@@ -28,6 +28,14 @@ const es = {
     empty: "VACÍO",
     hint: "No entran en tu ventana de trabajo. Recortá volumen o ampliá el horario.",
   },
+  // Canonical set-action vocabulary — the same three words in the toast, the panel and Hoy.
+  // "later" reschedules (snooze by snoozeMinutes); "skip" drops it for today.
+  actions: {
+    done: "HECHO",
+    later: "MÁS TARDE",
+    skip: "SALTAR HOY",
+    skipped: "SALTADO HOY",
+  },
   today: {
     title: "HOY",
     weekdays: ["LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO", "DOMINGO"],
@@ -45,9 +53,6 @@ const es = {
     reps: "REPS",
     minutes: "MINUTOS",
     hours: "HORAS",
-    done: "HECHO",
-    snooze: "POSPONER",
-    notNow: "AHORA NO",
     stPending: "PENDIENTE",
     stDone: "HECHO",
     stSkipped: "SALTADO",
@@ -60,17 +65,12 @@ const es = {
     noSets: "Sin series",
     next: "PRÓXIMA",
     now: "AHORA",
-    done: "HECHO",
-    notNow: "AHORA NO",
     min: "MIN",
     h: "H",
     reps: "REPS",
   },
   toast: {
     now: "AHORA",
-    done: "HECHO",
-    snooze: "POSPONER",
-    notNow: "AHORA NO",
     reps: "REPS",
   },
   update: {
@@ -400,6 +400,12 @@ const en: Dict = {
     empty: "EMPTY",
     hint: "They don't fit your work window. Trim volume or widen your hours.",
   },
+  actions: {
+    done: "DONE",
+    later: "LATER",
+    skip: "SKIP TODAY",
+    skipped: "SKIPPED TODAY",
+  },
   today: {
     title: "TODAY",
     weekdays: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"],
@@ -417,9 +423,6 @@ const en: Dict = {
     reps: "REPS",
     minutes: "MINUTES",
     hours: "HOURS",
-    done: "DONE",
-    snooze: "SNOOZE",
-    notNow: "NOT NOW",
     stPending: "PENDING",
     stDone: "DONE",
     stSkipped: "SKIPPED",
@@ -432,17 +435,12 @@ const en: Dict = {
     noSets: "No sets",
     next: "NEXT",
     now: "NOW",
-    done: "DONE",
-    notNow: "NOT NOW",
     min: "MIN",
     h: "H",
     reps: "REPS",
   },
   toast: {
     now: "NOW",
-    done: "DONE",
-    snooze: "SNOOZE",
-    notNow: "NOT NOW",
     reps: "REPS",
   },
   update: {

@@ -4,6 +4,7 @@ import {
   createDayPlan,
   decline as engineDecline,
   markDone,
+  skip as engineSkip,
   snooze as engineSnooze,
 } from "@/lib/engine";
 import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
@@ -234,6 +235,7 @@ interface State {
   done: (blockId: string) => void;
   decline: (blockId: string) => void;
   snooze: (blockId: string, minutes: number) => void;
+  skip: (blockId: string) => void;
 
   // toast reminder window
   showToast: (blockId: string) => void;
@@ -620,6 +622,13 @@ export const useStore = create<State>()(
               b.id === blockId ? { ...b, status: "skipped" as const, time: nowMinutes() } : b,
             )
           : engineSnooze(day.blocks, blockId, minutes, settings, nowMinutes()).blocks;
+        set({ day: { ...day, blocks } });
+      },
+
+      skip: (blockId) => {
+        const { day, settings } = get();
+        if (!day) return;
+        const blocks = engineSkip(day.blocks, blockId, settings, nowMinutes()).blocks;
         set({ day: { ...day, blocks } });
       },
 

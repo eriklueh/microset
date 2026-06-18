@@ -92,7 +92,7 @@ cargo build                   # (in src-tauri/) compile Rust only
   in English.
 - Keep `tauri.conf.json` identifier `com.microset.app`.
 - Closing the main window **hides to tray** (does not quit) — quit is via tray → "Salir".
-- **Reminders use a custom toast window** (`toast` label, `components/toast/Toast.tsx`), not native notifications: borderless, always-on-top, no-focus, positioned bottom-right in Rust via the `show_toast`/`hide_toast` commands. The scheduler sets `toastBlockId`; the toast window shows/positions itself, auto-dismisses after 45s, and HECHO/POSPONER/AHORA NO drive the engine. This keeps the notification fully styled (Manifiesto) and identical on Windows and Hyprland. Native notifications (`lib/notify.ts`) remain an unused fallback.
+- **Reminders use a custom toast window** (`toast` label, `components/toast/Toast.tsx`), not native notifications: borderless, always-on-top, no-focus, positioned bottom-right in Rust via the `show_toast`/`hide_toast` commands. The scheduler sets `toastBlockId`; the toast window shows/positions itself, auto-dismisses after 45s, and the three canonical set-actions drive the engine: **HECHO** (done) · **MÁS TARDE** (reschedule via snooze, by `snoozeMinutes`) · **SALTAR HOY** (skip for today). Labels live in `t.actions` (shared by toast/panel/Hoy). This keeps the notification fully styled (Manifiesto) and identical on Windows and Hyprland. Native notifications (`lib/notify.ts`) remain an unused fallback.
 
 ## Cross-platform
 

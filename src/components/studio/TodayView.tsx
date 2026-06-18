@@ -23,8 +23,9 @@ export function TodayView() {
   const settings = useStore((s) => s.settings);
   const owned = useStore((s) => s.ownedEquipment);
   const done = useStore((s) => s.done);
-  const decline = useStore((s) => s.decline);
   const snooze = useStore((s) => s.snooze);
+  const skip = useStore((s) => s.skip);
+  const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const { byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
@@ -173,8 +174,8 @@ export function TodayView() {
                       name={name(b.exerciseId)}
                       meta={nextMeta}
                       onDone={() => done(b.id)}
-                      onSnooze={() => snooze(b.id, 30)}
-                      onDecline={() => decline(b.id)}
+                      onLater={() => snooze(b.id, snoozeMinutes)}
+                      onSkip={() => skip(b.id)}
                     />
                   ) : (
                     <TrackRow block={b} name={name(b.exerciseId)} muscle={muscleOf(b)} />
@@ -296,8 +297,8 @@ function NextNode({
   name,
   meta,
   onDone,
-  onSnooze,
-  onDecline,
+  onLater,
+  onSkip,
 }: {
   block: Block;
   due: boolean;
@@ -308,8 +309,8 @@ function NextNode({
   name: string;
   meta: string;
   onDone: () => void;
-  onSnooze: () => void;
-  onDecline: () => void;
+  onLater: () => void;
+  onSkip: () => void;
 }) {
   const t = useT();
   const node = (
@@ -362,20 +363,20 @@ function NextNode({
                 onClick={onDone}
                 className="flex flex-1 items-center justify-center gap-2 bg-[var(--on)] py-2.5 font-mono text-[12px] font-semibold tracking-[0.06em] text-[var(--acc)]"
               >
-                <Check className="size-4" strokeWidth={3} /> {t.today.done}
+                <Check className="size-4" strokeWidth={3} /> {t.actions.done}
               </button>
               <button
-                onClick={onSnooze}
+                onClick={onLater}
                 className="border-2 border-[var(--on)] px-4 py-2.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
               >
-                {t.today.snooze}
+                {t.actions.later}
               </button>
               <button
-                onClick={onDecline}
+                onClick={onSkip}
                 className="border-2 px-4 py-2.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
                 style={{ borderColor: "rgba(10,10,10,0.35)" }}
               >
-                {t.today.notNow}
+                {t.actions.skip}
               </button>
             </div>
           )}
