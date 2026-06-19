@@ -118,6 +118,21 @@ type DayTypeLike = { id: string; name: string; routine: unknown[] };
 const isDayType = (d: any): d is DayTypeLike =>
   d && typeof d.id === "string" && typeof d.name === "string" && Array.isArray(d.routine);
 
+const MUSCLES = new Set(["pull", "push", "core", "legs"]);
+const isVariant = (v: any) => v && typeof v.id === "string" && typeof v.label === "string";
+/** A custom exercise the catalog can render safely — id/name/muscle/axis are load-bearing. */
+const isExercise = (e: any): boolean =>
+  !!e &&
+  typeof e.id === "string" &&
+  typeof e.name === "string" &&
+  MUSCLES.has(e.muscle) &&
+  Array.isArray(e.equipment) &&
+  typeof e.defaultReps === "string" &&
+  typeof e.defaultSets === "number" &&
+  Array.isArray(e.axis) &&
+  e.axis.length > 0 &&
+  e.axis.every(isVariant);
+
 /**
  * Guarantee config invariants so a bad hand-edit (yours, mine, or the coach's)
  * can't crash the app: at least one dayType, and week/dayKind length 7 with valid
@@ -155,7 +170,14 @@ function sanitize(patch: Partial<State>): Partial<State> {
     }
     out.dayOverrides = clean;
   }
-  for (const key of ["ownedEquipment", "customEquipment", "customExercises", "logs"] as const) {
+  // Custom exercises: drop any malformed entry so a bad edit can't break the catalog
+  // (the rest of the app reads .muscle/.axis/.equipment on these without guarding).
+  if (out.customExercises !== undefined) {
+    out.customExercises = Array.isArray(out.customExercises)
+      ? (out.customExercises as any[]).filter(isExercise)
+      : cur.customExercises;
+  }
+  for (const key of ["ownedEquipment", "customEquipment", "logs"] as const) {
     if (out[key] !== undefined && !Array.isArray(out[key])) delete out[key];
   }
   return out as Partial<State>;
@@ -196,8 +218,12 @@ export async function setupFileSync(): Promise<void> {
     dir = await appConfigDir();
     if (!(await exists(dir))) await mkdir(dir, { recursive: true });
 
-    // Brief Claude Code run in this folder as the coach (focused workspace).
-    await writeTextFile(await join(dir, "CLAUDE.md"), COACH_CLAUDE_MD);
+    // Brief a Claude Code run in this folder as the coach (focused workspace). Refresh it
+    // when the template changes, but don't rewrite an identical file on every boot.
+    const claudeMdPath = await join(dir, "CLAUDE.md");
+    if (!(await exists(claudeMdPath)) || (await readTextFile(claudeMdPath)) !== COACH_CLAUDE_MD) {
+      await writeTextFile(claudeMdPath, COACH_CLAUDE_MD);
+    }
 
     if (await exists(await join(dir, FILES.settings))) {
       await loadIntoStore(); // files win on startup
