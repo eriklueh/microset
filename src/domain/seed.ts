@@ -254,11 +254,31 @@ export const DEFAULT_OWNED: EquipmentId[] = [
   "bands",
 ];
 
-/** Erik's approved starting routine. */
+/** Legacy single-routine seed — kept for the pre-day-types persist migration. */
 export const DEFAULT_ROUTINE: RoutineItem[] = [
   { exerciseId: "pullups", name: "Dominadas", sets: 3, target: "5", variantId: "bw" },
   { exerciseId: "dips", name: "Fondos", sets: 3, target: "5", variantId: "bw" },
   { exerciseId: "lsit", name: "L-sit", sets: 2, target: "10-20s", variantId: "full" },
+];
+
+// Built-in day-type routines new installs start with (assembled into DEFAULT_DAYTYPES in the
+// store). Full-body A/B spread across the workday (grease the groove) + a deload day.
+export const ROUTINE_FULL_A: RoutineItem[] = [
+  { exerciseId: "pullups", name: "Dominadas", sets: 3, target: "5-6", variantId: "b-mid" },
+  { exerciseId: "dips", name: "Fondos", sets: 3, target: "5-6", variantId: "b-mid" },
+  { exerciseId: "squats", name: "Sentadillas", sets: 3, target: "15", variantId: "bw" },
+  { exerciseId: "lsit", name: "L-sit", sets: 3, target: "10-15s", variantId: "tuck" },
+];
+export const ROUTINE_FULL_B: RoutineItem[] = [
+  { exerciseId: "chinups", name: "Dominadas supinas", sets: 3, target: "5-6", variantId: "b-mid" },
+  { exerciseId: "parallette-pushups", name: "Flexiones en paraletas", sets: 3, target: "8-10", variantId: "incline" },
+  { exerciseId: "bulgarian-split-squat", name: "Sentadilla búlgara", sets: 3, target: "8", variantId: "bw" },
+  { exerciseId: "hanging-leg-raises", name: "Elevaciones de piernas colgado", sets: 3, target: "8-10", variantId: "knees" },
+];
+export const ROUTINE_DELOAD: RoutineItem[] = [
+  { exerciseId: "band-rows", name: "Remo con banda", sets: 3, target: "12", variantId: "b-mid" },
+  { exerciseId: "band-facepulls", name: "Face pulls con banda", sets: 3, target: "15", variantId: "b-mid" },
+  { exerciseId: "glute-bridge", name: "Puente de glúteo", sets: 3, target: "15", variantId: "bw" },
 ];
 
 export const DEFAULT_SETTINGS: Settings = {

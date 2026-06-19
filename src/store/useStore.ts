@@ -23,6 +23,9 @@ import {
   DEFAULT_OWNED,
   DEFAULT_ROUTINE,
   DEFAULT_SETTINGS,
+  ROUTINE_DELOAD,
+  ROUTINE_FULL_A,
+  ROUTINE_FULL_B,
   exerciseById,
   isAvailable,
 } from "@/domain/seed";
@@ -75,11 +78,15 @@ const DEFAULT_COACH: CoachConfig = {
   model: "claude-sonnet-4-6",
   endpoint: "http://localhost:11434/v1",
 };
-const DEFAULT_DAYTYPE_ID = "default";
+const DEFAULT_DAYTYPE_ID = "default"; // legacy id used only by the pre-day-types migration
+// Built-in day-types a fresh install can pick from: a full-body A/B split + a deload day.
 const DEFAULT_DAYTYPES: DayType[] = [
-  { id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine: DEFAULT_ROUTINE },
+  { id: "full-a", name: "Cuerpo completo A", intensity: "normal", routine: ROUTINE_FULL_A },
+  { id: "full-b", name: "Cuerpo completo B", intensity: "normal", routine: ROUTINE_FULL_B },
+  { id: "deload", name: "Descarga", intensity: "deload", routine: ROUTINE_DELOAD },
 ];
-const DEFAULT_WEEK: string[] = Array(7).fill(DEFAULT_DAYTYPE_ID);
+// Mon–Fri = A / B / A / B / deload, weekend rest.
+const DEFAULT_WEEK: string[] = ["full-a", "full-b", "full-a", "full-b", "deload", REST, REST];
 const DEFAULT_DAYKIND: (WeekKind | null)[] = Array(7).fill(null);
 
 function newId(): string {
