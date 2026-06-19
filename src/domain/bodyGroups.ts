@@ -127,11 +127,13 @@ export function workedGroupCount(state: MuscleState): number {
 }
 
 // ---- colors: role family (amber/lime) × volume shade -------------------------
-const AMBER = ["#6b4a1c", "#b06a22", "#e8913c"];
-const LIME = ["#5a6f18", "#9bbf22", "var(--acc)"];
+// Theme-aware via CSS vars (defined per theme in index.css) — react-body-highlighter
+// renders inline SVG, so `fill: var(--…)` resolves and recolors with light/dark.
+const AMBER = ["var(--m-sec1)", "var(--m-sec2)", "var(--m-sec)"];
+const LIME = ["var(--m-pri1)", "var(--m-pri2)", "var(--acc)"];
 /** highlightedColors for react-body-highlighter: [amber×3, lime×3], index by freq-1. */
 export const HEAT_RAMP = [...AMBER, ...LIME];
-export const NONE_COLOR = "#23231d";
+export const NONE_COLOR = "var(--m-none)";
 
 /** Frequency (1-6) encoding role family + intensity level for a muscle. */
 export function freqFor(role: Role, level: Level): number {
@@ -140,7 +142,7 @@ export function freqFor(role: Role, level: Level): number {
 }
 
 export const PRIMARY_COLOR = "var(--acc)";
-export const SECONDARY_COLOR = "#e8913c";
+export const SECONDARY_COLOR = "var(--m-sec)";
 
 // ---- create-form helpers: presets, name suggestion, role↔state ---------------
 

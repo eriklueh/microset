@@ -80,6 +80,14 @@
     --destructive: #c83c5c;
     --radius: 0rem;
 
+    /* Body-map palette: untrained + the secondary/primary volume ramps. Tuned for paper. */
+    --m-none: #c7c2b4;
+    --m-sec1: #e6cba6;
+    --m-sec2: #d4954c;
+    --m-sec: #b06a1f;
+    --m-pri1: #bcd189;
+    --m-pri2: #8fb52e;
+
     /* shadcn token compatibility — map to Manifiesto vars */
     --background: var(--bg);
     --foreground: var(--fg);
@@ -117,6 +125,14 @@
     --acc: #c4f82a;
     --on: #0a0a0a;
     --destructive: #ff6b8a;
+
+    /* Body-map palette (dark): untrained near-black + the original deep→bright ramp. */
+    --m-none: #23231d;
+    --m-sec1: #6b4a1c;
+    --m-sec2: #b06a22;
+    --m-sec: #e8913c;
+    --m-pri1: #5a6f18;
+    --m-pri2: #9bbf22;
 }
 
 /* ===== Accents — override the lime with another hue (deeper in light) ===== */
@@ -183,4 +199,28 @@
 }
 .ms-blink {
   animation: ms-blink 2.4s steps(1, end) infinite;
+}
+
+/* Marathon body scanner: a lime telemetry line sweeping down the muscle map. */
+@keyframes ms-scan {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 0.55;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.ms-scan {
+  animation: ms-scan 4.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-scan {
+    display: none;
+  }
 }

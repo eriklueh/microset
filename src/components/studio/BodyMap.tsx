@@ -65,7 +65,7 @@ export function BodyLegend() {
   const items: [string, string][] = [
     [t.body.primary, "var(--acc)"],
     [t.body.secondary, SECONDARY_COLOR],
-    [t.body.untrained.toUpperCase(), "#3a3a32"],
+    [t.body.untrained.toUpperCase(), NONE_COLOR],
   ];
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
