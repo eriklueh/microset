@@ -244,6 +244,33 @@ export const COACH_TOOLS: CoachTool[] = [
     },
   },
   {
+    name: "set_day_schedule",
+    description:
+      "Give a day-type its OWN work window + rest so its sets cluster into a session (e.g. an evening upper-body block), instead of spreading across the global window. Times are minutes since midnight. Pass useGlobal:true to clear the override and fall back to the global settings. Set windowStart+windowEnd together.",
+    params: obj(
+      {
+        dayTypeId: str("Day-type id"),
+        windowStart: int("Window start, minutes since midnight (e.g. 1200 = 20:00)"),
+        windowEnd: int("Window end, minutes since midnight (e.g. 1260 = 21:00)"),
+        minRest: int("Minutes between sets within the window (small = back-to-back)"),
+        useGlobal: { type: "boolean", description: "Clear the override and use the global window/rest" },
+      },
+      ["dayTypeId"],
+    ),
+    apply: ({ dayTypeId, windowStart, windowEnd, minRest, useGlobal }) => {
+      if (useGlobal) {
+        useStore.getState().setDaySchedule(dayTypeId, { window: null, minRest: null });
+        return `Horario global en ${dayTypeId}`;
+      }
+      const patch: { window?: { start: number; end: number }; minRest?: number } = {};
+      if (typeof windowStart === "number" && typeof windowEnd === "number")
+        patch.window = { start: windowStart, end: windowEnd };
+      if (typeof minRest === "number") patch.minRest = minRest;
+      useStore.getState().setDaySchedule(dayTypeId, patch);
+      return `Horario propio en ${dayTypeId}`;
+    },
+  },
+  {
     name: "set_settings",
     description: "Update work window / min rest / avoid windows (times are minutes since midnight).",
     params: obj({

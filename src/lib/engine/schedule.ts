@@ -5,8 +5,27 @@ import type {
   RoutineItem,
   ScheduleResult,
   Settings,
+  TimeWindow,
   Warning,
 } from "./types";
+
+/**
+ * Merge a per-day-type scheduling override onto the global settings. Lets a day-type run in
+ * its own window with its own rest (e.g. an evening "upper body" session at 20:00–21:00 with
+ * 3-min rest → sets cluster back-to-back), while other days keep the global spread. Unset
+ * fields fall back to global; avoidWindows stay global.
+ */
+export function effectiveSettings(
+  global: Settings,
+  override?: { window?: TimeWindow; minRest?: number },
+): Settings {
+  if (!override || (!override.window && override.minRest == null)) return global;
+  return {
+    workWindow: override.window ?? global.workWindow,
+    minRest: override.minRest ?? global.minRest,
+    avoidWindows: global.avoidWindows,
+  };
+}
 
 /** Round-robin interleave per-exercise blocks so the same exercise isn't clustered. */
 function interleaveByExercise(blocks: Block[]): Block[] {

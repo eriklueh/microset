@@ -3,11 +3,12 @@ import { persist } from "zustand/middleware";
 import {
   createDayPlan,
   decline as engineDecline,
+  effectiveSettings,
   markDone,
   skip as engineSkip,
   snooze as engineSnooze,
 } from "@/lib/engine";
-import type { Block, Minute, RoutineItem, Settings } from "@/lib/engine";
+import type { Block, Minute, RoutineItem, Settings, TimeWindow } from "@/lib/engine";
 import type {
   Equipment,
   EquipmentId,
@@ -37,6 +38,10 @@ export interface DayType {
   routine: RoutineItem[];
   /** Volume knob for this day-type (scales scheduled sets; non-destructive). */
   intensity?: IntensityId;
+  /** Per-day scheduling override — its own work window (e.g. an evening session). Falls back to global. */
+  window?: TimeWindow;
+  /** Per-day min rest between sets; falls back to global. Low values cluster sets together. */
+  minRest?: number;
 }
 
 export type WeekKind = "home" | "office";
@@ -182,6 +187,8 @@ interface State {
   setRoutineOrder: (dayTypeId: string, orderedExerciseIds: string[]) => void;
   /** Set a day-type's intensity (non-destructive volume scale). */
   setIntensity: (dayTypeId: string, id: IntensityId) => void;
+  /** Override a day-type's schedule (own window / rest). Pass null on a field to clear it (→ global). */
+  setDaySchedule: (dayTypeId: string, patch: { window?: TimeWindow | null; minRest?: number | null }) => void;
 
   // day-type management
   addDayType: (name: string) => string;
@@ -359,6 +366,25 @@ export const useStore = create<State>()(
       setIntensity: (dayTypeId, id) => {
         set((s) => ({
           dayTypes: s.dayTypes.map((d) => (d.id === dayTypeId ? { ...d, intensity: id } : d)),
+        }));
+        get().replan();
+      },
+
+      setDaySchedule: (dayTypeId, patch) => {
+        set((s) => ({
+          dayTypes: s.dayTypes.map((d) => {
+            if (d.id !== dayTypeId) return d;
+            const next = { ...d };
+            if ("window" in patch) {
+              if (patch.window) next.window = patch.window;
+              else delete next.window;
+            }
+            if ("minRest" in patch) {
+              if (patch.minRest != null) next.minRest = Math.max(1, Math.min(180, patch.minRest));
+              else delete next.minRest;
+            }
+            return next;
+          }),
         }));
         get().replan();
       },
@@ -573,7 +599,8 @@ export const useStore = create<State>()(
             return ex ? isAvailable(ex, ownedEquipment) : true;
           })
           .map((r) => ({ ...r, sets: scaleSets(r.sets, dayType?.intensity) })); // intensity = non-destructive volume scale
-        const { blocks } = createDayPlan(doable, settings, nowMinutes());
+        // The day-type can run in its own window/rest (e.g. an evening session); else global.
+        const { blocks } = createDayPlan(doable, effectiveSettings(settings, dayType), nowMinutes());
         set({
           day: { date: todayKey(), blocks, rest, dayTypeName: dayType?.name ?? null },
         });

@@ -22,7 +22,7 @@ routine, week, equipment, profile. Never schedule clock times yourself.
   \`available\`), the \`intensities\` table, and per-exercise progress.
 
 ## Edit these (your tools)
-- "routine.json" — { dayTypes:[{ id, name, intensity?:"deload"|"normal"|"push", routine:[{ exerciseId, name, sets, target?, variantId? }] }], week:[7], dayKind:[7], dayOverrides:{ "YYYY-M-D":{ slot, kind } } }
+- "routine.json" — { dayTypes:[{ id, name, intensity?:"deload"|"normal"|"push", window?:{ start, end }, minRest?, routine:[{ exerciseId, name, sets, target?, variantId? }] }], week:[7], dayKind:[7], dayOverrides:{ "YYYY-M-D":{ slot, kind } } }
 - "equipment.json" — { owned:[ids], custom:[{ id, name }] }
 - "exercises.json" — { custom:[Exercise] }, where Exercise = { id, name, muscle:"pull"|"push"|"core"|"legs", equipment:[ids], measure:"reps"|"seconds", context?:"desk"|"space", defaultSets:number, defaultReps:"5", axis:[{ id:"bw", label:"Peso corporal", kind:"bodyweight" }] }. \`axis\` must be non-empty.
 - "settings.json" — { settings:{ workWindow:{ start, end }, minRest, avoidWindows }, ... }
@@ -38,6 +38,10 @@ dayKind[i] is "home" | "office" | null.
   window. Don't oversaturate.
 - **Intensity** is a non-destructive volume knob per day-type: "deload" ≈ half, "normal" ×1,
   "push" ≈ 1.5×. Prefer it over rewriting sets for a lighter/heavier day.
+- **Schedule**: by default a day's sets spread across the global work window. A day-type can
+  set its own \`window\` + a small \`minRest\` to cluster them into one session — e.g. an evening
+  upper-body block: window { start:1200, end:1260 } (20:00–21:00), minRest:3. Leave both unset
+  to use the global spread.
 - **Balance** pull / push / core / legs (see \`balance\`).
 - **Equipment**: only prescribe exercises with \`available:true\`, or create/own the gear first.
 - **Context**: "desk" (silent, no setup) suits office days / meeting hours; "space" suits home days.

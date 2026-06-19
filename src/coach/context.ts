@@ -2,6 +2,7 @@ import { EQUIPMENT, EXERCISES, exerciseContext, isAvailable, variantLabel } from
 import { DEFAULT_INTENSITY, INTENSITIES, scaleSets } from "@/domain/intensity";
 import { MUSCLE_LABEL } from "@/domain/types";
 import type { Exercise } from "@/domain/types";
+import { effectiveSettings } from "@/lib/engine";
 import { useStore } from "@/store/useStore";
 import { analyzeRoutine } from "./analysis";
 
@@ -51,11 +52,14 @@ export function buildCoachContext() {
     const intensity = dt.intensity ?? DEFAULT_INTENSITY;
     // feasibility/balance must reflect the SCHEDULED sets (after intensity), not the raw ones
     const scheduled = dt.routine.map((r) => ({ ...r, sets: scaleSets(r.sets, intensity) }));
-    const a = analyzeRoutine(scheduled, s.ownedEquipment, s.settings, byId);
+    const a = analyzeRoutine(scheduled, s.ownedEquipment, effectiveSettings(s.settings, dt), byId);
     return {
       id: dt.id,
       name: dt.name,
       intensity,
+      // per-day scheduling override (own window/rest); undefined → uses the global settings
+      window: dt.window,
+      minRest: dt.minRest,
       routine: dt.routine.map((r) => {
         const ex = byId(r.exerciseId);
         return {

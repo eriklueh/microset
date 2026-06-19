@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
+import { effectiveSettings } from "@/lib/engine";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
 import { useIntensities } from "@/domain/i18n";
 import { scaleSets } from "@/domain/intensity";
@@ -55,6 +56,7 @@ export function RoutineView() {
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
   const setIntensity = useStore((s) => s.setIntensity);
+  const setDaySchedule = useStore((s) => s.setDaySchedule);
   const setRoutineSets = useStore((s) => s.setRoutineSets);
   const setRoutineTarget = useStore((s) => s.setRoutineTarget);
   const setRoutineVariant = useStore((s) => s.setRoutineVariant);
@@ -106,6 +108,11 @@ export function RoutineView() {
   }
   const routine = selected.routine;
   const dayIntensity = selected.intensity ?? "normal";
+  // Per-day schedule override (own window/rest) — falls back to the global settings.
+  const ownSchedule = !!selected.window || selected.minRest != null;
+  const win = selected.window ?? settings.workWindow;
+  const restMin = selected.minRest ?? settings.minRest;
+  const toHour = (m: number) => Math.round(m / 60);
   // intensity scales the SCHEDULED sets (non-destructive) — header/coverage reflect that
   const effRoutine = routine.map((r) => ({ ...r, sets: scaleSets(r.sets, dayIntensity) }));
   const regions = t.body.regions as Record<string, string>;
@@ -120,7 +127,7 @@ export function RoutineView() {
       e.name.toLowerCase().includes(search.trim().toLowerCase()),
   );
 
-  const { totalSets, fits } = analyzeRoutine(effRoutine, owned, settings, byId);
+  const { totalSets, fits } = analyzeRoutine(effRoutine, owned, effectiveSettings(settings, selected), byId);
   const aggState = aggregateState(effRoutine, byId, owned);
   const worked = workedGroupCount(aggState);
   const legGap = totalSets > 0 && !groupWorked(aggState, "legs");
@@ -637,6 +644,84 @@ export function RoutineView() {
       {!creating && totalSets > 0 && fits < totalSets && (
         <div className="border-l-2 px-2.5 py-2" style={{ borderColor: WARN }}>
           <FeasibilityHint />
+        </div>
+      )}
+      {!creating && (
+        <div className="border border-[var(--rule2)] p-2.5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="font-mono text-[9px] tracking-[0.14em] text-[var(--faint)]">{t.routine.scheduleLabel}</span>
+            <div className="flex flex-none">
+              {[false, true].map((own) => {
+                const on = own === ownSchedule;
+                return (
+                  <button
+                    key={String(own)}
+                    onClick={() =>
+                      setDaySchedule(
+                        selected.id,
+                        own
+                          ? { window: selected.window ?? settings.workWindow, minRest: selected.minRest ?? settings.minRest }
+                          : { window: null, minRest: null },
+                      )
+                    }
+                    className="border px-2 py-[3px] font-mono text-[9px] tracking-[0.06em]"
+                    style={{
+                      marginLeft: own ? -1 : 0,
+                      borderColor: on ? "var(--acc)" : "var(--rule2)",
+                      color: on ? "var(--acc)" : "var(--dim)",
+                      background: on ? "color-mix(in oklch, var(--acc) 12%, transparent)" : "transparent",
+                    }}
+                  >
+                    {own ? t.routine.scheduleOwn : t.routine.scheduleGlobal}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {ownSchedule && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={toHour(win.start)}
+                  onChange={(e) =>
+                    setDaySchedule(selected.id, {
+                      window: { start: Math.max(0, Math.min(23, +e.currentTarget.value)) * 60, end: win.end },
+                    })
+                  }
+                  className={`${input} w-11 px-1.5 py-1 text-center font-mono text-[11px]`}
+                />
+                <span className="text-[var(--faint2)]">–</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={toHour(win.end)}
+                  onChange={(e) =>
+                    setDaySchedule(selected.id, {
+                      window: { start: win.start, end: Math.max(1, Math.min(24, +e.currentTarget.value)) * 60 },
+                    })
+                  }
+                  className={`${input} w-11 px-1.5 py-1 text-center font-mono text-[11px]`}
+                />
+                <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">h</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint)]">{t.routine.restEvery}</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={restMin}
+                  onChange={(e) => setDaySchedule(selected.id, { minRest: +e.currentTarget.value })}
+                  className={`${input} w-12 px-1.5 py-1 text-center font-mono text-[11px]`}
+                />
+                <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">min</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div className="flex-1" />

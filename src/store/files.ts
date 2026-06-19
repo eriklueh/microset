@@ -154,7 +154,14 @@ function sanitize(patch: Partial<State>): Partial<State> {
   if (out.dayTypes !== undefined) {
     const dts = Array.isArray(out.dayTypes) ? (out.dayTypes as any[]).filter(isDayType) : [];
     if (dts.length === 0) delete out.dayTypes; // never empty dayTypes — keep current
-    else out.dayTypes = dts;
+    else
+      out.dayTypes = dts.map((d: any) => {
+        const c = { ...d };
+        // strip a malformed per-day schedule override so it can't break createDayPlan
+        if (!(c.window && typeof c.window.start === "number" && typeof c.window.end === "number")) delete c.window;
+        if (typeof c.minRest !== "number") delete c.minRest;
+        return c;
+      });
   }
   const dayTypes = (out.dayTypes as DayTypeLike[] | undefined) ?? cur.dayTypes;
   const fallbackId = dayTypes[0]?.id ?? "default";

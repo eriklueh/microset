@@ -1,6 +1,7 @@
 import { EXERCISES, defaultVariantId } from "@/domain/seed";
 import { MUSCLE_LABEL, type Exercise, type MuscleGroup } from "@/domain/types";
 import { DEFAULT_INTENSITY, scaleSets } from "@/domain/intensity";
+import { effectiveSettings } from "@/lib/engine";
 import { useStore, type DayType } from "@/store/useStore";
 import { analyzeRoutine } from "./analysis";
 
@@ -44,7 +45,7 @@ export function coachSnapshot(): CoachSnapshot {
   // what the day actually schedules (e.g. a deload day reads as "won't fit" when it does).
   const analyzeDay = (dt: DayType) => {
     const scheduled = dt.routine.map((r) => ({ ...r, sets: scaleSets(r.sets, dt.intensity ?? DEFAULT_INTENSITY) }));
-    return analyzeRoutine(scheduled, s.ownedEquipment, s.settings, byId);
+    return analyzeRoutine(scheduled, s.ownedEquipment, effectiveSettings(s.settings, dt), byId);
   };
 
   const usedIds = new Set(s.week.filter((w) => w !== REST));
