@@ -11,7 +11,9 @@ import { Barcode, Corners } from "@/components/studio/hud";
 const ACTION_THRESHOLD_MIN = 5;
 /** Fallback spacing (min) for the proximity hairline when there's no previous set. */
 const DEFAULT_SPAN_MIN = 90;
-const BLACK_A = (a: number) => `rgba(10,10,10,${a})`;
+/** Alpha tint of the on-accent color — borders/dividers on the lime takeover that follow
+ *  the theme (dark on bright lime in dark mode, white on deep green in light). */
+const BLACK_A = (a: number) => `color-mix(in oklch, var(--on) ${Math.round(a * 100)}%, transparent)`;
 
 /**
  * Compact always-on-top widget (Manifiesto). Three escalating states:

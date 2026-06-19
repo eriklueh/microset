@@ -76,7 +76,7 @@
     --bar0: #d8d3c7;
     --bar1: #cbc6ba;
     --acc: #6f9c00;
-    --on: #0a0a0a;
+    --on: #ffffff; /* text/marks on the accent — white reads as a "primary" fill on paper */
     --destructive: #c83c5c;
     --radius: 0rem;
 

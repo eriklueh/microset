@@ -374,7 +374,7 @@ function NextNode({
               <button
                 onClick={onSkip}
                 className="border-2 px-4 py-2.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
-                style={{ borderColor: "rgba(10,10,10,0.35)" }}
+                style={{ borderColor: "color-mix(in oklch, var(--on) 35%, transparent)" }}
               >
                 {t.actions.skip}
               </button>
