@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
-import { createDayPlan, effectiveSettings, formatMinute } from "@/lib/engine";
+import { createDayPlan, effectiveSettings } from "@/lib/engine";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
 import { useIntensities } from "@/domain/i18n";
 import { scaleSets } from "@/domain/intensity";
@@ -112,13 +112,18 @@ export function RoutineView() {
   const ownSchedule = !!selected.window || selected.minRest != null;
   const win = selected.window ?? settings.workWindow;
   const restMin = selected.minRest ?? settings.minRest;
-  const toHour = (m: number) => Math.round(m / 60);
+  const winDur = Math.max(1, win.end - win.start);
+  const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  const parseHHMM = (s: string) => {
+    const [h, mm] = s.split(":").map((n) => parseInt(n, 10));
+    return (h || 0) * 60 + (mm || 0);
+  };
   // intensity scales the SCHEDULED sets (non-destructive) — header/coverage reflect that
   const effRoutine = routine.map((r) => ({ ...r, sets: scaleSets(r.sets, dayIntensity) }));
-  // Live preview of where the sets would land with this day's schedule (window-start as "now"
-  // so it's time-of-day stable). Makes the window/rest interplay self-explanatory.
+  // Live preview: where the sets actually land with this day's schedule (window-start as "now"
+  // so it's time-of-day stable). Feeds the mini-timeline so window/rest density is visible.
   const schedSettings = effectiveSettings(settings, selected);
-  const previewTimes = createDayPlan(
+  const previewMins = createDayPlan(
     effRoutine.filter((r) => {
       const ex = byId(r.exerciseId);
       return ex ? isAvailable(ex, owned) : true;
@@ -127,8 +132,12 @@ export function RoutineView() {
     schedSettings.workWindow.start,
   )
     .blocks.filter((b) => b.time >= 0)
-    .sort((a, b) => a.time - b.time)
-    .map((b) => formatMinute(b.time));
+    .map((b) => b.time)
+    .sort((a, b) => a - b);
+  const avgGap =
+    previewMins.length > 1
+      ? Math.round((previewMins[previewMins.length - 1] - previewMins[0]) / (previewMins.length - 1))
+      : 0;
   const regions = t.body.regions as Record<string, string>;
   const regionLabel = (g: BodyGroup) => regions[g].toUpperCase();
   const muscleName = (mu: string) => (t.body.muscleNames as Record<string, string>)[mu] ?? mu;
@@ -661,8 +670,8 @@ export function RoutineView() {
         </div>
       )}
       {!creating && (
-        <div className="border border-[var(--rule2)] p-2.5">
-          <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-2 border border-[var(--rule2)] p-2.5">
+          <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-[9px] tracking-[0.14em] text-[var(--faint)]">{t.routine.scheduleLabel}</span>
             <div className="flex flex-none">
               {[false, true].map((own) => {
@@ -674,16 +683,16 @@ export function RoutineView() {
                       setDaySchedule(
                         selected.id,
                         own
-                          ? { window: selected.window ?? settings.workWindow, minRest: selected.minRest ?? settings.minRest }
+                          ? { window: selected.window ?? { start: 1200, end: 1245 }, minRest: selected.minRest ?? 5 }
                           : { window: null, minRest: null },
                       )
                     }
-                    className="border px-2 py-[3px] font-mono text-[9px] tracking-[0.06em]"
+                    className="border px-2 py-[3px] font-mono text-[9px] tracking-[0.08em]"
                     style={{
                       marginLeft: own ? -1 : 0,
                       borderColor: on ? "var(--acc)" : "var(--rule2)",
-                      color: on ? "var(--acc)" : "var(--dim)",
-                      background: on ? "color-mix(in oklch, var(--acc) 12%, transparent)" : "transparent",
+                      color: on ? "var(--on)" : "var(--dim)",
+                      background: on ? "var(--acc)" : "transparent",
                     }}
                   >
                     {own ? t.routine.scheduleOwn : t.routine.scheduleGlobal}
@@ -692,53 +701,91 @@ export function RoutineView() {
               })}
             </div>
           </div>
-          {ownSchedule && (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={toHour(win.start)}
-                  onChange={(e) =>
-                    setDaySchedule(selected.id, {
-                      window: { start: Math.max(0, Math.min(23, +e.currentTarget.value)) * 60, end: win.end },
-                    })
-                  }
-                  className={`${input} w-11 px-1.5 py-1 text-center font-mono text-[11px]`}
-                />
-                <span className="text-[var(--faint2)]">–</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={24}
-                  value={toHour(win.end)}
-                  onChange={(e) =>
-                    setDaySchedule(selected.id, {
-                      window: { start: win.start, end: Math.max(1, Math.min(24, +e.currentTarget.value)) * 60 },
-                    })
-                  }
-                  className={`${input} w-11 px-1.5 py-1 text-center font-mono text-[11px]`}
-                />
-                <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">h</span>
+
+          {ownSchedule ? (
+            <>
+              {[
+                {
+                  label: t.routine.scheduleStart,
+                  el: (
+                    <input
+                      type="time"
+                      value={hhmm(win.start)}
+                      onChange={(e) => {
+                        const ns = parseHHMM(e.currentTarget.value);
+                        setDaySchedule(selected.id, { window: { start: ns, end: ns + winDur } });
+                      }}
+                      className={`${input} px-1.5 py-1 font-mono text-[11px] [color-scheme:dark]`}
+                    />
+                  ),
+                },
+                {
+                  label: t.routine.scheduleDuration,
+                  el: (
+                    <span className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={5}
+                        max={600}
+                        step={5}
+                        value={winDur}
+                        onChange={(e) =>
+                          setDaySchedule(selected.id, {
+                            window: { start: win.start, end: win.start + Math.max(5, +e.currentTarget.value) },
+                          })
+                        }
+                        className={`${input} w-14 px-1.5 py-1 text-center font-mono text-[11px]`}
+                      />
+                      <span className="font-mono text-[9px] text-[var(--faint2)]">min</span>
+                    </span>
+                  ),
+                },
+                {
+                  label: t.routine.restEvery,
+                  el: (
+                    <span className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={1}
+                        max={180}
+                        value={restMin}
+                        onChange={(e) => setDaySchedule(selected.id, { minRest: +e.currentTarget.value })}
+                        className={`${input} w-14 px-1.5 py-1 text-center font-mono text-[11px]`}
+                      />
+                      <span className="font-mono text-[9px] text-[var(--faint2)]">min</span>
+                    </span>
+                  ),
+                },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[9px] tracking-[0.1em] text-[var(--faint)]">{row.label}</span>
+                  {row.el}
+                </div>
+              ))}
+
+              {/* mini-timeline: each dot is a set placed in the window */}
+              <div className="relative mt-0.5 h-6 overflow-hidden border border-[var(--rule2)] bg-[var(--bar0)]">
+                {previewMins.map((m, i) => (
+                  <span
+                    key={i}
+                    className="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 bg-[var(--acc)]"
+                    style={{ left: `${Math.max(2, Math.min(98, ((m - win.start) / winDur) * 100))}%` }}
+                  />
+                ))}
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint)]">{t.routine.restEvery}</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={180}
-                  value={restMin}
-                  onChange={(e) => setDaySchedule(selected.id, { minRest: +e.currentTarget.value })}
-                  className={`${input} w-12 px-1.5 py-1 text-center font-mono text-[11px]`}
-                />
-                <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">min</span>
+              <div className="flex items-center justify-between font-mono text-[8.5px] tracking-[0.06em] text-[var(--faint2)]">
+                <span>{hhmm(win.start)}</span>
+                <span className="text-[var(--faint)]">
+                  {previewMins.length} {t.routine.sets}
+                  {avgGap ? ` · ~${avgGap}m` : ""}
+                </span>
+                <span>{hhmm(win.end)}</span>
               </div>
-              <div className="font-mono text-[9px] leading-[1.6] tracking-[0.04em] text-[var(--faint2)]">
-                {previewTimes.length
-                  ? `→ ${previewTimes.slice(0, 6).join(" · ")}${previewTimes.length > 6 ? " · …" : ""}`
-                  : "—"}
-              </div>
+            </>
+          ) : (
+            <div className="font-mono text-[9px] leading-[1.6] tracking-[0.04em] text-[var(--faint2)]">
+              {t.routine.scheduleSpread} {hhmm(settings.workWindow.start)}–{hhmm(settings.workWindow.end)} ·{" "}
+              {t.routine.restEvery} {settings.minRest} min
             </div>
           )}
         </div>
