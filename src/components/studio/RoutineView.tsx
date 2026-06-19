@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, ChevronUp, Minus, Plus, Search, Trash2, X } from "lucide-react";
 import { analyzeRoutine } from "@/coach/analysis";
-import { effectiveSettings } from "@/lib/engine";
+import { createDayPlan, effectiveSettings, formatMinute } from "@/lib/engine";
 import { defaultVariantId, isAvailable } from "@/domain/seed";
 import { useIntensities } from "@/domain/i18n";
 import { scaleSets } from "@/domain/intensity";
@@ -115,6 +115,20 @@ export function RoutineView() {
   const toHour = (m: number) => Math.round(m / 60);
   // intensity scales the SCHEDULED sets (non-destructive) — header/coverage reflect that
   const effRoutine = routine.map((r) => ({ ...r, sets: scaleSets(r.sets, dayIntensity) }));
+  // Live preview of where the sets would land with this day's schedule (window-start as "now"
+  // so it's time-of-day stable). Makes the window/rest interplay self-explanatory.
+  const schedSettings = effectiveSettings(settings, selected);
+  const previewTimes = createDayPlan(
+    effRoutine.filter((r) => {
+      const ex = byId(r.exerciseId);
+      return ex ? isAvailable(ex, owned) : true;
+    }),
+    schedSettings,
+    schedSettings.workWindow.start,
+  )
+    .blocks.filter((b) => b.time >= 0)
+    .sort((a, b) => a.time - b.time)
+    .map((b) => formatMinute(b.time));
   const regions = t.body.regions as Record<string, string>;
   const regionLabel = (g: BodyGroup) => regions[g].toUpperCase();
   const muscleName = (mu: string) => (t.body.muscleNames as Record<string, string>)[mu] ?? mu;
@@ -719,6 +733,11 @@ export function RoutineView() {
                   className={`${input} w-12 px-1.5 py-1 text-center font-mono text-[11px]`}
                 />
                 <span className="font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">min</span>
+              </div>
+              <div className="font-mono text-[9px] leading-[1.6] tracking-[0.04em] text-[var(--faint2)]">
+                {previewTimes.length
+                  ? `→ ${previewTimes.slice(0, 6).join(" · ")}${previewTimes.length > 6 ? " · …" : ""}`
+                  : "—"}
               </div>
             </div>
           )}
