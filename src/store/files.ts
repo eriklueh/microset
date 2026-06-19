@@ -33,6 +33,7 @@ let suppress = false; // applying disk -> store (ignore the resulting writes)
 let writePending = false; // a store -> disk write is queued/in-flight
 let lastWrite = 0; // when we last wrote, to avoid reconciling stale disk
 let writeTimer: ReturnType<typeof setTimeout> | null = null;
+let lastWritten: Record<string, string> = {}; // file -> last JSON we wrote (skip unchanged)
 
 type State = ReturnType<typeof useStore.getState>;
 
@@ -57,14 +58,22 @@ function groups(s: State): Record<string, unknown> {
 
 async function writeAll(): Promise<void> {
   const g = groups(useStore.getState());
-  await Promise.all([
-    ...Object.entries(g).map(async ([file, data]) =>
-      writeTextFile(await join(dir, file), JSON.stringify(data, null, 2)),
-    ),
+  const all: [string, string][] = [
+    ...Object.entries(g).map(([file, data]) => [file, JSON.stringify(data, null, 2)] as [string, string]),
     // read-only snapshot for the coach (Claude Code reads this); not a config file
-    writeTextFile(await join(dir, "context.json"), JSON.stringify(buildCoachContext(), null, 2)),
-  ]);
-  lastWrite = Date.now();
+    ["context.json", JSON.stringify(buildCoachContext(), null, 2)],
+  ];
+  // Only write files whose content actually changed since our last write. A store change
+  // that doesn't touch a given file (e.g. ephemeral toast/day churn) must NOT rewrite it —
+  // otherwise it can overwrite, and clobber, an external edit (the coach's) sitting on disk.
+  const changed = all.filter(([file, json]) => lastWritten[file] !== json);
+  await Promise.all(
+    changed.map(async ([file, json]) => {
+      await writeTextFile(await join(dir, file), json);
+      lastWritten[file] = json;
+    }),
+  );
+  if (changed.length) lastWrite = Date.now();
   writePending = false;
 }
 

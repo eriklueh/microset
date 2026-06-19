@@ -49,6 +49,8 @@ dayKind[i] is "home" | "office" | null.
 - Keep week & dayKind length 7 and at least one dayType. Never empty the config (the app
   sanitizes on load, but don't rely on it).
 - Never edit "logs.json" or the live day plan — the engine owns those.
+- The app regenerates "context.json" after it applies your edits (~2s) — re-read it if you
+  need the updated fitsInDay / balance before a follow-up change.
 - After editing, tell the user in 1-2 lines what changed and why.
 
 > Canonical contract (kept in sync with this brief and the in-app system prompt): if you're
