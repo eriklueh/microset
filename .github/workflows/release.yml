@@ -62,6 +62,8 @@ jobs:
 
       - uses: tauri-apps/tauri-action@v0
         env:
+          # tauri-action crea el release y sube los assets → necesita el token del runner.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Clave privada del updater → firma los bundles y genera latest.json.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
