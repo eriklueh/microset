@@ -1,0 +1,94 @@
+# Corta un release multiplataforma con auto-update.
+#
+# Disparo: push de un tag `vX.Y.Z` (la versión debe coincidir con src-tauri/tauri.conf.json).
+# Produce, firma y sube en un solo release de GitHub:
+#   · Windows NSIS  (.exe + .exe.sig)
+#   · Linux AppImage (.AppImage + .AppImage.sig)
+#   · latest.json    (manifiesto que lee tauri-plugin-updater)  ← lo genera tauri-action
+#   · alias estables microset-setup-x64.exe / microset-x64.AppImage  (los que linkea la landing)
+#
+# Requisito único de setup: guardá la clave PRIVADA del updater
+# (C:\Users\Erik\.tauri\microset_updater.key) como secreto de repo `TAURI_SIGNING_PRIVATE_KEY`.
+# Ver docs/RELEASING.md.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: "--bundles nsis"
+          - platform: ubuntu-22.04
+            args: "--bundles appimage"
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          # Clave privada del updater → firma los bundles y genera latest.json.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "microset ${{ github.ref_name }}"
+          releaseBody: "Descargá el instalador para tu sistema. Las apps ya instaladas se actualizan solas."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  # La landing linkea nombres ESTABLES que sobreviven a los bumps de versión.
+  # tauri-action sube los bundles con nombre versionado; acá los republicamos con alias fijos.
+  stable-aliases:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Re-upload installers under stable names
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release download "$TAG" --repo "$REPO" --pattern '*_x64-setup.exe' --output microset-setup-x64.exe --clobber
+          gh release download "$TAG" --repo "$REPO" --pattern '*_amd64.AppImage' --output microset-x64.AppImage --clobber
+          gh release upload "$TAG" --repo "$REPO" --clobber \
+            microset-setup-x64.exe \
+            microset-x64.AppImage

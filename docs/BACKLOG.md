@@ -34,7 +34,7 @@ picked up.
 | **Power-on scan splash** | A one-shot subtle `ms-scan` sweep on app open — the "instrument booting" touch. | S | 💡 |
 | **Rest-day HUD screen** | A dedicated `DESCANSO · RECUPERACIÓN` screen with a calm variant of the chrome, instead of the generic empty state. | S | 💡 |
 | **Pixel numeral audit** | Ensure every big figure uses Geist Pixel consistently (streaks, counters, ETAs) — it's uneven across views. | S | 💡 |
-| **Light-mode calibration** | The dot-grids / RegMarks / glows are tuned for dark; recalibrate the tokens per theme so light mode holds up. | M | 🩹 |
+| **Light-mode calibration** | Per-theme body-map ramp tokens (`--m-none/--m-sec*/--m-pri*` in `index.css`) so the model reads right on paper; on-accent text forced white in light (`--on: #fff`) so green components read as primary fills. (Optional: deepen the light accent if white contrast ever feels weak.) | M | ✅ |
 | **Equipo / Ajustes cockpit** | They use the shared `ViewHeader` but are plain full-width. Give them `SectionRule` chrome and/or a contextual rail like the other views. | M | 💡 |
 | **Motion discipline** | Codify the small Marathon motion set (blink, scan, deplete) and honor `prefers-reduced-motion`. | S | 💡 |
 | **Onboarding = calibration sequence** | First-run sets equipment / work window / goals as a HUD wizard. | M | 💡 |
@@ -47,7 +47,9 @@ picked up.
 | **Coach balance label i18n** | `snapshot.ts` builds `balanceLabel` hardcoded in Spanish; localize by deriving from `snap.balance` + `t.muscle` so it follows the UI language. | S | 🩹 |
 | **Autostart (M5)** | Launch-at-login via `tauri-plugin-autostart` — the last open box in M5. | S–M | 💡 |
 | **Bundle size warning** | Vite warns the main chunk is >500 kB; consider `manualChunks` / dynamic import for `react-markdown`, body-highlighter, etc. | S | 🩹 |
-| **Landing refresh** | Hero mock refresh + real app screenshots (Erik's task), now that Studio + panel + toast are all Marathon. | M | 💡 |
+| **Cross-platform release + auto-update** | `.github/workflows/release.yml` (tauri-action) builds Win + Linux, signs both, generates `latest.json`, and re-uploads stable aliases (`microset-setup-x64.exe` / `microset-x64.AppImage`). Needs the `TAURI_SIGNING_PRIVATE_KEY` repo secret + a `vX.Y.Z` tag to publish the first release (≥ v0.1.1). See [RELEASING.md](RELEASING.md). | M | ✅ |
+| **Landing — Win + Linux downloads** | OS-aware CTA picks the right stable installer (Windows `.exe` / Linux `.AppImage`, others → releases page) + explicit per-platform links. Live once the first cross-platform release is published. | S | ✅ |
+| **Landing copy/screenshots refresh** | Hero mock + real app screenshots (Erik's task) and copy re-sync with the newest features (per-day schedule / night sessions, set actions HECHO·MÁS TARDE·SALTAR, default routines, proactive coach). | M | 💡 |
 
 ---
 
