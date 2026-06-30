@@ -1,12 +1,21 @@
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronUp, Minus } from "lucide-react";
+import { useMemo } from "react";
 import { defaultVariantId } from "@/domain/seed";
-import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
+import { aggregateState, workedGroupCount, type BodyGroup } from "@/domain/bodyGroups";
 import type { RoutineItem } from "@/lib/engine";
 import type { Exercise, LogEntry } from "@/domain/types";
+import {
+  computeAchievements,
+  computeLevels,
+  type Achievement,
+  type LevelsSummary,
+  type PlanContext,
+} from "@/lib/levels";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
-import { useStore } from "@/store/useStore";
+import { effectiveSlot, REST, useStore } from "@/store/useStore";
 import { BodyLegend, ModelRail } from "./BodyMap";
+import { SectionRule } from "./hud";
 import { ViewHeader } from "./shell";
 
 const DAY = 86_400_000;
@@ -26,8 +35,38 @@ function shortDate(iso: string): string {
 export function ProgressView() {
   const logs = useStore((s) => s.logs);
   const owned = useStore((s) => s.ownedEquipment);
+  const levelsEnabled = useStore((s) => s.levelsEnabled);
+  const streakFreeze = useStore((s) => s.streakFreeze);
+  const week = useStore((s) => s.week);
+  const dayOverrides = useStore((s) => s.dayOverrides);
+  const dayTypes = useStore((s) => s.dayTypes);
+  const setRoutineVariant = useStore((s) => s.setRoutineVariant);
   const { byId } = useCatalog();
   const t = useT();
+
+  // Pure plan context for the levels module — resolves the day-type (→ intensity) in
+  // effect for any date, with planned-rest days treated as neutral for the streak.
+  const plan = useMemo<PlanContext>(
+    () => ({
+      intensityByDayType: Object.fromEntries(dayTypes.map((d) => [d.id, d.intensity])),
+      slotForDate: (key) => effectiveSlot(week, dayOverrides, key),
+      rest: REST,
+    }),
+    [dayTypes, week, dayOverrides],
+  );
+  const levels = useMemo<LevelsSummary | null>(
+    () => (levelsEnabled ? computeLevels(logs, plan, byId, streakFreeze) : null),
+    [levelsEnabled, logs, plan, byId, streakFreeze],
+  );
+
+  /** One-tap level up: bump the variant in every day-type whose routine holds this exercise. */
+  const levelUp = (exerciseId: string, variantId: string) => {
+    for (const dt of dayTypes) {
+      if (dt.routine.some((r) => r.exerciseId === exerciseId)) {
+        setRoutineVariant(dt.id, exerciseId, variantId);
+      }
+    }
+  };
 
   if (logs.length === 0) {
     return (
@@ -115,6 +154,8 @@ export function ProgressView() {
             <Metric label={t.progress.activeLabel} value={activeExercises} unit={t.progress.exercises} />
           </div>
 
+          {levels && <LevelsPanel levels={levels} />}
+
           <div className="mt-3 flex flex-col gap-3">
             {ids.map((id) => {
               const ex = byId(id);
@@ -127,6 +168,7 @@ export function ProgressView() {
                   now={now}
                   inLast7={inLast7}
                   inPrev7={inPrev7}
+                  onLevelUp={levels ? levelUp : undefined}
                 />
               );
             })}
@@ -143,12 +185,15 @@ function ExerciseProgress({
   now,
   inLast7,
   inPrev7,
+  onLevelUp,
 }: {
   ex: Exercise;
   logs: LogEntry[];
   now: number;
   inLast7: (l: LogEntry) => boolean;
   inPrev7: (l: LogEntry) => boolean;
+  /** When set, the "ready" nudge gets a one-tap button that bumps the routine variant. */
+  onLevelUp?: (exerciseId: string, variantId: string) => void;
 }) {
   const t = useT();
   const { name, variantLabel } = useCatalog();
@@ -223,9 +268,21 @@ function ExerciseProgress({
             </span>
           </div>
           {readyToLevel && (
-            <span className="mt-2 inline-block bg-[var(--acc)] px-2.5 py-1 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--on)]">
-              {t.progress.ready} {nextLabel!.toUpperCase()}
-            </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-block bg-[var(--acc)] px-2.5 py-1 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--on)]">
+                {t.progress.ready} {nextLabel!.toUpperCase()}
+              </span>
+              {onLevelUp && nextVariantId && (
+                <button
+                  onClick={() => onLevelUp(ex.id, nextVariantId)}
+                  aria-label={t.progress.levelUpAria}
+                  className="inline-flex items-center gap-1 border border-[var(--acc)] px-2.5 py-1 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--fg)] hover:bg-[var(--acc)] hover:text-[var(--on)]"
+                >
+                  <ChevronUp className="size-3" />
+                  {t.progress.levelUp}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -302,4 +359,121 @@ function Delta({ value }: { value: number }) {
       </span>
     );
   return <Minus className="size-3 text-[var(--faint2)]" />;
+}
+
+// ---- Niveles (gamification, gated on settings.levelsEnabled) ------------------
+
+/** Racha pixel counter + RPG character sheet + achievements row. */
+function LevelsPanel({ levels }: { levels: LevelsSummary }) {
+  const t = useT();
+  const achievements = computeAchievements(levels);
+
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      {/* Racha — big pixel streak counter + overall rank */}
+      <div className="flex border border-[var(--rule2)]">
+        <div className="flex flex-1 flex-col p-4">
+          <span className="font-mono text-[10px] font-semibold tracking-[0.14em] text-[var(--faint)]">
+            {t.levels.streak}
+          </span>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="font-pixel text-[50px] leading-[0.8] tabular-nums text-[var(--acc)]">
+              {levels.streak}
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--faint2)]">
+              {levels.streak === 1 ? t.levels.day : t.levels.days}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col border-l border-[var(--rule2)] p-4">
+          <span className="font-mono text-[10px] font-semibold tracking-[0.14em] text-[var(--faint)]">
+            {t.levels.rank}
+          </span>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="font-pixel text-[50px] leading-[0.8] tabular-nums text-[var(--fg)]">
+              {levels.rank}
+            </span>
+          </div>
+          <div className="mt-1 h-1 w-full bg-[var(--bar0)]">
+            <div className="h-full bg-[var(--acc)]" style={{ width: `${levels.rankProgress * 100}%` }} />
+          </div>
+        </div>
+        <div className="flex flex-col border-l border-[var(--rule2)] p-4">
+          <span className="font-mono text-[10px] font-semibold tracking-[0.14em] text-[var(--faint)]">
+            {t.levels.totalSets}
+          </span>
+          <div className="mt-2 flex items-baseline">
+            <span className="font-pixel text-[50px] leading-[0.8] tabular-nums text-[var(--fg)]">
+              {levels.totalSets}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Character sheet — 6 attributes, each with its LVL + progress bar */}
+      <div className="border border-[var(--rule2)] p-4">
+        <SectionRule index={1} label={t.levels.sheet} />
+        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3">
+          {levels.attributes.map((a) => (
+            <AttributeBar key={a.group} group={a.group} level={a.level} progress={a.progress} />
+          ))}
+        </div>
+      </div>
+
+      {/* Achievements — derived, currently-earned only */}
+      <div className="border border-[var(--rule2)] p-4">
+        <SectionRule index={2} label={t.levels.achievements} />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {achievements.map((a) => (
+            <AchievementChip key={a.id} ach={a} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttributeBar({ group, level, progress }: { group: BodyGroup; level: number; progress: number }) {
+  const t = useT();
+  const label = (t.body.regions as Record<BodyGroup, string>)[group];
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate font-mono text-[11px] tracking-[0.06em] text-[var(--fg)] uppercase">
+            {label}
+          </span>
+          <span className="flex items-baseline gap-1 font-mono text-[9px] tracking-[0.1em] text-[var(--faint2)]">
+            {t.levels.lvl}
+            <span className="font-pixel text-[16px] leading-none tabular-nums text-[var(--acc)]">{level}</span>
+          </span>
+        </div>
+        <div className="h-1.5 w-full bg-[var(--bar0)]">
+          <div className="h-full bg-[var(--acc)]" style={{ width: `${progress * 100}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AchievementChip({ ach }: { ach: Achievement }) {
+  const t = useT();
+  const label = (t.levels.ach as Record<string, string>)[ach.id] ?? ach.id;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.06em]"
+      style={{
+        borderColor: ach.earned ? "var(--acc)" : "var(--rule2)",
+        background: ach.earned ? "var(--acc)" : "transparent",
+        color: ach.earned ? "var(--on)" : "var(--faint2)",
+      }}
+      title={ach.earned ? undefined : t.levels.locked}
+    >
+      <span
+        className="size-1.5"
+        style={{ background: ach.earned ? "var(--on)" : "var(--faint2)" }}
+      />
+      {label}
+    </span>
+  );
 }

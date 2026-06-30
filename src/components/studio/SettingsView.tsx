@@ -25,6 +25,10 @@ export function SettingsView() {
   const setSnoozeMinutes = useStore((s) => s.setSnoozeMinutes);
   const demoMode = useStore((s) => s.demoMode);
   const setDemoMode = useStore((s) => s.setDemoMode);
+  const levelsEnabled = useStore((s) => s.levelsEnabled);
+  const setLevelsEnabled = useStore((s) => s.setLevelsEnabled);
+  const streakFreeze = useStore((s) => s.streakFreeze);
+  const setStreakFreeze = useStore((s) => s.setStreakFreeze);
   const coach = useStore((s) => s.coach);
   const setCoachConfig = useStore((s) => s.setCoachConfig);
   const profile = useStore((s) => s.profile);
@@ -211,6 +215,17 @@ export function SettingsView() {
         <ProfileField label={t.settings.goals} value={profile.goals} onChange={(v) => setProfile({ goals: v })} placeholder={t.settings.goalsPh} />
         <ProfileField label={t.settings.diet} value={profile.diet} onChange={(v) => setProfile({ diet: v })} placeholder={t.settings.dietPh} />
         <ProfileField label={t.settings.constraints} value={profile.constraints} onChange={(v) => setProfile({ constraints: v })} placeholder={t.settings.constraintsPh} />
+      </Section>
+
+      <Section title={t.settings.levels}>
+        <Row label={t.settings.levelsLabel} hint={t.settings.levelsHint}>
+          <SquareSwitch on={levelsEnabled} onClick={() => setLevelsEnabled(!levelsEnabled)} />
+        </Row>
+        {levelsEnabled && (
+          <Row label={t.settings.streakFreezeLabel} hint={t.settings.streakFreezeHint}>
+            <SquareSwitch on={streakFreeze} onClick={() => setStreakFreeze(!streakFreeze)} />
+          </Row>
+        )}
       </Section>
 
       <Section title={t.settings.demo}>

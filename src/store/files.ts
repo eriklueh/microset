@@ -46,6 +46,8 @@ function groups(s: State): Record<string, unknown> {
       notificationsEnabled: s.notificationsEnabled,
       snoozeMinutes: s.snoozeMinutes,
       demoMode: s.demoMode,
+      levelsEnabled: s.levelsEnabled,
+      streakFreeze: s.streakFreeze,
     },
     [FILES.routine]: { dayTypes: s.dayTypes, week: s.week, dayKind: s.dayKind, dayOverrides: s.dayOverrides },
     [FILES.equipment]: { owned: s.ownedEquipment, custom: s.customEquipment },
@@ -98,6 +100,8 @@ async function readAll(): Promise<Partial<State>> {
     if (typeof s.notificationsEnabled === "boolean") patch.notificationsEnabled = s.notificationsEnabled;
     if (typeof s.snoozeMinutes === "number") patch.snoozeMinutes = s.snoozeMinutes;
     if (typeof s.demoMode === "boolean") patch.demoMode = s.demoMode;
+    if (typeof s.levelsEnabled === "boolean") patch.levelsEnabled = s.levelsEnabled;
+    if (typeof s.streakFreeze === "boolean") patch.streakFreeze = s.streakFreeze;
   }
   const r = await readJSON(FILES.routine);
   if (r) {

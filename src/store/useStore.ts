@@ -181,6 +181,10 @@ interface State {
   notificationsEnabled: boolean;
   snoozeMinutes: number;
   demoMode: boolean;
+  /** Niveles — optional RPG gamification layer in Progreso (streak + attributes + achievements). */
+  levelsEnabled: boolean;
+  /** When on, a single missed non-rest day doesn't break the streak. */
+  streakFreeze: boolean;
 
   // routine editing (per day-type)
   addToRoutine: (dayTypeId: string, item: RoutineItem) => void;
@@ -238,6 +242,8 @@ interface State {
   setNotificationsEnabled: (value: boolean) => void;
   setSnoozeMinutes: (minutes: number) => void;
   setDemoMode: (value: boolean) => void;
+  setLevelsEnabled: (value: boolean) => void;
+  setStreakFreeze: (value: boolean) => void;
 
   // data
   resetSettings: () => void;
@@ -297,6 +303,8 @@ export const useStore = create<State>()(
       notificationsEnabled: true,
       snoozeMinutes: 30,
       demoMode: false,
+      levelsEnabled: true,
+      streakFreeze: false,
 
       addToRoutine: (dayTypeId, item) => {
         set((s) => ({
@@ -544,6 +552,9 @@ export const useStore = create<State>()(
         get().replan();
       },
 
+      setLevelsEnabled: (value) => set({ levelsEnabled: value }),
+      setStreakFreeze: (value) => set({ streakFreeze: value }),
+
       resetSettings: () => {
         set({ settings: DEFAULT_SETTINGS, demoMode: false });
         get().replan();
@@ -569,6 +580,8 @@ export const useStore = create<State>()(
           notificationsEnabled: true,
           snoozeMinutes: 30,
           demoMode: false,
+          levelsEnabled: true,
+          streakFreeze: false,
         });
         applyTheme(DEFAULT_THEME.mode, DEFAULT_THEME.accent);
         get().replan();
@@ -671,10 +684,13 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const p = persisted as Record<string, unknown>;
         delete p.methodologyId; // v3: methodology → per-day-type intensity (default normal)
+        // v4: optional gamification (Niveles). Default ON; freeze OFF. Older stores lack these.
+        if (typeof p.levelsEnabled !== "boolean") p.levelsEnabled = true;
+        if (typeof p.streakFreeze !== "boolean") p.streakFreeze = false;
         if (p && (version < 1 || !p.dayTypes)) {
           const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
           p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
@@ -705,6 +721,8 @@ export const useStore = create<State>()(
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,
         demoMode: s.demoMode,
+        levelsEnabled: s.levelsEnabled,
+        streakFreeze: s.streakFreeze,
       }),
     },
   ),
