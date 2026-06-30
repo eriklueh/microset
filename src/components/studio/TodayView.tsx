@@ -11,6 +11,7 @@ import { nowMinutes, useStore } from "@/store/useStore";
 import { BodyLegend, ModelRail } from "./BodyMap";
 import { FeasibilityHint } from "./Feasibility";
 import { ViewHeader } from "./shell";
+import { Barcode, Corners, RegMark, SectionRule } from "./hud";
 
 const metaLine = (parts: (string | false)[]) => parts.filter(Boolean).join(" · ");
 
@@ -57,12 +58,52 @@ export function TodayView() {
           title={t.today.title}
         />
         <div className="flex min-h-0 flex-1 items-center justify-center p-8">
-          <div className="border border-[var(--rule2)] p-10 text-center">
-            <div className="text-[34px] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
-              {t.today.restTitle}
+          <div className="relative w-full max-w-[560px] border border-[var(--rule2)] p-10">
+            <Corners />
+            <RegMark className="top-3 left-1/2 -translate-x-1/2" />
+            <RegMark className="bottom-3 left-1/2 -translate-x-1/2" />
+
+            <div className="flex items-center gap-2.5">
+              <span className="inline-block size-1.5 bg-[var(--faint2)]" />
+              <span className="font-mono text-[10px] font-semibold tracking-[0.22em] text-[var(--faint)]">
+                {t.today.restStatus}
+              </span>
+              <span className="ml-auto">
+                <Barcode color="var(--faint2)" height={10} />
+              </span>
             </div>
-            <div className="mt-2 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)] uppercase">
+
+            <div className="mt-6 font-pixel text-[44px] leading-[0.82] tracking-[0.02em] text-[var(--fg)]">
+              {t.today.restScreen}
+            </div>
+            <div className="mt-2.5 font-mono text-[11px] tracking-[0.1em] text-[var(--faint)] uppercase">
               {t.today.restSub}
+            </div>
+
+            <div className="mt-8">
+              <SectionRule index={1} label={t.today.restProtocol} />
+              <div className="mt-3 text-[14px] leading-[1.6] text-[var(--dim)]">
+                {t.today.restProtocolBody}
+              </div>
+              <div className="mt-3 flex flex-col gap-1.5">
+                {[t.today.restTip1, t.today.restTip2].map((tip) => (
+                  <div key={tip} className="flex items-center gap-2.5">
+                    <span className="inline-block size-1.5 bg-[var(--acc)]" />
+                    <span className="font-mono text-[11px] tracking-[0.04em] text-[var(--faint)] uppercase">
+                      {tip}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-end justify-between border-t border-[var(--rule)] pt-4">
+              <span className="font-mono text-[9px] tracking-[0.18em] text-[var(--faint2)]">
+                {t.today.restNext}
+              </span>
+              <span className="font-pixel text-[18px] leading-none text-[var(--dim)]">
+                {t.today.restNextValue}
+              </span>
             </div>
           </div>
         </div>
@@ -119,7 +160,7 @@ export function TodayView() {
         title={t.today.title}
         right={
           <div className="text-right">
-            <div className="font-pixel text-[34px] leading-[0.8] text-[var(--fg)]">
+            <div className="font-pixel text-[34px] leading-[0.8] tabular-nums text-[var(--fg)]">
               {pad(doneCount)}
               <span className="text-[var(--faint2)]">/{pad(total)}</span>
             </div>
@@ -148,8 +189,8 @@ export function TodayView() {
         >
           <BodyLegend />
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="font-pixel text-[30px] leading-[0.8] text-[var(--fg)]">{worked}</span>
-            <span className="font-pixel text-[16px] text-[var(--faint2)]">/6</span>
+            <span className="font-pixel text-[30px] leading-[0.8] tabular-nums text-[var(--fg)]">{worked}</span>
+            <span className="font-pixel text-[16px] tabular-nums text-[var(--faint2)]">/6</span>
             <span className="ml-auto self-end font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
               {t.body.coverage}
             </span>
@@ -262,7 +303,7 @@ function NowMarker({ label, clock }: { label: string; clock: string }) {
       </div>
       <div className="flex flex-1 items-center gap-2 py-1.5">
         <span className="font-mono text-[9.5px] font-bold tracking-[0.2em] text-[var(--acc)]">{label}</span>
-        <span className="font-pixel text-[13px] leading-none text-[var(--acc)]">{clock}</span>
+        <span className="font-pixel text-[13px] leading-none tabular-nums text-[var(--acc)]">{clock}</span>
         <span className="h-px flex-1" style={{ background: "linear-gradient(90deg, var(--acc), transparent)" }} />
       </div>
     </div>
@@ -295,7 +336,7 @@ function TrackRow({ block, name, muscle }: { block: Block; name: string; muscle:
       {unsched ? <div className="w-9 flex-none" /> : <Rail node={node} />}
       <div className="flex flex-1 items-center gap-4 border-b border-[var(--rule)] py-[13px]">
         <span
-          className="w-[54px] flex-none font-mono text-[18px] tracking-[-0.01em]"
+          className="w-[54px] flex-none font-pixel text-[16px] tabular-nums tracking-[0.01em]"
           style={{ color: dim ? "var(--faint2)" : "var(--dim)" }}
         >
           {unsched ? "—" : formatMinute(block.time)}
@@ -384,7 +425,7 @@ function NextNode({
             </div>
             {!showActions && (
               <div className="flex-none text-right">
-                <div className="font-pixel text-[40px] leading-[0.8] text-[var(--fg)]">{heroNum}</div>
+                <div className="font-pixel text-[40px] leading-[0.8] tabular-nums text-[var(--fg)]">{heroNum}</div>
                 <div className="mt-1 font-mono text-[9px] tracking-[0.18em] text-[var(--faint)]">
                   {heroIsMin ? t.today.minutes : t.today.hours}
                 </div>

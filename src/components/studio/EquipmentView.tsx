@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { ViewHeader } from "./shell";
+import { ViewHeader, CockpitRail, RailStat } from "./shell";
+import { SectionRule } from "./hud";
 import { EQUIPMENT } from "@/domain/seed";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
@@ -28,11 +29,34 @@ export function EquipmentView() {
     setName("");
   };
 
+  const ownedCount = owned.length;
+  const totalCount = allEquipment.length;
+
   return (
     <div className="flex h-full flex-col">
       <ViewHeader kicker={t.equipment.sub} title={t.equipment.title} />
-      <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
-      <div className="border-b border-[var(--rule)]">
+      <div className="flex min-h-0 flex-1">
+      <CockpitRail label={t.equipment.railLabel}>
+        <span className="font-mono text-[9px] tracking-[0.14em] text-[var(--faint)]">
+          {t.equipment.owned}
+        </span>
+        <div className="mt-1.5 flex items-baseline gap-1.5">
+          <span className="font-pixel text-[40px] leading-[0.8] tabular-nums text-[var(--fg)]">
+            {ownedCount}
+          </span>
+          <span className="font-pixel text-[18px] tabular-nums text-[var(--faint2)]">/{totalCount}</span>
+        </div>
+        <div className="mt-4 border-t border-[var(--rule)] pt-3">
+          <span className="font-mono text-[9px] tracking-[0.14em] text-[var(--faint)]">
+            {t.equipment.total}
+          </span>
+          <RailStat value={totalCount} unit={t.equipment.exercises} />
+        </div>
+      </CockpitRail>
+
+      <section className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+      <SectionRule index={1} label={t.equipment.section} right={`${ownedCount}/${totalCount}`} />
+      <div className="mt-3 border-b border-[var(--rule)]">
         {allEquipment.map((eq) => {
           const enables = all.filter((e) => e.equipment.includes(eq.id)).length;
           const inRoutines = [...used].filter((id) => byId(id)?.equipment.includes(eq.id)).length;
@@ -69,25 +93,29 @@ export function EquipmentView() {
         })}
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.currentTarget.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") add();
-          }}
-          placeholder={t.equipment.placeholder}
-          className={`${input} h-9 flex-1 px-3 font-mono text-[12px] tracking-[0.04em] placeholder:text-[var(--faint2)]`}
-        />
-        <button
-          onClick={add}
-          disabled={!name.trim()}
-          className="flex items-center gap-1.5 border px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] disabled:opacity-40"
-          style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
-        >
-          <Plus className="size-3.5" /> {t.equipment.add}
-        </button>
+      <div className="mt-6">
+        <SectionRule index={2} label={t.equipment.addSection} />
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") add();
+            }}
+            placeholder={t.equipment.placeholder}
+            className={`${input} h-9 flex-1 px-3 font-mono text-[12px] tracking-[0.04em] placeholder:text-[var(--faint2)]`}
+          />
+          <button
+            onClick={add}
+            disabled={!name.trim()}
+            className="flex items-center gap-1.5 border px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] disabled:opacity-40"
+            style={{ borderColor: "var(--acc)", color: "var(--acc)" }}
+          >
+            <Plus className="size-3.5" /> {t.equipment.add}
+          </button>
+        </div>
       </div>
+      </section>
       </div>
     </div>
   );

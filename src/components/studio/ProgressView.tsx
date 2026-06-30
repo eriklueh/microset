@@ -128,8 +128,8 @@ export function ProgressView() {
         >
           <BodyLegend />
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="font-pixel text-[30px] leading-[0.8] text-[var(--fg)]">{worked}</span>
-            <span className="font-pixel text-[16px] text-[var(--faint2)]">/6</span>
+            <span className="font-pixel text-[30px] leading-[0.8] tabular-nums text-[var(--fg)]">{worked}</span>
+            <span className="font-pixel text-[16px] tabular-nums text-[var(--faint2)]">/6</span>
             <span className="ml-auto self-end font-mono text-[9px] tracking-[0.08em] text-[var(--faint2)]">
               {t.body.coverage}
             </span>
@@ -333,7 +333,7 @@ function Metric({
         {label}
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="font-pixel text-[50px] leading-[0.8] text-[var(--fg)]">
+        <span className="font-pixel text-[50px] leading-[0.8] tabular-nums text-[var(--fg)]">
           {value}
         </span>
         {delta !== undefined && <Delta value={delta} />}

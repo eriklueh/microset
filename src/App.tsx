@@ -4,6 +4,7 @@ import { useScheduler } from "@/hooks/useScheduler";
 import { useT } from "@/lib/i18n";
 import { setPanelVisible } from "@/lib/windows";
 import { Titlebar } from "@/components/studio/Titlebar";
+import { BootSplash } from "@/components/studio/BootSplash";
 import { RelayBar } from "@/components/studio/hud";
 import { Sidebar, type Section } from "@/components/studio/Sidebar";
 import { CoachView } from "@/components/studio/CoachView";
@@ -33,6 +34,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-[var(--bg)] text-[var(--fg)]">
+      <BootSplash />
       <Titlebar label={t.nav[section]} />
       <div className="flex min-h-0 flex-1">
         <Sidebar active={section} onSelect={setSection} />

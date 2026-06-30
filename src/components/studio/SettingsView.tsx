@@ -4,8 +4,12 @@ import { openConfigFolder } from "@/lib/windows";
 import { reloadFromFiles } from "@/store/files";
 import { useT, LangSelect } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
-import { ViewHeader } from "./shell";
+import { ViewHeader, CockpitRail, RailStat } from "./shell";
+import { SectionRule } from "./hud";
 import { SquareSwitch } from "./EquipmentView";
+
+/** App version — mirrors the Titlebar build stamp. */
+const APP_VERSION = "2.6.0";
 
 const toHour = (min: number) => Math.round(min / 60);
 const input = "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
@@ -52,7 +56,22 @@ export function SettingsView() {
   return (
     <div className="flex h-full flex-col">
       <ViewHeader kicker={t.settings.sub} title={t.settings.title} />
-      <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+      <div className="flex min-h-0 flex-1">
+      <CockpitRail label={t.settings.railLabel}>
+        <span className="font-mono text-[9px] tracking-[0.14em] text-[var(--faint)]">
+          {t.settings.railVersion}
+        </span>
+        <RailStat value={APP_VERSION} unit={t.settings.title} />
+        <div className="mt-4 border-t border-[var(--rule)] pt-3">
+          <div className="mb-1.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint)]">
+            {t.settings.railLang}
+          </div>
+          <LangSelect />
+        </div>
+      </CockpitRail>
+
+      <section className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+      <SectionRule index={1} label={t.settings.groupPrefs} />
       <Section title={t.settings.appearance}>
         <Row label={t.settings.theme}>
           <div className="flex">
@@ -94,9 +113,6 @@ export function SettingsView() {
               />
             ))}
           </div>
-        </Row>
-        <Row label={t.settings.languageLabel}>
-          <LangSelect />
         </Row>
       </Section>
 
@@ -154,6 +170,9 @@ export function SettingsView() {
         </Row>
       </Section>
 
+      <div className="mt-6">
+        <SectionRule index={2} label={t.settings.groupSchedule} />
+      </div>
       <Section title={t.settings.work}>
         <div className="grid grid-cols-2 gap-3">
           <Field
@@ -208,6 +227,9 @@ export function SettingsView() {
         />
       </Section>
 
+      <div className="mt-6">
+        <SectionRule index={3} label={t.settings.groupCoach} />
+      </div>
       <Section title={t.settings.coach}>
         <Row label={t.settings.provider}>
           <div className="flex">
@@ -273,6 +295,9 @@ export function SettingsView() {
         </Row>
       </Section>
 
+      <div className="mt-6">
+        <SectionRule index={4} label={t.settings.groupData} />
+      </div>
       <Section title={t.settings.data}>
         <Row label={t.settings.configFolder} hint={t.settings.configFolderHint}>
           <button className={dataBtn} onClick={() => void openConfigFolder()}>
@@ -304,6 +329,7 @@ export function SettingsView() {
           </button>
         </Row>
       </Section>
+      </section>
       </div>
     </div>
   );

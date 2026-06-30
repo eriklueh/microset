@@ -219,8 +219,60 @@
 .ms-scan {
   animation: ms-scan 4.6s linear infinite;
 }
+
+/* Power-on scan: one-shot full-height sweep over the boot splash (non-looping). */
+@keyframes ms-scan-once {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  92% {
+    opacity: 0.9;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.ms-scan-once {
+  animation: ms-scan-once 0.62s linear 1 forwards;
+}
+
+/* Boot splash fade-out as it unmounts. */
+@keyframes ms-splash-out {
+  to {
+    opacity: 0;
+  }
+}
+.ms-splash-out {
+  animation: ms-splash-out 0.24s ease-out 1 forwards;
+}
+
+/* ===== Motion discipline =====
+ * Honor the OS "reduce motion" preference everywhere: kill the looping HUD
+ * animations and the boot splash sweep, and neutralize any remaining CSS
+ * animations/transitions so nothing keeps moving. */
 @media (prefers-reduced-motion: reduce) {
-  .ms-scan {
+  .ms-scan,
+  .ms-scan-once {
     display: none;
+  }
+  .ms-blink {
+    animation: none;
+  }
+  .ms-splash-out {
+    animation: none;
+    opacity: 0;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

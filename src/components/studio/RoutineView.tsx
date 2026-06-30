@@ -627,8 +627,8 @@ export function RoutineView() {
         </span>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="font-pixel text-[34px] leading-[0.8] text-[var(--fg)]">{card.big}</span>
-        <span className="font-pixel text-[18px] text-[var(--faint2)]">/6</span>
+        <span className="font-pixel text-[34px] leading-[0.8] tabular-nums text-[var(--fg)]">{card.big}</span>
+        <span className="font-pixel text-[18px] tabular-nums text-[var(--faint2)]">/6</span>
         <span className="ml-auto self-end font-mono text-[9px] tracking-[0.08em]" style={{ color: toneStyle.fg }}>
           {card.tag}
         </span>
