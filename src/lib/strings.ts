@@ -85,6 +85,7 @@ const es = {
     start: "Modo foco",
     hint: "Silencia los avisos por un rato. Las series siguen agendadas.",
     end: "TERMINAR FOCO",
+    cancel: "CANCELAR",
   },
   panel: {
     noSets: "Sin series",
@@ -539,6 +540,7 @@ const en: Dict = {
     start: "Focus mode",
     hint: "Silences reminders for a while. Sets stay scheduled.",
     end: "END FOCUS",
+    cancel: "CANCEL",
   },
   panel: {
     noSets: "No sets",

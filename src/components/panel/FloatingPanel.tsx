@@ -87,23 +87,53 @@ export function FloatingPanel() {
     );
   }
 
-  const next = day?.blocks
-    .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
-    .sort((a, b) => a.time - b.time)[0];
-
-  // Drag-bar moon button → arm Foco/DND for 15/30/60 min (inline picker in the body).
+  // Drag-bar moon button arms Foco/DND. Picking a duration is its OWN full-body state —
+  // the panel is too short to host an inline picker without squishing the schedule body.
   const focusBtn = <FocusButton open={showFocusPicker} setOpen={setShowFocusPicker} />;
   const armFocus = (m: number) => {
     setFocus(m);
     setShowFocusPicker(false);
   };
-  const focusPicker = showFocusPicker ? <FocusPicker onPick={armFocus} /> : null;
+
+  // ----- Foco picker: full-body duration chooser ---------------------------
+  if (showFocusPicker) {
+    return (
+      <Shell isNow={false} headerExtra={focusBtn}>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2.5 p-2.5 text-center">
+          <span className="flex items-center gap-1.5 font-mono text-[9px] font-bold tracking-[0.2em] text-[var(--faint)]">
+            <Moon className="size-3" /> {t.focus.label}
+          </span>
+          <div className="flex gap-1.5">
+            {[15, 30, 60].map((min) => (
+              <button
+                key={min}
+                onClick={() => armFocus(min)}
+                className="flex flex-col items-center gap-0.5 border border-[var(--rule2)] px-3 py-1.5 hover:border-[var(--acc)]"
+              >
+                <span className="font-pixel text-[19px] leading-none tabular-nums text-[var(--fg)]">{min}</span>
+                <span className="font-mono text-[7.5px] tracking-[0.12em] text-[var(--faint)]">{t.panel.min}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowFocusPicker(false)}
+            className="font-mono text-[8.5px] tracking-[0.14em] text-[var(--faint2)] uppercase hover:text-[var(--fg)]"
+          >
+            {t.focus.cancel}
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  const next = day?.blocks
+    .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
+    .sort((a, b) => a.time - b.time)[0];
 
   // ----- Empty state -------------------------------------------------------
   if (!next) {
     return (
       <Shell isNow={false} headerExtra={focusBtn}>
-        {focusPicker}
         <div className="flex flex-1 flex-col items-center justify-center gap-1.5">
           <span className="size-2 bg-[var(--faint2)]" />
           <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--faint)] uppercase">
@@ -186,7 +216,6 @@ export function FloatingPanel() {
 
   return (
     <Shell isNow={false} headerExtra={focusBtn}>
-      {focusPicker}
       <div className="flex flex-1 flex-col gap-1 p-2.5">
         <span className="font-mono text-[8.5px] font-semibold tracking-[0.18em] text-[var(--faint)]">
           {t.panel.next}{muscle ? ` · ${muscle}` : ""}
@@ -250,30 +279,6 @@ function FocusButton({ open, setOpen }: { open: boolean; setOpen: (v: boolean) =
     >
       <Moon className="size-3" />
     </button>
-  );
-}
-
-/** Inline 15/30/60-min picker row shown in the panel body when the moon is armed. */
-function FocusPicker({ onPick }: { onPick: (m: number) => void }) {
-  const t = useT();
-  return (
-    <div className="flex items-center gap-1.5 border-b border-[var(--rule2)] px-2.5 py-1.5">
-      <span className="font-mono text-[8.5px] font-semibold tracking-[0.16em] text-[var(--faint)]">
-        {t.focus.label}
-      </span>
-      <div className="ml-auto flex">
-        {[15, 30, 60].map((m, i) => (
-          <button
-            key={m}
-            onClick={() => onPick(m)}
-            className="border px-2 py-0.5 font-mono text-[9px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:bg-[var(--acc)] hover:text-[var(--on)]"
-            style={{ borderColor: "var(--rule2)", marginLeft: i ? -1 : 0 }}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 
