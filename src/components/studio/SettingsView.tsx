@@ -23,6 +23,9 @@ export function SettingsView() {
   const setNotificationsEnabled = useStore((s) => s.setNotificationsEnabled);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const setSnoozeMinutes = useStore((s) => s.setSnoozeMinutes);
+  const focusUntil = useStore((s) => s.focusUntil);
+  const setFocus = useStore((s) => s.setFocus);
+  const clearFocus = useStore((s) => s.clearFocus);
   const demoMode = useStore((s) => s.demoMode);
   const setDemoMode = useStore((s) => s.setDemoMode);
   const levelsEnabled = useStore((s) => s.levelsEnabled);
@@ -38,6 +41,8 @@ export function SettingsView() {
   const resetAll = useStore((s) => s.resetAll);
   const t = useT();
   const lunch = settings.avoidWindows[0];
+  const focusActive = focusUntil != null && Date.now() < focusUntil;
+  const focusRemaining = focusActive ? Math.max(1, Math.ceil((focusUntil! - Date.now()) / 60_000)) : 0;
   const modeLabel: Record<string, string> = {
     light: t.settings.modeLight,
     dark: t.settings.modeDark,
@@ -112,6 +117,40 @@ export function SettingsView() {
           <div className="w-24">
             <NumberInput value={snoozeMinutes} suffix="min" min={5} max={120} step={5} onChange={setSnoozeMinutes} />
           </div>
+        </Row>
+      </Section>
+
+      <Section title={t.settings.focusSection}>
+        <Row label={t.focus.start} hint={t.focus.hint}>
+          {focusActive ? (
+            <div className="flex items-center gap-2">
+              <span className="font-pixel text-[20px] leading-none tabular-nums text-[var(--fg)]">
+                {focusRemaining}
+              </span>
+              <span className="font-mono text-[9px] tracking-[0.1em] text-[var(--faint2)]">
+                {t.focus.remaining}
+              </span>
+              <button
+                className="ml-1 border border-[var(--rule2)] px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+                onClick={clearFocus}
+              >
+                {t.focus.end}
+              </button>
+            </div>
+          ) : (
+            <div className="flex">
+              {[15, 30, 60].map((m, i) => (
+                <button
+                  key={m}
+                  onClick={() => setFocus(m)}
+                  className="border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+                  style={{ borderColor: "var(--rule2)", marginLeft: i ? -1 : 0 }}
+                >
+                  {m} {t.panel.min}
+                </button>
+              ))}
+            </div>
+          )}
         </Row>
       </Section>
 

@@ -15,8 +15,10 @@ export function useScheduler(): void {
     let dayKey = "";
 
     const tick = () => {
-      const { day, notificationsEnabled, toastBlockId, showToast } = useStore.getState();
+      const { day, notificationsEnabled, focusUntil, toastBlockId, showToast } = useStore.getState();
       if (!day || !notificationsEnabled) return;
+      // Foco/DND: stay quiet for the focus window (the set stays due; it just won't ping).
+      if (focusUntil && Date.now() < focusUntil) return;
       if (day.date !== dayKey) {
         dayKey = day.date;
         notified.clear();

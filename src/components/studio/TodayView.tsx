@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { formatMinute } from "@/lib/engine";
 import type { Block, RoutineItem } from "@/lib/engine";
+import type { MuscleGroup } from "@/domain/types";
 import { exerciseContext } from "@/domain/seed";
 import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
 import { useCatalog } from "@/hooks/useCatalog";
@@ -26,9 +27,19 @@ export function TodayView() {
   const snooze = useStore((s) => s.snooze);
   const skip = useStore((s) => s.skip);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
-  const { byId, name, variantLabel } = useCatalog();
+  const logFreeSet = useStore((s) => s.logFreeSet);
+  const { all, byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
+  const [logOpen, setLogOpen] = useState(false);
+  const [stamp, setStamp] = useState<string | null>(null);
+
+  const onLogFree = (exerciseId: string, variantId?: string) => {
+    logFreeSet(exerciseId, variantId);
+    setLogOpen(false);
+    setStamp(`${name(exerciseId)} · ${t.today.logged}`);
+    window.setTimeout(() => setStamp(null), 2200);
+  };
 
   useEffect(() => {
     const handle = setInterval(() => setNow(nowMinutes()), 20_000);
@@ -152,7 +163,30 @@ export function TodayView() {
               {t.today.theDay} · {total} {t.today.sets}
             </span>
             <span className="h-px flex-1 bg-[var(--rule2)]" />
+            {stamp ? (
+              <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-[0.1em] text-[var(--acc)]">
+                <span className="ms-blink inline-block size-1.5 bg-[var(--acc)]" />
+                {stamp}
+              </span>
+            ) : (
+              <button
+                onClick={() => setLogOpen((v) => !v)}
+                className="border border-[var(--rule2)] px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.1em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+              >
+                {t.today.logFree}
+              </button>
+            )}
           </div>
+
+          {logOpen && (
+            <FreeLogPanel
+              exercises={all}
+              name={name}
+              variantLabel={variantLabel}
+              onCancel={() => setLogOpen(false)}
+              onConfirm={onLogFree}
+            />
+          )}
 
           {scheduled.length === 0 ? (
             <div className="mt-2 border border-[var(--rule2)] p-5 font-mono text-[12px] tracking-[0.04em] text-[var(--faint)]">
@@ -381,6 +415,126 @@ function NextNode({
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Quick free-set logger: pick an exercise (grouped by muscle) + a variant, then log it.
+ *  Appends a LogEntry without touching the day plan — feeds progression/balance only. */
+function FreeLogPanel({
+  exercises,
+  name,
+  variantLabel,
+  onCancel,
+  onConfirm,
+}: {
+  exercises: { id: string; muscle: MuscleGroup; axis: { id: string }[] }[];
+  name: (id: string) => string;
+  variantLabel: (exerciseId: string, variantId?: string) => string;
+  onCancel: () => void;
+  onConfirm: (exerciseId: string, variantId?: string) => void;
+}) {
+  const t = useT();
+  const [exId, setExId] = useState<string | null>(null);
+  const [variantId, setVariantId] = useState<string | undefined>(undefined);
+
+  // Group by coarse muscle for a scannable picker, names localized via the catalog.
+  const groups = useMemo(() => {
+    const order: MuscleGroup[] = ["pull", "push", "core", "legs"];
+    const byMuscle = new Map<MuscleGroup, { id: string }[]>();
+    for (const e of exercises) {
+      const arr = byMuscle.get(e.muscle) ?? [];
+      arr.push(e);
+      byMuscle.set(e.muscle, arr);
+    }
+    return order
+      .filter((m) => byMuscle.has(m))
+      .map((m) => ({ muscle: m, items: byMuscle.get(m)! }));
+  }, [exercises]);
+
+  const selected = exId ? exercises.find((e) => e.id === exId) : undefined;
+
+  const pick = (id: string) => {
+    setExId(id);
+    setVariantId(undefined); // default → bodyweight in variantLabel
+  };
+
+  return (
+    <div className="mb-3 border border-[var(--rule2)] p-3" style={{ borderLeft: "3px solid var(--acc)" }}>
+      <span className="font-mono text-[10px] font-semibold tracking-[0.16em] text-[var(--faint)]">
+        {t.today.logFreeTitle}
+      </span>
+
+      <div className="mt-2 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{t.today.logPick}</div>
+      <div className="mt-1.5 max-h-44 overflow-y-auto">
+        {groups.map((g) => (
+          <div key={g.muscle} className="mb-2">
+            <div className="mb-1 font-mono text-[9px] tracking-[0.12em] text-[var(--faint2)]">
+              {t.muscle[g.muscle].toUpperCase()}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {g.items.map((e) => {
+                const on = e.id === exId;
+                return (
+                  <button
+                    key={e.id}
+                    onClick={() => pick(e.id)}
+                    className="border px-2 py-1 font-mono text-[10px] tracking-[0.04em]"
+                    style={{
+                      borderColor: on ? "var(--acc)" : "var(--rule2)",
+                      background: on ? "var(--acc)" : "transparent",
+                      color: on ? "var(--on)" : "var(--dim)",
+                    }}
+                  >
+                    {name(e.id).toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {selected && selected.axis.length > 1 && (
+        <>
+          <div className="mt-1 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{t.today.logVariant}</div>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {selected.axis.map((v) => {
+              const on = v.id === variantId;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setVariantId(v.id)}
+                  className="border px-2 py-1 font-mono text-[10px] tracking-[0.04em]"
+                  style={{
+                    borderColor: on ? "var(--acc)" : "var(--rule2)",
+                    background: on ? "var(--acc)" : "transparent",
+                    color: on ? "var(--on)" : "var(--dim)",
+                  }}
+                >
+                  {variantLabel(selected.id, v.id).toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => exId && onConfirm(exId, variantId)}
+          disabled={!exId}
+          className="flex-1 bg-[var(--acc)] py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)] disabled:opacity-40"
+        >
+          {t.today.logConfirm}
+        </button>
+        <button
+          onClick={onCancel}
+          className="border border-[var(--rule2)] px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+        >
+          {t.today.logCancel}
+        </button>
       </div>
     </div>
   );

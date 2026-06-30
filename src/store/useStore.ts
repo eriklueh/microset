@@ -181,6 +181,8 @@ interface State {
   notificationsEnabled: boolean;
   snoozeMinutes: number;
   demoMode: boolean;
+  /** Foco/DND: epoch ms until which reminders are silenced (null = off). */
+  focusUntil: number | null;
   /** Niveles — optional RPG gamification layer in Progreso (streak + attributes + achievements). */
   levelsEnabled: boolean;
   /** When on, a single missed non-rest day doesn't break the streak. */
@@ -245,6 +247,13 @@ interface State {
   setLevelsEnabled: (value: boolean) => void;
   setStreakFreeze: (value: boolean) => void;
 
+  // focus / DND (silences reminders for a window)
+  setFocus: (minutes: number) => void;
+  clearFocus: () => void;
+
+  // quick log (free set, outside the day plan)
+  logFreeSet: (exerciseId: string, variantId?: string) => void;
+
   // data
   resetSettings: () => void;
   resetAll: () => void;
@@ -303,6 +312,7 @@ export const useStore = create<State>()(
       notificationsEnabled: true,
       snoozeMinutes: 30,
       demoMode: false,
+      focusUntil: null,
       levelsEnabled: true,
       streakFreeze: false,
 
@@ -555,6 +565,16 @@ export const useStore = create<State>()(
       setLevelsEnabled: (value) => set({ levelsEnabled: value }),
       setStreakFreeze: (value) => set({ streakFreeze: value }),
 
+      setFocus: (minutes) =>
+        set({ focusUntil: Date.now() + Math.max(1, minutes) * 60_000 }),
+      clearFocus: () => set({ focusUntil: null }),
+
+      logFreeSet: (exerciseId, variantId) => {
+        set((s) => ({
+          logs: [...s.logs, { at: new Date().toISOString(), exerciseId, variantId }],
+        }));
+      },
+
       resetSettings: () => {
         set({ settings: DEFAULT_SETTINGS, demoMode: false });
         get().replan();
@@ -580,6 +600,7 @@ export const useStore = create<State>()(
           notificationsEnabled: true,
           snoozeMinutes: 30,
           demoMode: false,
+          focusUntil: null,
           levelsEnabled: true,
           streakFreeze: false,
         });
@@ -684,13 +705,15 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         const p = persisted as Record<string, unknown>;
         delete p.methodologyId; // v3: methodology → per-day-type intensity (default normal)
         // v4: optional gamification (Niveles). Default ON; freeze OFF. Older stores lack these.
         if (typeof p.levelsEnabled !== "boolean") p.levelsEnabled = true;
         if (typeof p.streakFreeze !== "boolean") p.streakFreeze = false;
+        // v5: Foco/DND window. Older stores lack it; start cleared.
+        if (typeof p.focusUntil !== "number") p.focusUntil = null;
         if (p && (version < 1 || !p.dayTypes)) {
           const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
           p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
@@ -721,6 +744,7 @@ export const useStore = create<State>()(
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,
         demoMode: s.demoMode,
+        focusUntil: s.focusUntil,
         levelsEnabled: s.levelsEnabled,
         streakFreeze: s.streakFreeze,
       }),

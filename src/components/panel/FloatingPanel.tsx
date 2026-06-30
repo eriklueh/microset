@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Check, X } from "lucide-react";
+import { Check, Moon, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { formatMinute } from "@/lib/engine";
 import { useCatalog } from "@/hooks/useCatalog";
@@ -26,17 +26,52 @@ export function FloatingPanel() {
   const done = useStore((s) => s.done);
   const snooze = useStore((s) => s.snooze);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
+  const focusUntil = useStore((s) => s.focusUntil);
+  const setFocus = useStore((s) => s.setFocus);
+  const clearFocus = useStore((s) => s.clearFocus);
   const ensureToday = useStore((s) => s.ensureToday);
   const { byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
   const [outcome, setOutcome] = useState<string | null>(null);
+  const [showFocusPicker, setShowFocusPicker] = useState(false);
 
   useEffect(() => {
     ensureToday();
-    const handle = setInterval(() => setNow(nowMinutes()), 20_000);
+    // 10s tick keeps both the schedule clock and the focus countdown fresh.
+    const handle = setInterval(() => setNow(nowMinutes()), 10_000);
     return () => clearInterval(handle);
   }, [ensureToday]);
+
+  // ----- Foco / DND: dimmed takeover with a pixel countdown -----------------
+  const focusActive = focusUntil != null && Date.now() < focusUntil;
+  if (focusActive) {
+    const remaining = Math.max(1, Math.ceil((focusUntil! - Date.now()) / 60_000));
+    return (
+      <Shell isNow={false} dim>
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 p-2.5 text-center">
+          <span className="flex items-center gap-1.5 font-mono text-[9px] font-bold tracking-[0.22em] text-[var(--faint)]">
+            <Moon className="size-3" /> {t.focus.on}
+          </span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-pixel text-[40px] leading-[0.8] tabular-nums text-[var(--fg)]">
+              {remaining}
+            </span>
+            <span className="font-mono text-[11px] font-semibold tracking-[0.1em] text-[var(--faint)]">
+              {t.panel.min}
+            </span>
+          </div>
+          <span className="font-mono text-[8.5px] tracking-[0.16em] text-[var(--faint2)]">{t.focus.sub}</span>
+          <button
+            onClick={clearFocus}
+            className="mt-2 border border-[var(--rule2)] px-2.5 py-1 font-mono text-[9px] font-semibold tracking-[0.1em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+          >
+            {t.focus.end}
+          </button>
+        </div>
+      </Shell>
+    );
+  }
 
   // After "MÁS TARDE", briefly confirm where the set went so it never reads as "skipped".
   if (outcome) {
@@ -56,10 +91,19 @@ export function FloatingPanel() {
     .filter((b) => (b.status === "pending" || b.status === "snoozed") && b.time >= 0)
     .sort((a, b) => a.time - b.time)[0];
 
+  // Drag-bar moon button → arm Foco/DND for 15/30/60 min (inline picker in the body).
+  const focusBtn = <FocusButton open={showFocusPicker} setOpen={setShowFocusPicker} />;
+  const armFocus = (m: number) => {
+    setFocus(m);
+    setShowFocusPicker(false);
+  };
+  const focusPicker = showFocusPicker ? <FocusPicker onPick={armFocus} /> : null;
+
   // ----- Empty state -------------------------------------------------------
   if (!next) {
     return (
-      <Shell isNow={false}>
+      <Shell isNow={false} headerExtra={focusBtn}>
+        {focusPicker}
         <div className="flex flex-1 flex-col items-center justify-center gap-1.5">
           <span className="size-2 bg-[var(--faint2)]" />
           <span className="font-mono text-[9.5px] tracking-[0.16em] text-[var(--faint)] uppercase">
@@ -141,7 +185,8 @@ export function FloatingPanel() {
   const progress = Math.min(1, Math.max(0, (now - prevTime) / span));
 
   return (
-    <Shell isNow={false}>
+    <Shell isNow={false} headerExtra={focusBtn}>
+      {focusPicker}
       <div className="flex flex-1 flex-col gap-1 p-2.5">
         <span className="font-mono text-[8.5px] font-semibold tracking-[0.18em] text-[var(--faint)]">
           {t.panel.next}{muscle ? ` · ${muscle}` : ""}
@@ -192,8 +237,59 @@ export function FloatingPanel() {
   );
 }
 
-/** Window chrome: opaque frame + drag bar with a lime brand mark; lime takeover when due. */
-function Shell({ isNow, children }: { isNow: boolean; children: ReactNode }) {
+/** Drag-bar moon button that toggles the inline Foco/DND duration picker. */
+function FocusButton({ open, setOpen }: { open: boolean; setOpen: (v: boolean) => void }) {
+  const t = useT();
+  return (
+    <button
+      onClick={() => setOpen(!open)}
+      aria-label={t.focus.start}
+      title={t.focus.start}
+      className="opacity-70 hover:opacity-100"
+      style={{ color: open ? "var(--acc)" : "var(--faint2)" }}
+    >
+      <Moon className="size-3" />
+    </button>
+  );
+}
+
+/** Inline 15/30/60-min picker row shown in the panel body when the moon is armed. */
+function FocusPicker({ onPick }: { onPick: (m: number) => void }) {
+  const t = useT();
+  return (
+    <div className="flex items-center gap-1.5 border-b border-[var(--rule2)] px-2.5 py-1.5">
+      <span className="font-mono text-[8.5px] font-semibold tracking-[0.16em] text-[var(--faint)]">
+        {t.focus.label}
+      </span>
+      <div className="ml-auto flex">
+        {[15, 30, 60].map((m, i) => (
+          <button
+            key={m}
+            onClick={() => onPick(m)}
+            className="border px-2 py-0.5 font-mono text-[9px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:bg-[var(--acc)] hover:text-[var(--on)]"
+            style={{ borderColor: "var(--rule2)", marginLeft: i ? -1 : 0 }}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Window chrome: opaque frame + drag bar with a lime brand mark; lime takeover when due.
+ *  `dim` softens the whole frame for the Foco/DND state. */
+function Shell({
+  isNow,
+  dim,
+  headerExtra,
+  children,
+}: {
+  isNow: boolean;
+  dim?: boolean;
+  headerExtra?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div
       className="flex h-screen w-screen flex-col overflow-hidden border select-none"
@@ -201,6 +297,7 @@ function Shell({ isNow, children }: { isNow: boolean; children: ReactNode }) {
         background: isNow ? "var(--acc)" : "var(--bg)",
         color: isNow ? "var(--on)" : "var(--fg)",
         borderColor: isNow ? BLACK_A(0.18) : "var(--rule2)",
+        opacity: dim ? 0.82 : 1,
       }}
     >
       <div
@@ -217,14 +314,17 @@ function Shell({ isNow, children }: { isNow: boolean; children: ReactNode }) {
             microset
           </span>
         </div>
-        <button
-          onClick={() => void getCurrentWindow().hide()}
-          aria-label="Ocultar panel"
-          style={{ color: isNow ? "var(--on)" : "var(--faint2)" }}
-          className="hover:opacity-100 opacity-70"
-        >
-          <X className="size-3" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {headerExtra}
+          <button
+            onClick={() => void getCurrentWindow().hide()}
+            aria-label="Ocultar panel"
+            style={{ color: isNow ? "var(--on)" : "var(--faint2)" }}
+            className="hover:opacity-100 opacity-70"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
       </div>
       <div className="relative flex min-h-0 flex-1 flex-col">
         {!isNow && (
