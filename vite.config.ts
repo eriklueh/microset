@@ -16,6 +16,20 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep the main chunk lean. react-markdown / react-body-highlighter are already split
+        // via React.lazy (their own async chunks); here we peel the remaining big vendor libs
+        // (React runtime + Tauri API) off the entry so it stays well under the 500kB warning.
+        manualChunks: {
+          "react-vendor": ["react", "react-dom"],
+          tauri: ["@tauri-apps/api"],
+        },
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

@@ -4,6 +4,7 @@ import { openConfigFolder } from "@/lib/windows";
 import { reloadFromFiles } from "@/store/files";
 import { useT, LangSelect } from "@/lib/i18n";
 import { useStore } from "@/store/useStore";
+import { useUpdater, type CheckStatus } from "@/hooks/useUpdater";
 import { ViewHeader, CockpitRail, RailStat } from "./shell";
 import { SectionRule } from "./hud";
 import { SquareSwitch } from "./EquipmentView";
@@ -43,6 +44,7 @@ export function SettingsView() {
   const replan = useStore((s) => s.replan);
   const resetSettings = useStore((s) => s.resetSettings);
   const resetAll = useStore((s) => s.resetAll);
+  const updater = useUpdater();
   const t = useT();
   const lunch = settings.avoidWindows[0];
   const focusActive = focusUntil != null && Date.now() < focusUntil;
@@ -329,6 +331,26 @@ export function SettingsView() {
           </button>
         </Row>
       </Section>
+
+      <Section title={t.update.section}>
+        <Row label={t.update.checkLabel} hint={t.update.checkHint}>
+          <div className="flex items-center gap-3">
+            <UpdateStatus status={updater.status} version={updater.version} />
+            <button
+              className={dataBtn}
+              disabled={updater.status === "checking"}
+              onClick={() => updater.recheck()}
+            >
+              {updater.status === "checking" ? t.update.stChecking : t.update.checkBtn}
+            </button>
+          </div>
+        </Row>
+        <Row label={t.update.currentVersion}>
+          <span className="font-mono text-[12px] tabular-nums text-[var(--fg)]">
+            {updater.appVersion || "—"}
+          </span>
+        </Row>
+      </Section>
       </section>
       </div>
     </div>
@@ -357,6 +379,24 @@ function ProfileField({
         className={`${input} resize-none px-3 py-2 text-[13px] leading-[1.5] placeholder:text-[var(--faint2)]`}
       />
     </div>
+  );
+}
+
+/** Inline feedback for the manual update check — color-coded by status, version when available. */
+function UpdateStatus({ status, version }: { status: CheckStatus; version: string }) {
+  const t = useT();
+  if (status === "idle") return null;
+  const map: Record<Exclude<CheckStatus, "idle">, { text: string; color: string }> = {
+    checking: { text: t.update.stChecking, color: "var(--faint)" },
+    upToDate: { text: t.update.stUpToDate, color: "var(--faint)" },
+    available: { text: `${t.update.stAvailable} · ${version}`, color: "var(--acc)" },
+    error: { text: t.update.stError, color: "var(--destructive)" },
+  };
+  const s = map[status];
+  return (
+    <span className="font-mono text-[10px] tracking-[0.08em]" style={{ color: s.color }}>
+      {s.text}
+    </span>
   );
 }
 

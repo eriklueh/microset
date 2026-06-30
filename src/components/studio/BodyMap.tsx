@@ -1,9 +1,6 @@
-import { useMemo, type ReactNode } from "react";
-import Model, { type IExerciseData } from "react-body-highlighter";
+import { Suspense, lazy, type ReactNode } from "react";
 import {
   exerciseGroupRoles,
-  freqFor,
-  HEAT_RAMP,
   NONE_COLOR,
   SECONDARY_COLOR,
   type BodyGroup,
@@ -15,13 +12,9 @@ import { useT } from "@/lib/i18n";
 import { Corners, RegMark } from "./hud";
 import { RAIL_BODY_W, RAIL_CLASS } from "./shell";
 
-function dataFor(state: MuscleState): IExerciseData[] {
-  return Object.entries(state).map(([m, s]) => ({
-    name: m,
-    muscles: [m as IExerciseData["muscles"][number]],
-    frequency: freqFor(s.role, s.level),
-  }));
-}
+// react-body-highlighter is heavy; load its figure in a lazily-fetched chunk. The fallback is a
+// thin Manifiesto skeleton sized to the figure so the rail never jumps while it loads.
+const BodyModel = lazy(() => import("./BodyModel"));
 
 /** Front + back figures painted by role (lime/amber) and volume shade. */
 export function BodyFigures({
@@ -35,20 +28,21 @@ export function BodyFigures({
   onPick?: (muscle: string) => void;
 }) {
   const t = useT();
-  const data = useMemo(() => dataFor(state), [state]);
   return (
     <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
       {(["anterior", "posterior"] as const).map((side) => (
         <div key={side} style={{ textAlign: "center" }}>
           <div style={{ width }}>
-            <Model
-              data={data}
-              type={side}
-              bodyColor={NONE_COLOR}
-              highlightedColors={HEAT_RAMP}
-              svgStyle={{ width: "100%" }}
-              onClick={onPick ? (s) => onPick((s as { muscle: string }).muscle) : undefined}
-            />
+            <Suspense
+              fallback={
+                <div
+                  className="ms-blink bg-[var(--bar0)]"
+                  style={{ width: "100%", aspectRatio: "1 / 2.4" }}
+                />
+              }
+            >
+              <BodyModel state={state} side={side} onPick={onPick} />
+            </Suspense>
           </div>
           <div className="mt-1 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">
             {side === "anterior" ? t.body.front : t.body.back}

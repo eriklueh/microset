@@ -1,7 +1,5 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { Fragment, Suspense, lazy, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Check, History, Plus, Trash2, X } from "lucide-react";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   listCoachSessions,
   openCoach,
@@ -14,7 +12,7 @@ import { ViewHeader } from "./shell";
 import { Corners, RegMark } from "./hud";
 import { applyChanges, humanizeChange, type ProposedChange } from "@/coach/changes";
 import { getProvider, type CoachMessage } from "@/coach/provider";
-import { coachSnapshot, type CoachAlert } from "@/coach/snapshot";
+import { coachSnapshot, type CoachAlert, type CoachSnapshot } from "@/coach/snapshot";
 import { useT } from "@/lib/i18n";
 import type { Dict } from "@/lib/strings";
 import {
@@ -37,39 +35,21 @@ type Thread = {
   cwd?: string;
 };
 
-const MD: Components = {
-  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-  ul: ({ children }) => <ul className="mb-2 list-disc pl-4 last:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="mb-2 list-decimal pl-4 last:mb-0">{children}</ol>,
-  li: ({ children }) => <li className="mb-0.5">{children}</li>,
-  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
-  a: ({ children, href }) => (
-    <a href={href} className="text-[var(--acc)] underline">
-      {children}
-    </a>
-  ),
-  code: ({ children }) => (
-    <code className="bg-[var(--bar1)] px-1 py-0.5 font-mono text-[12px]">{children}</code>
-  ),
-  pre: ({ children }) => (
-    <pre className="mb-2 overflow-x-auto bg-[var(--bar1)] p-2 font-mono text-[12px] leading-[1.4] last:mb-0">
-      {children}
-    </pre>
-  ),
-  h1: ({ children }) => <div className="mt-2 mb-1 text-[14px] font-bold first:mt-0">{children}</div>,
-  h2: ({ children }) => <div className="mt-2 mb-1 text-[13.5px] font-bold first:mt-0">{children}</div>,
-  h3: ({ children }) => <div className="mt-2 mb-1 text-[13px] font-semibold first:mt-0">{children}</div>,
-  hr: () => <hr className="my-2 border-[var(--rule2)]" />,
-};
+// react-markdown + remark-gfm are heavy; load them in their own chunk, only when an assistant
+// bubble actually renders. The fallback is a thin Manifiesto skeleton (no layout jump).
+const MarkdownBody = lazy(() => import("./MarkdownBody"));
 
 function MarkdownText({ text }: { text: string }) {
   return (
-    <div className="text-[13px] leading-[1.5]">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>
-        {text}
-      </ReactMarkdown>
-    </div>
+    <Suspense
+      fallback={
+        <div className="flex h-[1.05em] items-center">
+          <span className="ms-blink h-[10px] w-24 bg-[var(--bar1)]" />
+        </div>
+      }
+    >
+      <MarkdownBody text={text} />
+    </Suspense>
   );
 }
 
@@ -253,9 +233,9 @@ export function CoachView({ onSettings }: { onSettings: () => void }) {
     },
     {
       label: t.coach.balanceTitle,
-      value: snap.balanceLabel.startsWith("Falta") ? snap.balanceLabel : t.coach.balanced,
-      tone: snap.balanceLabel.startsWith("Falta") ? "warn" : "ok",
-      onClick: snap.balanceLabel.startsWith("Falta") ? () => void send(t.coach.promptBalance) : undefined,
+      value: balanceValue(snap.balanceState, t),
+      tone: snap.balanceState.missing.length ? "warn" : "ok",
+      onClick: snap.balanceState.missing.length ? () => void send(t.coach.promptBalance) : undefined,
     },
   ];
 
@@ -572,6 +552,15 @@ function Seg({
   ) : (
     <span className={cls}>{inner}</span>
   );
+}
+
+/** Build the balance segment's value in the UI language from the structured snapshot fields:
+ *  no volume at all → "Sin volumen"; missing groups → "Falta <grupos>"; else "Equilibrado". */
+function balanceValue(state: CoachSnapshot["balanceState"], t: Dict): string {
+  if (!state.hasVolume) return t.coach.noVolume;
+  if (state.missing.length)
+    return `${t.coach.missing} ${state.missing.map((g) => t.muscle[g]).join(", ")}`;
+  return t.coach.balanced;
 }
 
 /** Render a proactive alert into a short HUD label + the full prompt sent to the coach. */

@@ -1,5 +1,5 @@
 import { EXERCISES, defaultVariantId } from "@/domain/seed";
-import { MUSCLE_LABEL, type Exercise, type MuscleGroup } from "@/domain/types";
+import { type Exercise, type MuscleGroup } from "@/domain/types";
 import { DEFAULT_INTENSITY, scaleSets } from "@/domain/intensity";
 import { effectiveSettings } from "@/lib/engine";
 import { useStore, type DayType } from "@/store/useStore";
@@ -23,7 +23,9 @@ export interface CoachSnapshot {
   feasibilityOk: boolean;
   overflow: { name: string; fits: number; total: number }[]; // day-types whose volume doesn't fit
   balance: Record<MuscleGroup, number>; // today's (or first active) day-type
-  balanceLabel: string;
+  // Structured read of the day's group balance so the UI can build a label that follows the
+  // app language (no pre-baked Spanish string). `hasVolume` false ⇒ nothing trained at all.
+  balanceState: { missing: MuscleGroup[]; hasVolume: boolean };
   readyToLevel: string[]; // exercise names ready to level up
   thisWeekSets: number;
   alerts: CoachAlert[]; // proactive nudges derived from logs + plan
@@ -59,12 +61,8 @@ export function coachSnapshot(): CoachSnapshot {
   const balDT = todayDT ?? s.dayTypes.find((d) => usedIds.has(d.id)) ?? s.dayTypes[0];
   const balance = balDT ? analyzeDay(balDT).balance : { pull: 0, push: 0, core: 0, legs: 0 };
   const missing = GROUPS.filter((g) => balance[g] === 0);
-  const hasAny = GROUPS.some((g) => balance[g] > 0);
-  const balanceLabel = !hasAny
-    ? "Sin volumen"
-    : missing.length
-      ? `Falta ${missing.map((g) => MUSCLE_LABEL[g]).join(", ")}`
-      : "Equilibrado";
+  const hasVolume = GROUPS.some((g) => balance[g] > 0);
+  const balanceState = { missing, hasVolume };
 
   const now = Date.now();
   const lastVariant: Record<string, string | undefined> = {};
@@ -113,7 +111,7 @@ export function coachSnapshot(): CoachSnapshot {
     feasibilityOk: overflow.length === 0,
     overflow,
     balance,
-    balanceLabel,
+    balanceState,
     readyToLevel,
     thisWeekSets,
     alerts,
