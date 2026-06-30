@@ -22,9 +22,29 @@ picked up.
 | **Weekly review ritual** | A Sunday coach-generated summary: done vs planned, with one-tap tweaks to next week. Closes the coach + logs + week loop. | M | 💡 |
 | **RPE quick feedback** | Optional "fácil / justo / duro" tap after DONE; feeds progression (ready-to-level today uses raw counts). | M | 💡 |
 | **Calendar / .ics integration** | Read OS calendar / meetings to dynamically extend `avoidWindows` so reminders dodge meetings. Highest-value for desk workers, biggest scope. | L | 💡 |
-| **Achievements / milestones** | Pixel "badges" for streak/volume milestones. Keep it sober, not gamified-cheesy. | M | 💡 |
+| **Achievements / milestones** | Pixel "badges" for streak/volume/level milestones — the celebratory layer *on top of* the Character sheet. Keep it sober, not gamified-cheesy. | M | 💡 |
 | **Export week as Marathon card** | Render the week/stats as a shareable HUD poster image. Doubles as real landing assets. | M | 💡 |
 | **Stats depth** | Time-of-day completion heatmap (when you actually do vs skip), balance over time, desk-vs-full completion. | M | 💡 |
+| **Comeback nudge** | Active re-engagement (not just the passive coach greeting): on launch — or via the scheduler — if the last completed set was ≥ N days ago, fire a **toast/notification** "Hace X días sin entrenar — ¿arrancamos suave?" with a one-tap **easy restart** (a short deload session). Reuses the `snapshot.ts` `inactive` alert as the trigger; configurable threshold + an anti-nag cap (don't repeat daily). The restart session is a small Night-recovery–style block. | M | 💡 |
+| **Night recovery ("Repechaje")** | If the day's sets went undone, an evening catch-up. Triggered by a nudge at a configurable hour (or a button on Hoy): take the day's **pending** sets, **triage by balance gap + a volume cap** (recover the few that best close today's gap, not all 8), and reschedule them into a **dense consecutive block** from now → a bedtime cutoff at **reduced intensity** (×0.5, calmer variants — no high-CNS work before sleep). Reuses three things already built: the tight per-day-type **window** mechanic (consecutive session), the **feasibility/balance** analysis (`analysis.ts`), and **intensity** scaling. Outcomes: *Exprés* (cram the key ones now) · *Cerrar el día* (accept it, no guilt; logs what you did) · *Pasar 1–2 a mañana* (carry-forward — small new concept, engine is day-bounded today). Optional hook: softens FORMA decay / saves the streak ("salvá el día"). Respects a bedtime guardrail (no nudges after lights-out). | M–L | 💡 |
+
+## Niveles — módulo opcional (gamificación)
+
+> **Desactivable de raíz.** Todo esto vive como una **capa derivada pura sobre `logs.json`** (al
+> estilo de `analysis.ts` / `snapshot.ts`): XP, niveles, atributos y FORMA se calculan en un módulo
+> nuevo `src/lib/levels.ts` con funciones puras, **sin acoplarse al engine ni al store**. Un flag
+> `levels` en `settings.json` (toggle en Ajustes; se ofrece prender/saltear en el onboarding) prende
+> o apaga toda la presentación; apagado, Progreso vuelve a sus stats actuales. La **progresión de
+> variantes sigue siendo core** (es lógica de entreno, no la piel del juego) — el módulo solo le pone
+> la capa RPG encima. Así se mantiene la regla "engine = timing, módulo = vista derivada".
+
+| Item | What | Effort | Status |
+|---|---|---|---|
+| **Placement test — benchmark de nivel** | Calibración de primer uso (y re-test periódico): un set a AMRAP / hold máximo por patrón de movimiento (Empuje/Tirón/Piernas/Core vía `PATTERN_PRESETS`, filtrado por equipo con `isAvailable`), auto-reportado. Cada resultado mapea a una **variante inicial** en el eje de ese ejercicio y siembra los LVL del character sheet + una **FORMA provisional** (estilo ajedrez: swings rápidos hasta N datos y después baja el K-factor). Doble valor: calibra las prescripciones reales, no solo un número. Única captura de data nueva: un registro `assessment` (resultados + fecha). Es la mitad "física" del item *Onboarding = calibration sequence* (UI/UX). | M | 💡 |
+| **"Racha" — streak de consistencia** | Días consecutivos que cumplen un umbral de "día hecho" (configurable: ≥1 serie / ≥X series / ≥% del plan; default una **dosis mínima efectiva** para que no sea cheesy). **Los días de descanso planificados son neutros** — no rompen la racha (respeta el programa, no penaliza descansar). Opcional: un **freeze/gracia** (un solo fallo no resetea una racha larga; en línea con el "sin culpa" del Repechaje). Derivable 100% de los logs + el plan de semana, **sin captura de data nueva**. Es la pieza más liviana y legible del módulo (candidata a promoverse a stat base si querés que viva fuera del toggle). Se muestra como cifra pixel en Hoy / system bar / Progreso; los hitos alimentan *Achievements*. Cruza con todo: el **Repechaje la salva**, el **Comeback nudge** salta cuando se rompe, y complementa a FORMA (consistencia binaria vs. forma continua). | M | 💡 |
+| **Character sheet — RPG stats** | Seis **atributos** = los seis grupos musculares (PECHO/ESPALDA/HOMBROS/BRAZOS/CORE/PIERNAS), cada uno con LVL, + un **NIVEL/RANGO** general. XP por serie completada = `roleWeight × variantDifficulty × intensity` — reusa los pesos de rol de `bodyGroups.ts` (prim 1 / sec 0.5) + el eje de variantes por ejercicio (variante más difícil → más XP) + intensidad del día (deload/normal/push), con rendimiento decreciente por grupo/día para que no se farmee volumen fácil. Acumulativo + permanente (solo sube); subir un atributo == el milestone "listo para subir" que ya existe. Vive en Progreso; el mapa muscular puede pintar cada grupo por LVL. Todo derivable de `logs.json` hoy. | L | 💡 |
+| **"FORMA" — momentum rating (elo)** | Un rating **volátil** (~1000 de arranque) que puede **bajar**: cada período te comparás contra tu propio baseline móvil (volumen + dificultad) — lo superás → sube, por debajo → baja, días salteados → decay (reusa las señales de inactividad / caída de volumen de `snapshot.ts` como disparadores). Elo para un jugador solo = "vos vs tu yo de antes", computable solo con los logs de series completadas. Hace dúo con el character sheet: **stats = en quién te convertiste (permanente), FORMA = cómo venís ahora (baja si aflojás).** Ladder de tiers opcional (una "liga" sobria). Una versión por adherencia (premiar cumplir el plan) necesita persistir el planeado-vs-hecho diario + el logging diferido de declines/skips. | M–L | 💡 |
+| **Off-switch + módulo aislado** | Flag `levels` en `settings.json` que gatea todo lo anterior (Ajustes + opción en onboarding); off → Progreso usa los stats actuales. Implementar XP/atributos/FORMA como funciones puras en `src/lib/levels.ts` sobre los logs, sin tocar engine/store — removible y barato de mantener. | S–M | 💡 |
 
 ## UI/UX — Marathon
 
@@ -37,7 +57,7 @@ picked up.
 | **Light-mode calibration** | Per-theme body-map ramp tokens (`--m-none/--m-sec*/--m-pri*` in `index.css`) so the model reads right on paper; on-accent text forced white in light (`--on: #fff`) so green components read as primary fills. (Optional: deepen the light accent if white contrast ever feels weak.) | M | ✅ |
 | **Equipo / Ajustes cockpit** | They use the shared `ViewHeader` but are plain full-width. Give them `SectionRule` chrome and/or a contextual rail like the other views. | M | 💡 |
 | **Motion discipline** | Codify the small Marathon motion set (blink, scan, deplete) and honor `prefers-reduced-motion`. | S | 💡 |
-| **Onboarding = calibration sequence** | First-run sets equipment / work window / goals as a HUD wizard. | M | 💡 |
+| **Onboarding = calibration sequence** | First-run sets equipment / work window / goals as a HUD wizard. If the *Niveles* module is on, its physical half = the **Placement test** (seeds level + provisional FORMA). | M | 💡 |
 | **Command palette / global hotkey** | Power-user: hotkey to "done next set" or open the panel; a Marathon command bar. | M | 💡 |
 
 ## Parked fixes / tech debt
@@ -45,10 +65,11 @@ picked up.
 | Item | What | Effort | Status |
 |---|---|---|---|
 | **Coach balance label i18n** | `snapshot.ts` builds `balanceLabel` hardcoded in Spanish; localize by deriving from `snap.balance` + `t.muscle` so it follows the UI language. | S | 🩹 |
-| **Autostart (M5)** | Launch-at-login via `tauri-plugin-autostart` — the last open box in M5. | S–M | 💡 |
+| **Manual "Buscar actualizaciones"** | `useUpdater` only runs `check()` once on mount and `UpdateBanner` shows only in the main window; add an Ajustes button to re-check on demand + show the current version (for users who dismiss the banner or keep the app open for days). | S | 💡 |
+| **Autostart — iniciar con la PC** | User-facing setting in Ajustes (default off): launch-at-login via `tauri-plugin-autostart`. The last open box in M5; explicitly requested. Pairs well with starting minimized to tray. | S–M | 🔜 |
 | **Bundle size warning** | Vite warns the main chunk is >500 kB; consider `manualChunks` / dynamic import for `react-markdown`, body-highlighter, etc. | S | 🩹 |
-| **Cross-platform release + auto-update** | `.github/workflows/release.yml` (tauri-action) builds Win + Linux, signs both, generates `latest.json`, and re-uploads stable aliases (`microset-setup-x64.exe` / `microset-x64.AppImage`). Needs the `TAURI_SIGNING_PRIVATE_KEY` repo secret + a `vX.Y.Z` tag to publish the first release (≥ v0.1.1). See [RELEASING.md](RELEASING.md). | M | ✅ |
-| **Landing — Win + Linux downloads** | OS-aware CTA picks the right stable installer (Windows `.exe` / Linux `.AppImage`, others → releases page) + explicit per-platform links. Live once the first cross-platform release is published. | S | ✅ |
+| **Cross-platform release + auto-update** | `.github/workflows/release.yml` (tauri-action) builds Win + Linux, signs both, generates `latest.json`, and re-uploads stable aliases (`microset-setup-x64.exe` / `microset-x64.AppImage`). Secret + a `vX.Y.Z` tag publish everything. **Live: v0.1.1 published 2026-06-24** (Win+Linux+`latest.json`, auto-update working). See [RELEASING.md](RELEASING.md). | M | ✅ |
+| **Landing — Win + Linux downloads** | OS-aware CTA picks the right stable installer (Windows `.exe` / Linux `.AppImage`, others → releases page) + explicit per-platform links. **Live** — both stable links resolve 200 since v0.1.1. | S | ✅ |
 | **Landing copy/screenshots refresh** | Hero mock + real app screenshots (Erik's task) and copy re-sync with the newest features (per-day schedule / night sessions, set actions HECHO·MÁS TARDE·SALTAR, default routines, proactive coach). | M | 💡 |
 
 ---
