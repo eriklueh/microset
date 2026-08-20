@@ -33,6 +33,9 @@ import { scaleSets, type IntensityId } from "@/domain/intensity";
 import { applyTheme, type Accent, type ThemeConfig, type ThemeMode } from "@/lib/theme";
 import { detectLang, type Lang } from "@/lib/strings";
 import { setPanelVisible } from "@/lib/windows";
+// Side-effect import: registers the Pausa manifest into the kernel module registry on
+// boot. Nothing reads the registry yet (Fase 0), so behavior is unchanged.
+import "@/modules/pausa/pausa";
 
 /** A named routine template that can be assigned to weekdays. */
 export interface DayType {
@@ -70,6 +73,10 @@ export interface CoachConfig {
   model: string;
   endpoint: string; // for local (OpenAI-compatible) providers
 }
+
+/** Per-module enablement (kernel). Fresh installs enable Pausa (microset's only module today).
+ *  Fresh factory each call so no default object is shared across store resets/migrations. */
+const defaultModules = (): Record<string, { enabled: boolean }> => ({ pausa: { enabled: true } });
 
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 const DEFAULT_PROFILE: UserProfile = { goals: "", diet: "", constraints: "" };
@@ -175,6 +182,8 @@ interface State {
   toastBlockId: string | null; // block currently shown in the toast window
   profile: UserProfile; // goals/diet/constraints for the AI coach
   coach: CoachConfig; // provider/model/endpoint for the AI coach
+  /** Per-module enablement (kernel registry). Dormant in Fase 0 — nothing reads it yet. */
+  modules: Record<string, { enabled: boolean }>;
 
   // preferences
   panelEnabled: boolean;
@@ -219,6 +228,9 @@ interface State {
   // coach profile + provider config
   setProfile: (patch: Partial<UserProfile>) => void;
   setCoachConfig: (patch: Partial<CoachConfig>) => void;
+
+  // modules (kernel enablement; no UI yet)
+  setModuleEnabled: (id: string, enabled: boolean) => void;
 
   // week
   setWeekDay: (index: number, slot: string) => void;
@@ -290,6 +302,33 @@ function demoBlocks(routine: RoutineItem[], owned: EquipmentId[], now: Minute): 
   );
 }
 
+/**
+ * Persist migration (zustand). Additive-only: each step defaults a newly-introduced field
+ * on older blobs without touching any existing data. Exported so it can be unit-tested
+ * directly (the persist `.persist` API isn't attached in a storage-less test env).
+ */
+export function migratePersisted(persisted: unknown, version: number): unknown {
+  const p = persisted as Record<string, unknown>;
+  delete p.methodologyId; // v3: methodology → per-day-type intensity (default normal)
+  // v4: optional gamification (Niveles). Default ON; freeze OFF. Older stores lack these.
+  if (typeof p.levelsEnabled !== "boolean") p.levelsEnabled = true;
+  if (typeof p.streakFreeze !== "boolean") p.streakFreeze = false;
+  // v5: Foco/DND window. Older stores lack it; start cleared.
+  if (typeof p.focusUntil !== "number") p.focusUntil = null;
+  // v6: kernel module registry. Older stores (v5 and below) lack it; default to Pausa
+  // enabled without touching any other field (routine/logs/settings stay intact).
+  if (!p.modules || typeof p.modules !== "object") p.modules = defaultModules();
+  if (p && (version < 1 || !p.dayTypes)) {
+    const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
+    p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
+    p.week = Array(7).fill(DEFAULT_DAYTYPE_ID);
+    p.dayKind = Array(7).fill(null);
+    delete p.routine;
+  }
+  if (p && (!p.dayOverrides || typeof p.dayOverrides !== "object")) p.dayOverrides = {};
+  return p;
+}
+
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
@@ -308,6 +347,7 @@ export const useStore = create<State>()(
       toastBlockId: null,
       profile: DEFAULT_PROFILE,
       coach: DEFAULT_COACH,
+      modules: defaultModules(),
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -489,6 +529,9 @@ export const useStore = create<State>()(
       setProfile: (patch) => set((s) => ({ profile: { ...s.profile, ...patch } })),
       setCoachConfig: (patch) => set((s) => ({ coach: { ...s.coach, ...patch } })),
 
+      setModuleEnabled: (id, enabled) =>
+        set((s) => ({ modules: { ...s.modules, [id]: { ...s.modules[id], enabled } } })),
+
       setWeekDay: (index, slot) => {
         set((s) => ({ week: s.week.map((v, i) => (i === index ? slot : v)) }));
         get().replan();
@@ -596,6 +639,7 @@ export const useStore = create<State>()(
           toastBlockId: null,
           profile: DEFAULT_PROFILE,
           coach: DEFAULT_COACH,
+          modules: defaultModules(),
           panelEnabled: true,
           notificationsEnabled: true,
           snoozeMinutes: 30,
@@ -705,25 +749,8 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 5,
-      migrate: (persisted, version) => {
-        const p = persisted as Record<string, unknown>;
-        delete p.methodologyId; // v3: methodology → per-day-type intensity (default normal)
-        // v4: optional gamification (Niveles). Default ON; freeze OFF. Older stores lack these.
-        if (typeof p.levelsEnabled !== "boolean") p.levelsEnabled = true;
-        if (typeof p.streakFreeze !== "boolean") p.streakFreeze = false;
-        // v5: Foco/DND window. Older stores lack it; start cleared.
-        if (typeof p.focusUntil !== "number") p.focusUntil = null;
-        if (p && (version < 1 || !p.dayTypes)) {
-          const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
-          p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
-          p.week = Array(7).fill(DEFAULT_DAYTYPE_ID);
-          p.dayKind = Array(7).fill(null);
-          delete p.routine;
-        }
-        if (p && (!p.dayOverrides || typeof p.dayOverrides !== "object")) p.dayOverrides = {};
-        return p;
-      },
+      version: 6,
+      migrate: migratePersisted,
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,
         dayTypes: s.dayTypes,
@@ -740,6 +767,7 @@ export const useStore = create<State>()(
         toastBlockId: s.toastBlockId,
         profile: s.profile,
         coach: s.coach,
+        modules: s.modules,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,
