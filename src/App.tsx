@@ -9,6 +9,7 @@ import { RelayBar } from "@/components/studio/hud";
 import { Sidebar, type Section } from "@/components/studio/Sidebar";
 import { CoachView } from "@/components/studio/CoachView";
 import { TodayView } from "@/components/studio/TodayView";
+import { CalendarView } from "@/components/studio/CalendarView";
 import { RoutineView } from "@/components/studio/RoutineView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { ProgressView } from "@/components/studio/ProgressView";
@@ -41,6 +42,7 @@ function App() {
         <main className="min-h-0 flex-1 overflow-y-auto">
           {section === "coach" && <CoachView onSettings={() => setSection("settings")} />}
           {section === "today" && <TodayView />}
+          {section === "calendar" && <CalendarView />}
           {section === "routine" && <RoutineView />}
           {section === "equipment" && <EquipmentView />}
           {section === "progress" && <ProgressView />}

@@ -10,6 +10,7 @@ const es = {
   nav: {
     coach: "COACH",
     today: "HOY",
+    calendar: "CALENDARIO",
     routine: "RUTINA",
     week: "SEMANA",
     equipment: "EQUIPO",
@@ -511,6 +512,19 @@ const es = {
     emptyCircuit: "Sin circuito — priorizá recuperar.",
     status: { done: "HECHA HOY", skipped: "SALTADA HOY" },
   },
+  // CALENDARIO — la agenda (semana/mes): dónde ves qué toca cada día y lo marcás.
+  // Reusa t.routine.dow, t.week.*, t.cal.* y t.entreno.* donde ya existen.
+  calendar: {
+    title: "CALENDARIO",
+    sub: "TU AGENDA — QUÉ TOCA CADA DÍA",
+    weekOf: "SEMANA DEL",
+    agenda: "AGENDA",
+    dayType: "TIPO DE DÍA",
+    pending: "PENDIENTE",
+    pickDay: "Elegí un día con salida para marcarlo",
+    todayOnly: "Solo el día de hoy se puede marcar",
+    outingOn: "SALIDA",
+  },
 };
 
 export type Dict = typeof es;
@@ -519,6 +533,7 @@ const en: Dict = {
   nav: {
     coach: "COACH",
     today: "TODAY",
+    calendar: "CALENDAR",
     routine: "ROUTINE",
     week: "WEEK",
     equipment: "GEAR",
@@ -1014,6 +1029,17 @@ const en: Dict = {
     circuit: "HOME CIRCUIT",
     emptyCircuit: "No circuit — prioritize recovery.",
     status: { done: "DONE TODAY", skipped: "SKIPPED TODAY" },
+  },
+  calendar: {
+    title: "CALENDAR",
+    sub: "YOUR AGENDA — WHAT'S ON EACH DAY",
+    weekOf: "WEEK OF",
+    agenda: "AGENDA",
+    dayType: "DAY TYPE",
+    pending: "PENDING",
+    pickDay: "Pick a day with an outing to mark it",
+    todayOnly: "Only today can be marked",
+    outingOn: "OUTING",
   },
 };
 

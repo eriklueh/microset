@@ -5,13 +5,15 @@ import { useStore } from "@/store/useStore";
 export type Section =
   | "coach"
   | "today"
+  | "calendar"
   | "routine"
   | "equipment"
   | "progress"
   | "settings";
 
-/** Numbered nav (always shown). Entreno lives inside Rutina now, not as its own route. */
-const NAV: Section[] = ["coach", "today", "routine", "equipment", "progress"];
+/** Numbered nav (always shown). CALENDARIO (the agenda) sits between HOY and RUTINA;
+ *  Entreno's per-day outing lives inside it, not as its own route. */
+const NAV: Section[] = ["coach", "today", "calendar", "routine", "equipment", "progress"];
 
 const rowBase =
   "flex w-full items-center gap-3 px-[18px] py-[13px] text-left transition-colors";
