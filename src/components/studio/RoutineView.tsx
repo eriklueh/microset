@@ -26,8 +26,10 @@ import {
   type BodyGroup,
   type Role,
 } from "@/domain/bodyGroups";
+import type { Session } from "@/modules/entreno/entreno";
 import { BodyLegend, GroupChips, ModelRail } from "./BodyMap";
 import { FeasibilityHint, FeasibilityTag } from "./Feasibility";
+import { SessionLibrary } from "./SessionLibrary";
 import { ViewHeader } from "./shell";
 
 type Mode = "list" | "crear" | "buscar";
@@ -67,6 +69,12 @@ export function RoutineView() {
   const renameDayType = useStore((s) => s.renameDayType);
   const removeDayType = useStore((s) => s.removeDayType);
   const addCustomExercise = useStore((s) => s.addCustomExercise);
+  // ENTRENO (opt-in module): unified into Rutina. With it off, the week gains no outing
+  // control and the SESIONES library never renders — Rutina is exactly today's layout.
+  const entrenoOn = useStore((s) => !!s.modules.entreno?.enabled);
+  const entrenoSessions = useStore((s) => s.entreno.sessions);
+  const entrenoWeek = useStore((s) => s.entreno.week);
+  const setEntrenoWeekDay = useStore((s) => s.setEntrenoWeekDay);
 
   const { all, byId, name, variantLabel, allEquipment, eqName } = useCatalog();
   const intensities = useIntensities();
@@ -141,6 +149,9 @@ export function RoutineView() {
   const regions = t.body.regions as Record<string, string>;
   const regionLabel = (g: BodyGroup) => regions[g].toUpperCase();
   const muscleName = (mu: string) => (t.body.muscleNames as Record<string, string>)[mu] ?? mu;
+  // Entreno outing session label (modality · location) for the per-day picker in the week strip.
+  const sessionTitle = (s: Session) =>
+    `${t.entreno.modalities[s.modality]} · ${t.entreno.locations[s.location]}`.toUpperCase();
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
   const available = all.filter(
@@ -438,6 +449,26 @@ export function RoutineView() {
                 {t.today.rest.toUpperCase()}
               </option>
             </select>
+            {/* Outing session (Entreno) — a day can be casa (day-type) + salida (session). */}
+            {entrenoOn && (
+              <select
+                value={entrenoWeek[i] ?? ""}
+                onChange={(e) => setEntrenoWeekDay(i, e.currentTarget.value || null)}
+                aria-label={`${t.entreno.outing} ${d}`}
+                title={t.entreno.outing}
+                className={`${input} mt-1 w-full appearance-none px-1.5 py-1 font-mono text-[10.5px]`}
+                style={{ color: entrenoWeek[i] ? "var(--acc)" : "var(--faint2)" }}
+              >
+                <option value="" className="bg-[var(--ink2)]">
+                  {t.entreno.none}
+                </option>
+                {entrenoSessions.map((s) => (
+                  <option key={s.id} value={s.id} className="bg-[var(--ink2)]">
+                    {sessionTitle(s)}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         );
       })}
@@ -920,6 +951,8 @@ export function RoutineView() {
             ) : (
               routine.map((r, i) => exRow(r, i))
             )}
+            {/* Entreno session library — only with the module on; else Rutina is untouched. */}
+            {entrenoOn && <SessionLibrary />}
           </div>
         </>
       )}

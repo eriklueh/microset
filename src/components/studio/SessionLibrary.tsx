@@ -14,15 +14,13 @@ import {
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
 import { dateKey, useStore } from "@/store/useStore";
-import { ViewHeader, CockpitRail, RailStat } from "./shell";
-import { SectionRule } from "./hud";
 
 /**
- * ENTRENO — Studio view for the (opt-in) training module. Lets the user build/edit
- * structured or external sessions, assign them to the 7 weekdays, and — the headline —
- * mark a session NOT DONE with a motive and see the smart adaptation the pure planner
- * returns (rest / mobility / a home-calisthenics substitution circuit). Everything is
- * gated behind `modules.entreno.enabled`; with the module off this view never mounts.
+ * SESIONES — the Entreno session library, embedded inside Rutina (opt-in module).
+ * Build/edit structured or external "outing" sessions, then mark one done / not-done
+ * to see the motive-aware adaptation the pure planner returns (rest / mobility / a
+ * home-calisthenics substitution circuit). Gated by `modules.entreno.enabled`; when the
+ * module is off this section never renders and Rutina is byte-for-byte today's layout.
  */
 
 const inputCls =
@@ -37,92 +35,45 @@ function todayKey(): string {
   return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-export function EntrenoView() {
+/** The SESIONES section: create/edit/delete the module's sessions from within Rutina. */
+export function SessionLibrary() {
   const t = useT();
   const sessions = useStore((s) => s.entreno.sessions);
-  const week = useStore((s) => s.entreno.week);
-  const setEntrenoWeekDay = useStore((s) => s.setEntrenoWeekDay);
   const addEntrenoSession = useStore((s) => s.addEntrenoSession);
-  const assigned = week.filter(Boolean).length;
-
-  const sessionTitle = (s: Session) =>
-    `${t.entreno.modalities[s.modality]} · ${t.entreno.locations[s.location]}`.toUpperCase();
 
   const newBtn =
     "border border-[var(--rule2)] px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]";
 
   return (
-    <div className="flex h-full flex-col">
-      <ViewHeader
-        kicker={t.entreno.sub}
-        title={t.entreno.title}
-        right={
-          <>
-            <button
-              onClick={() => addEntrenoSession({ modality: "calisthenics", location: "home", external: false })}
-              className={newBtn}
-            >
-              {t.entreno.newStructured}
-            </button>
-            <button
-              onClick={() => addEntrenoSession({ modality: "sport", location: "away", external: true })}
-              className={newBtn}
-            >
-              {t.entreno.newExternal}
-            </button>
-          </>
-        }
-      />
+    <div className="mt-7 border-t border-[var(--rule2)] pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--faint)]">
+          {t.entreno.sessionsTitle} · {sessions.length}
+        </span>
+        <div className="flex flex-none gap-2">
+          <button
+            onClick={() => addEntrenoSession({ modality: "calisthenics", location: "home", external: false })}
+            className={newBtn}
+          >
+            {t.entreno.newStructured}
+          </button>
+          <button
+            onClick={() => addEntrenoSession({ modality: "sport", location: "away", external: true })}
+            className={newBtn}
+          >
+            {t.entreno.newExternal}
+          </button>
+        </div>
+      </div>
 
-      <div className="flex min-h-0 flex-1">
-        <CockpitRail label={t.entreno.railLabel}>
-          <RailStat value={sessions.length} unit={t.entreno.railSessions} />
-          <div className="mt-4 border-t border-[var(--rule)] pt-3">
-            <RailStat value={`${assigned}/7`} unit={t.entreno.railAssigned} />
-          </div>
-        </CockpitRail>
-
-        <section className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
-          {/* Week assignment strip */}
-          <SectionRule index={1} label={t.entreno.weekTitle} right={t.entreno.weekHint} />
-          <div className="mt-3 flex border border-[var(--rule2)]">
-            {t.routine.dow.map((d, i) => (
-              <div key={i} className="min-w-0 flex-1 border-r border-[var(--rule)] p-2 last:border-r-0">
-                <div className="mb-1 font-mono text-[9.5px] tracking-[0.14em] text-[var(--faint)]">{d}</div>
-                <select
-                  value={week[i] ?? ""}
-                  onChange={(e) => setEntrenoWeekDay(i, e.currentTarget.value || null)}
-                  aria-label={`${t.entreno.weekTitle} ${d}`}
-                  className={`${inputCls} w-full appearance-none px-1.5 py-1 font-mono text-[10px]`}
-                  style={{ color: week[i] ? "var(--fg)" : "var(--faint2)" }}
-                >
-                  <option value="" className="bg-[var(--ink2)]">
-                    {t.entreno.none}
-                  </option>
-                  {sessions.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-[var(--ink2)]">
-                      {sessionTitle(s)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-
-          {/* Sessions */}
-          <div className="mt-7">
-            <SectionRule index={2} label={t.entreno.sessionsTitle} right={String(sessions.length)} />
-          </div>
-          <div className="mt-3 flex flex-col gap-4">
-            {sessions.length === 0 ? (
-              <p className="border border-[var(--rule2)] p-6 text-center text-[13px] text-[var(--faint)]">
-                {t.entreno.noSessions}
-              </p>
-            ) : (
-              sessions.map((s) => <SessionCard key={s.id} session={s} />)
-            )}
-          </div>
-        </section>
+      <div className="mt-4 flex flex-col gap-4">
+        {sessions.length === 0 ? (
+          <p className="border border-[var(--rule2)] p-6 text-center text-[13px] text-[var(--faint)]">
+            {t.entreno.noSessions}
+          </p>
+        ) : (
+          sessions.map((s) => <SessionCard key={s.id} session={s} />)
+        )}
       </div>
     </div>
   );

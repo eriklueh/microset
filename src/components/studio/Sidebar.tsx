@@ -8,11 +8,10 @@ export type Section =
   | "routine"
   | "equipment"
   | "progress"
-  | "entreno"
   | "settings";
 
-/** Base numbered nav (always shown). "entreno" is appended only when its module is enabled. */
-const BASE_NAV: Section[] = ["coach", "today", "routine", "equipment", "progress"];
+/** Numbered nav (always shown). Entreno lives inside Rutina now, not as its own route. */
+const NAV: Section[] = ["coach", "today", "routine", "equipment", "progress"];
 
 const rowBase =
   "flex w-full items-center gap-3 px-[18px] py-[13px] text-left transition-colors";
@@ -28,9 +27,7 @@ export function Sidebar({
   const setThemeMode = useStore((s) => s.setThemeMode);
   const isDark = resolveDark(theme.mode);
   const t = useT();
-  // ENTRENO nav appears only when its (opt-in) module is enabled; off = today's layout exactly.
-  const entrenoOn = useStore((s) => !!s.modules.entreno?.enabled);
-  const navIds = entrenoOn ? [...BASE_NAV, "entreno" as const] : BASE_NAV;
+  const navIds = NAV;
   const settingsNum = String(navIds.length + 1).padStart(2, "0");
 
   return (
