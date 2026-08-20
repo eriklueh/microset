@@ -102,6 +102,7 @@ const REGISTRY: FileGroup[] = [
       demoMode: s.demoMode,
       levelsEnabled: s.levelsEnabled,
       streakFreeze: s.streakFreeze,
+      modules: s.modules,
     }),
     apply: (s) => {
       const p: Record<string, unknown> = {};
@@ -114,6 +115,9 @@ const REGISTRY: FileGroup[] = [
         if (typeof s.demoMode === "boolean") p.demoMode = s.demoMode;
         if (typeof s.levelsEnabled === "boolean") p.levelsEnabled = s.levelsEnabled;
         if (typeof s.streakFreeze === "boolean") p.streakFreeze = s.streakFreeze;
+        // Module registry (which modules are enabled) — editable from disk so the coach/config
+        // can turn a module on/off. Reads guard with `?.enabled`, so a partial map is safe.
+        if (s.modules && typeof s.modules === "object" && !Array.isArray(s.modules)) p.modules = s.modules;
       }
       return p as Partial<State>;
     },
