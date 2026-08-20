@@ -1,5 +1,9 @@
 import { EXERCISES } from "@/domain/seed";
 import { REST, useStore } from "@/store/useStore";
+import { allModules } from "@/kernel";
+// Side-effect import: registers the Pausa manifest so the registry-aware catalog below
+// can see its tool namespace. Additive — registration is inert (just fills a Map).
+import "@/modules/pausa/pausa";
 
 /**
  * Provider-agnostic tool catalog. ONE source of truth: API/local adapters turn
@@ -309,4 +313,38 @@ export const COACH_TOOLS: CoachTool[] = [
 
 export function toolByName(name: string): CoachTool | undefined {
   return COACH_TOOLS.find((t) => t.name === name);
+}
+
+/**
+ * Which coach tools each module's namespace contributes. Today every tool lives in Pausa's
+ * routine/plan domain, so the whole catalog is registered under "pausa". A future module adds
+ * its own namespace → tools entry here (or ships its own tools) without touching this list.
+ */
+const TOOLS_BY_NAMESPACE: Record<string, CoachTool[]> = {
+  pausa: COACH_TOOLS,
+};
+
+/** The tool namespaces of the modules currently enabled (today: just Pausa). */
+export function enabledToolNamespaces(): Set<string> {
+  return new Set(allModules().filter((m) => m.defaultEnabled).map((m) => m.toolNamespace));
+}
+
+/**
+ * Registry-aware coach tool catalog: the UNION of the tools contributed by the enabled modules'
+ * namespaces. Today only Pausa is enabled → this is byte-for-byte the current `COACH_TOOLS`.
+ * As modules are added/gated, the coach's catalog follows automatically.
+ */
+export function buildCoachTools(): CoachTool[] {
+  const ns = enabledToolNamespaces();
+  const out: CoachTool[] = [];
+  const seen = new Set<string>();
+  for (const [namespace, tools] of Object.entries(TOOLS_BY_NAMESPACE)) {
+    if (!ns.has(namespace)) continue;
+    for (const t of tools) {
+      if (seen.has(t.name)) continue; // union: de-dup by tool name
+      seen.add(t.name);
+      out.push(t);
+    }
+  }
+  return out;
 }

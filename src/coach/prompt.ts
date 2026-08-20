@@ -1,4 +1,4 @@
-import { COACH_TOOLS } from "./tools";
+import { buildCoachTools } from "./tools";
 
 /**
  * System prompt for API/local providers. Trimmed Spanish view of the same contract the
@@ -24,9 +24,9 @@ Cómo actuás:
 - Mantené dayTypes con al menos 1; week y dayKind de largo 7.
 - Nunca toques los logs ni el plan del día.`;
 
-/** Tool catalog in Anthropic tool-use format. */
+/** Tool catalog in Anthropic tool-use format (registry-aware: union of enabled modules). */
 export function anthropicTools() {
-  return COACH_TOOLS.map((t) => ({
+  return buildCoachTools().map((t) => ({
     name: t.name,
     description: t.description,
     input_schema: t.params,

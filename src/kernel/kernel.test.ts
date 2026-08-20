@@ -2,7 +2,13 @@ import { describe, it, expect } from "vitest";
 import { BODY_GROUPS } from "@/domain/bodyGroups";
 import type { Exercise, LogEntry } from "@/domain/types";
 import { allModules, getModule } from "@/kernel";
-import { logEntryToEvent, pausaContribute, pausaManifest, PAUSA_SET_DONE } from "@/modules/pausa/pausa";
+import {
+  activityFromLogs,
+  logEntryToEvent,
+  pausaContribute,
+  pausaManifest,
+  PAUSA_SET_DONE,
+} from "@/modules/pausa/pausa";
 
 // A self-contained fixture with explicit fine muscles so exerciseGroupRoles is deterministic.
 const PULL: Exercise = {
@@ -60,5 +66,18 @@ describe("Fase 0 — kernel contracts + Pausa module", () => {
     expect(ev.metrics?.effortXp).toBeGreaterThan(0);
     // same log → same id (idempotent)
     expect(logEntryToEvent(log, byId).id).toBe(ev.id);
+  });
+
+  it("projects a logs stream into activity events one-to-one (metrics envelope readable)", () => {
+    const logs: LogEntry[] = [
+      { at: "2026-08-18T09:00:00.000Z", exerciseId: PULL.id, variantId: "hard" },
+      { at: "2026-08-18T10:00:00.000Z", exerciseId: PULL.id, variantId: "easy" },
+    ];
+    const events = activityFromLogs(logs, byId);
+    expect(events).toHaveLength(logs.length);
+    // one-to-one and equivalent to mapping logEntryToEvent directly (deterministic ids)
+    expect(events).toEqual(logs.map((l) => logEntryToEvent(l, byId)));
+    // a cross-cutting layer reads ONLY the metrics envelope, never the payload
+    expect(events[0].metrics?.effortXp).toBeGreaterThan(events[1].metrics!.effortXp!);
   });
 });

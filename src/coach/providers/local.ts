@@ -3,11 +3,11 @@ import { buildCoachContext } from "../context";
 import type { ProposedChange } from "../changes";
 import type { CoachMessage, CoachProvider, CoachReply } from "../provider";
 import { COACH_SYSTEM } from "../prompt";
-import { COACH_TOOLS } from "../tools";
+import { buildCoachTools } from "../tools";
 
-/** Tool catalog in OpenAI function-calling format. */
+/** Tool catalog in OpenAI function-calling format (registry-aware: union of enabled modules). */
 function openaiTools() {
-  return COACH_TOOLS.map((t) => ({
+  return buildCoachTools().map((t) => ({
     type: "function",
     function: { name: t.name, description: t.description, parameters: t.params },
   }));

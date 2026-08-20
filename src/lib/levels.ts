@@ -12,6 +12,7 @@
  */
 import { exerciseGroupRoles, BODY_GROUPS, type BodyGroup } from "@/domain/bodyGroups";
 import { intensityById, DEFAULT_INTENSITY, type IntensityId } from "@/domain/intensity";
+import { setRoleXp } from "@/domain/setContribution";
 import type { Exercise, LogEntry } from "@/domain/types";
 
 const DAY = 86_400_000;
@@ -24,13 +25,8 @@ export const DAY_DONE_THRESHOLD = 1;
 const K_GROUP = 40;
 /** Same curve for the overall rank, over total XP across all groups. */
 const K_RANK = 90;
-/** Role → XP weight (primary worth double a secondary), mirrors the body-map weights. */
-const ROLE_WEIGHT: Record<"primary" | "secondary", number> = { primary: 1, secondary: 0.5 };
-
-/** Difficulty multiplier for a variant by its index on the exercise's axis (easiest→hardest). */
-function variantDifficulty(idx: number): number {
-  return 1 + Math.max(0, idx) * 0.25;
-}
+// The per-series primitive (roleWeight × variantDifficulty) lives in the shared
+// `setRoleXp` (src/domain/setContribution.ts) — single source with the Pausa module.
 
 // ---- inputs ------------------------------------------------------------------
 
@@ -144,13 +140,15 @@ export function computeAttributes(
     const intensity = slot === plan.rest ? DEFAULT_INTENSITY : plan.intensityByDayType[slot];
     const factor = intensityById(intensity ?? DEFAULT_INTENSITY)?.factor ?? 1;
 
+    // idx<0 → variantDifficulty 1 (default rung), handled inside setRoleXp.
     const idx = ex.axis.findIndex((v) => v.id === l.variantId);
-    const diff = variantDifficulty(idx); // idx<0 → 1 (default rung)
 
     const { primary, secondary } = exerciseGroupRoles(ex);
     const day = (rawByDay[dayKey] ??= {});
+    // setRoleXp(role, idx) === ROLE_WEIGHT[role] × variantDifficulty(idx); multiplying by
+    // `factor` last preserves the exact arithmetic order of the pre-dedup code (bit-identical).
     const add = (g: BodyGroup, role: "primary" | "secondary") => {
-      day[g] = (day[g] ?? 0) + ROLE_WEIGHT[role] * diff * factor;
+      day[g] = (day[g] ?? 0) + setRoleXp(role, idx) * factor;
     };
     primary.forEach((g) => add(g, "primary"));
     secondary.forEach((g) => add(g, "secondary"));
