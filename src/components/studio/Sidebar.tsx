@@ -8,9 +8,11 @@ export type Section =
   | "routine"
   | "equipment"
   | "progress"
+  | "entreno"
   | "settings";
 
-const NAV_IDS = ["coach", "today", "routine", "equipment", "progress"] as const;
+/** Base numbered nav (always shown). "entreno" is appended only when its module is enabled. */
+const BASE_NAV: Section[] = ["coach", "today", "routine", "equipment", "progress"];
 
 const rowBase =
   "flex w-full items-center gap-3 px-[18px] py-[13px] text-left transition-colors";
@@ -26,6 +28,10 @@ export function Sidebar({
   const setThemeMode = useStore((s) => s.setThemeMode);
   const isDark = resolveDark(theme.mode);
   const t = useT();
+  // ENTRENO nav appears only when its (opt-in) module is enabled; off = today's layout exactly.
+  const entrenoOn = useStore((s) => !!s.modules.entreno?.enabled);
+  const navIds = entrenoOn ? [...BASE_NAV, "entreno" as const] : BASE_NAV;
+  const settingsNum = String(navIds.length + 1).padStart(2, "0");
 
   return (
     <aside className="flex w-[210px] shrink-0 flex-col border-r border-[var(--rule2)] bg-[var(--bg)]">
@@ -37,7 +43,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex flex-col">
-        {NAV_IDS.map((id, i) => {
+        {navIds.map((id, i) => {
           const on = active === id;
           return (
             <button
@@ -70,7 +76,7 @@ export function Sidebar({
           }`}
         >
           <span className={`font-mono text-[10px] ${active === "settings" ? "text-[var(--on)] opacity-60" : "text-[var(--faint2)]"}`}>
-            06
+            {settingsNum}
           </span>
           <span className="font-mono text-[12.5px] font-semibold tracking-[0.08em]">{t.nav.settings}</span>
         </button>

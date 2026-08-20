@@ -12,6 +12,7 @@ import { TodayView } from "@/components/studio/TodayView";
 import { RoutineView } from "@/components/studio/RoutineView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { ProgressView } from "@/components/studio/ProgressView";
+import { EntrenoView } from "@/components/studio/EntrenoView";
 import { SettingsView } from "@/components/studio/SettingsView";
 import { UpdateBanner } from "@/components/studio/UpdateBanner";
 
@@ -20,10 +21,17 @@ function App() {
   const t = useT();
   const ensureToday = useStore((s) => s.ensureToday);
   const panelEnabled = useStore((s) => s.panelEnabled);
+  // ENTRENO is an opt-in module: its view only mounts while enabled. If it's turned off
+  // while selected, fall back to Hoy so the shell never shows a dead route.
+  const entrenoOn = useStore((s) => !!s.modules.entreno?.enabled);
 
   useEffect(() => {
     ensureToday();
   }, [ensureToday]);
+
+  useEffect(() => {
+    if (section === "entreno" && !entrenoOn) setSection("today");
+  }, [section, entrenoOn]);
 
   useEffect(() => {
     void setPanelVisible(panelEnabled);
@@ -44,6 +52,7 @@ function App() {
           {section === "routine" && <RoutineView />}
           {section === "equipment" && <EquipmentView />}
           {section === "progress" && <ProgressView />}
+          {section === "entreno" && entrenoOn && <EntrenoView />}
           {section === "settings" && <SettingsView />}
         </main>
         <RelayBar />

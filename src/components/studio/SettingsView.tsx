@@ -35,6 +35,8 @@ export function SettingsView() {
   const setDemoMode = useStore((s) => s.setDemoMode);
   const levelsEnabled = useStore((s) => s.levelsEnabled);
   const setLevelsEnabled = useStore((s) => s.setLevelsEnabled);
+  const entrenoEnabled = useStore((s) => !!s.modules.entreno?.enabled);
+  const setModuleEnabled = useStore((s) => s.setModuleEnabled);
   const streakFreeze = useStore((s) => s.streakFreeze);
   const setStreakFreeze = useStore((s) => s.setStreakFreeze);
   const coach = useStore((s) => s.coach);
@@ -289,6 +291,12 @@ export function SettingsView() {
             <SquareSwitch on={streakFreeze} onClick={() => setStreakFreeze(!streakFreeze)} />
           </Row>
         )}
+      </Section>
+
+      <Section title={t.settings.modules}>
+        <Row label={t.settings.entrenoModuleLabel} hint={t.settings.entrenoModuleHint}>
+          <SquareSwitch on={entrenoEnabled} onClick={() => setModuleEnabled("entreno", !entrenoEnabled)} />
+        </Row>
       </Section>
 
       <Section title={t.settings.demo}>
