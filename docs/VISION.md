@@ -114,6 +114,20 @@ foco/DND. Depende **solo del kernel**.
 Sesiones estructuradas **multi-modalidad** (gym / deporte afuera / casa) con **reprogramación
 adaptativa cross-día**. Vive en la ventana Studio; **no** trae widget.
 
+- **No es una vista ni una semana aparte.** La **semana es única** y vive en **Rutina** (la misma
+  tira lun→dom de Pausa: day-type de casa/oficina + descanso). Entreno es una **capacidad** que se
+  *surfacea* sobre esa semana, no un calendario paralelo:
+  - **Biblioteca de sesiones** (crear/editar estructuradas o externas "salida") → sección SESIONES
+    embebida en **Rutina**.
+  - **Asignación a la semana** → un selector de "salida" por día en la misma tira semanal de Rutina
+    (`entreno.week[i]`, alineado con la `week` de Pausa). Un día puede ser *casa* (day-type) **+**
+    *salida* (sesión).
+  - **El día de hoy** → la sesión asignada aparece como un **bloque en Hoy** (con su ventana si la
+    tiene, modalidad y "afuera" si `location=away`), con las acciones HECHA / NO HECHA-con-motivo y
+    la **adaptación** del planner in-line.
+  - **Planner adaptativo** → una capacidad derivada (no una UI propia): siembra la respuesta al
+    motivo donde haga falta (Rutina/Hoy).
+  Con el módulo **apagado** (default) nada de esto se monta: Rutina/Hoy/sidebar quedan idénticas a hoy.
 - Una sesión lleva `modality` (calistenia/fuerza/deporte/cardio), `location` (casa/afuera) y
   `external` (p.ej. BJJ: no logueás series, logueás hecho/duración/intensidad).
 - **Adaptación consciente del motivo** (requisito, caso de uso real): al posponer, la sesión lleva
@@ -179,6 +193,19 @@ UI de dos niveles manejada por el registro: con **un solo módulo** se ve **exac
 hoy** (el "spine" de módulos aparece recién con el 2º módulo). Con ≥2 módulos, un hub **CONSOLA**.
 El tray + panel + toast quedan como instrumento **permanente y liviano de Pausa** (bundle separado,
 regla de import-boundary, chunk-size en CI).
+
+### Distribución y usabilidad
+- **Una sola app, no varias.** Todo (Pausa, Entreno, Nutrición) vive en el mismo binario; el usuario
+  no instala módulos por separado — los **prende/apaga** desde Ajustes. Prender es puramente aditivo;
+  apagar oculta la UI sin borrar datos.
+- **La semana es unificada.** Una sola tira lun→dom en **Rutina** manda para todos los módulos
+  (day-type de Pausa + salida de Entreno sobre el mismo día). Los módulos no traen calendarios
+  paralelos: cada uno *surfacea* sobre la semana y el "Hoy" comunes.
+- **Cada módulo se muestra donde tiene sentido**, no en una pestaña genérica: Entreno se integra en
+  Rutina (biblioteca + asignación) y en Hoy (bloque del día + adaptación), no en una vista aparte.
+- **Onboarding "¿qué querés?" — pendiente.** Un primer arranque que pregunte el objetivo (moverme en
+  la jornada / entrenar estructurado / cuidar la comida) y **prenda los módulos correspondientes**
+  con una semana sembrada. Hoy el default es solo Pausa; el resto se prende a mano.
 
 ## 8. Faseo — strangler-fig (arranca desde hoy, sin rewrite)
 

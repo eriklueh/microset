@@ -76,6 +76,8 @@ const es = {
     logCancel: "CANCELAR",
     logConfirm: "REGISTRAR",
     logged: "REGISTRADO",
+    entrenoSession: "SESIÓN DE HOY",
+    entrenoWindow: "VENTANA",
   },
   // Foco/DND: silence reminders for a window. Shared by panel + Ajustes.
   focus: {
@@ -579,6 +581,8 @@ const en: Dict = {
     logCancel: "CANCEL",
     logConfirm: "LOG",
     logged: "LOGGED",
+    entrenoSession: "TODAY'S SESSION",
+    entrenoWindow: "WINDOW",
   },
   focus: {
     label: "FOCUS",

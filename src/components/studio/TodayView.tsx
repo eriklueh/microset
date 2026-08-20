@@ -7,9 +7,16 @@ import { exerciseContext } from "@/domain/seed";
 import { aggregateState, workedGroupCount } from "@/domain/bodyGroups";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
-import { nowMinutes, useStore } from "@/store/useStore";
+import { dateKey, nowMinutes, useStore } from "@/store/useStore";
+import {
+  adaptMissedSession,
+  type AdaptContext,
+  type Session,
+  type SkipReason,
+} from "@/modules/entreno/entreno";
 import { BodyLegend, ModelRail } from "./BodyMap";
 import { FeasibilityHint } from "./Feasibility";
+import { AdaptationPanel } from "./SessionLibrary";
 import { ViewHeader } from "./shell";
 import { Barcode, Corners, RegMark, SectionRule } from "./hud";
 
@@ -20,6 +27,135 @@ const hh = (min: number) => pad(Math.round(min / 60));
 /** Show the quick actions only when the set is due or this many minutes away. */
 const ACTION_THRESHOLD_MIN = 5;
 
+const SKIP_REASONS: SkipReason[] = ["enfermo", "lesionado", "ocupado", "viajando"];
+
+/** Canonical `YYYY-M-D` key for today (matches the Entreno outcome records). */
+function todayKey(): string {
+  const d = new Date();
+  return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/**
+ * Today's ENTRENO session as a block on Hoy's day view: title (modality · location), its
+ * window time if set, an "outing" tag when away, the day's outcome, and the two canonical
+ * actions — mark DONE (logEntrenoSession) or NOT DONE with a motive (skipEntrenoSession),
+ * which surfaces the motive-aware adaptation from the pure planner (rest / mobility / a home
+ * substitution circuit). Rendered only when the module is on and a session is assigned today.
+ */
+function EntrenoDayBlock({ session }: { session: Session }) {
+  const t = useT();
+  const { all, byId } = useCatalog();
+  const owned = useStore((s) => s.ownedEquipment);
+  const records = useStore((s) => s.entreno.records);
+  const logEntrenoSession = useStore((s) => s.logEntrenoSession);
+  const skipEntrenoSession = useStore((s) => s.skipEntrenoSession);
+
+  const [reasonsOpen, setReasonsOpen] = useState(false);
+  const [picked, setPicked] = useState<SkipReason | null>(null);
+
+  // Small injected planner context (never from the store): catalog + owned equipment.
+  const ctx: AdaptContext = useMemo(() => ({ byId, catalog: all, owned }), [byId, all, owned]);
+
+  const todayK = todayKey();
+  const todayRec = [...records].reverse().find((r) => r.sessionId === session.id && r.date === todayK);
+  const isDone = todayRec?.status === "done";
+  // Reason in effect: the one just picked this session, else a persisted skip for today.
+  const reason = picked ?? (todayRec?.status === "skipped" ? (todayRec.reason ?? null) : null);
+  const adapt = reason && !isDone ? adaptMissedSession(session, reason, ctx) : null;
+
+  const onReason = (r: SkipReason) => {
+    skipEntrenoSession(session.id, r);
+    setPicked(r);
+    setReasonsOpen(false);
+  };
+  const onDone = () => {
+    logEntrenoSession(session.id);
+    setPicked(null);
+    setReasonsOpen(false);
+  };
+
+  const title = metaLine([t.entreno.modalities[session.modality], t.entreno.locations[session.location]]).toUpperCase();
+  const win = session.window;
+
+  return (
+    <div className="mb-4 border border-[var(--rule2)] p-4" style={{ borderLeft: "3px solid var(--acc)" }}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="font-mono text-[10px] font-semibold tracking-[0.2em] text-[var(--faint)]">
+            {t.today.entrenoSession}
+          </div>
+          <div className="mt-1.5 truncate text-[26px] leading-[0.95] font-extrabold tracking-[-0.03em] text-[var(--fg)] uppercase">
+            {title}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 font-mono text-[10px] tracking-[0.1em]">
+            <span className="text-[var(--faint2)]">
+              {session.external ? t.entreno.external : t.entreno.structured}
+            </span>
+            {session.location === "away" && (
+              <span className="border border-[var(--rule2)] px-1.5 py-0.5 text-[var(--faint)]">
+                {t.entreno.outing}
+              </span>
+            )}
+            {isDone && <span className="text-[var(--acc)]">{t.entreno.status.done}</span>}
+            {reason && !isDone && (
+              <span className="text-[var(--faint2)]">
+                {t.entreno.status.skipped} · {t.entreno.reasons[reason]}
+              </span>
+            )}
+          </div>
+        </div>
+        {win && (
+          <div className="flex-none text-right">
+            <div className="font-pixel text-[30px] leading-[0.8] tabular-nums text-[var(--fg)]">
+              {formatMinute(win.start)}
+            </div>
+            <div className="mt-1 font-mono text-[9px] tracking-[0.16em] text-[var(--faint2)]">
+              → {formatMinute(win.end)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          onClick={onDone}
+          className="bg-[var(--acc)] px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)]"
+        >
+          {t.entreno.markDone}
+        </button>
+        <button
+          onClick={() => setReasonsOpen((v) => !v)}
+          aria-expanded={reasonsOpen}
+          className="border border-[var(--rule2)] px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+        >
+          {t.entreno.markMissed}
+        </button>
+      </div>
+
+      {reasonsOpen && (
+        <div className="mt-3">
+          <div className="mb-2 font-mono text-[9px] tracking-[0.16em] text-[var(--faint)]">
+            {t.entreno.reasonTitle}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {SKIP_REASONS.map((r) => (
+              <button
+                key={r}
+                onClick={() => onReason(r)}
+                className="border border-[var(--rule2)] px-3 py-1.5 font-mono text-[11px] tracking-[0.04em] text-[var(--dim)] hover:border-[var(--acc)] hover:text-[var(--acc)]"
+              >
+                {t.entreno.reasons[r]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {adapt && <AdaptationPanel adapt={adapt} />}
+    </div>
+  );
+}
+
 export function TodayView() {
   const day = useStore((s) => s.day);
   const settings = useStore((s) => s.settings);
@@ -29,6 +165,11 @@ export function TodayView() {
   const skip = useStore((s) => s.skip);
   const snoozeMinutes = useStore((s) => s.snoozeMinutes);
   const logFreeSet = useStore((s) => s.logFreeSet);
+  // ENTRENO (opt-in module): surface the day's assigned session as a block on Hoy. With the
+  // module off, `entrenoOn` is false → nothing below renders and Hoy is byte-for-byte today's.
+  const entrenoOn = useStore((s) => !!s.modules.entreno?.enabled);
+  const entrenoSessions = useStore((s) => s.entreno.sessions);
+  const entrenoWeek = useStore((s) => s.entreno.week);
   const { all, byId, name, variantLabel } = useCatalog();
   const t = useT();
   const [now, setNow] = useState(nowMinutes());
@@ -48,7 +189,12 @@ export function TodayView() {
   }, []);
 
   if (!day) return null;
-  const weekday = t.today.weekdays[(new Date().getDay() + 6) % 7];
+  const weekdayIdx = (new Date().getDay() + 6) % 7; // Mon-first, aligned with entreno.week
+  const weekday = t.today.weekdays[weekdayIdx];
+  // Today's Entreno session (if the module is on and a session is assigned to this weekday).
+  const entrenoSession = entrenoOn
+    ? entrenoSessions.find((s) => s.id === entrenoWeek[weekdayIdx])
+    : undefined;
 
   if (day.rest) {
     return (
@@ -57,7 +203,13 @@ export function TodayView() {
           kicker={metaLine([weekday, t.today.rest, `${hh(settings.workWindow.start)}–${hh(settings.workWindow.end)}H`])}
           title={t.today.title}
         />
-        <div className="flex min-h-0 flex-1 items-center justify-center p-8">
+        <div
+          className={
+            entrenoSession
+              ? "flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto p-8"
+              : "flex min-h-0 flex-1 items-center justify-center p-8"
+          }
+        >
           <div className="relative w-full max-w-[560px] border border-[var(--rule2)] p-10">
             <Corners />
             <RegMark className="top-3 left-1/2 -translate-x-1/2" />
@@ -106,6 +258,11 @@ export function TodayView() {
               </span>
             </div>
           </div>
+          {entrenoSession && (
+            <div className="w-full max-w-[560px]">
+              <EntrenoDayBlock session={entrenoSession} />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -199,6 +356,7 @@ export function TodayView() {
 
         {/* RIGHT PANE — the day as a relay track (scrolls) */}
         <section className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">
+          {entrenoSession && <EntrenoDayBlock session={entrenoSession} />}
           <div className="mb-2 flex items-center gap-3">
             <span className="font-mono text-[11px] font-semibold tracking-[0.18em] text-[var(--faint)]">
               {t.today.theDay} · {total} {t.today.sets}

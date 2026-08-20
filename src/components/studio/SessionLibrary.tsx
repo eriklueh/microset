@@ -318,7 +318,8 @@ function SessionCard({ session }: { session: Session }) {
   );
 }
 
-function AdaptationPanel({ adapt }: { adapt: Adaptation }) {
+/** The motive-aware adaptation readout (kind + note + home circuit). Shared with Hoy. */
+export function AdaptationPanel({ adapt }: { adapt: Adaptation }) {
   const t = useT();
   const { name } = useCatalog();
   const kindLabel =
