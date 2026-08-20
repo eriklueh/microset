@@ -194,15 +194,30 @@ hoy** (el "spine" de módulos aparece recién con el 2º módulo). Con ≥2 mód
 El tray + panel + toast quedan como instrumento **permanente y liviano de Pausa** (bundle separado,
 regla de import-boundary, chunk-size en CI).
 
+### Modelo de superficies (Rutina · Calendario · Hoy)
+Tres superficies, cada una con UNA responsabilidad — separar *diseñar* de *agendar* de *ejecutar*:
+- **Rutina = diseño.** La biblioteca de *actividades* que hacés. Cada actividad tiene un **modo**:
+  **repartido** (calistenia en casa, se reparte en el día), **bloque** (a una hora fija — calistenia
+  noche o gym; loguea series) o **deporte** (afuera — BJJ, correr; se marca *hecho + duración +
+  intensidad*, sin series). Rutina NO tiene semana ni estado de "hecho": solo se define acá.
+  → Esto **colapsa** la vieja dualidad "tipos de día vs sesiones": una sola lista, un campo `modo`.
+  Deja de existir la "sesión estructurada de casa" que duplicaba un day-type; day-types cubren
+  repartido/bloque (con series), y Entreno solo aporta el modo *deporte* (externo).
+- **Calendario = agenda (nivel kernel).** Dónde ves qué toca cada día (semana/mes), asignás
+  actividades a los días, y marcás **hecho / no-hecho** (los deportes con motivo → adaptación; las
+  rutinas de series derivan su estado de lo logueado). **Compone lo que cada módulo activo pone en el
+  día** — hoy calistenia + deportes; con Nutrición, + las comidas y si cumpliste el target. Absorbe el
+  "MES" (overrides por fecha) que hoy vive dentro de Rutina.
+- **Hoy = ejecución en vivo.** El loop grease-the-groove del día (panel flotante + toast +
+  recordatorios). Es el "zoom de hoy" del calendario; queda como vista propia (la cara liviana de Pausa).
+Definís una vez (Rutina) → armás la semana (Calendario) → lo vivís (Hoy). Separar *definir* de *asignar*
+es sano (definís una rutina una vez, la ponés en días muchas veces) — distinto de la vieja redundancia
+de definir lo mismo en dos lados.
+
 ### Distribución y usabilidad
 - **Una sola app, no varias.** Todo (Pausa, Entreno, Nutrición) vive en el mismo binario; el usuario
-  no instala módulos por separado — los **prende/apaga** desde Ajustes. Prender es puramente aditivo;
-  apagar oculta la UI sin borrar datos.
-- **La semana es unificada.** Una sola tira lun→dom en **Rutina** manda para todos los módulos
-  (day-type de Pausa + salida de Entreno sobre el mismo día). Los módulos no traen calendarios
-  paralelos: cada uno *surfacea* sobre la semana y el "Hoy" comunes.
-- **Cada módulo se muestra donde tiene sentido**, no en una pestaña genérica: Entreno se integra en
-  Rutina (biblioteca + asignación) y en Hoy (bloque del día + adaptación), no en una vista aparte.
+  no instala módulos por separado — los **prende/apaga** desde Ajustes. Prender es aditivo; apagar
+  oculta la UI sin borrar datos.
 - **Onboarding "¿qué querés?" — pendiente.** Un primer arranque que pregunte el objetivo (moverme en
   la jornada / entrenar estructurado / cuidar la comida) y **prenda los módulos correspondientes**
   con una semana sembrada. Hoy el default es solo Pausa; el resto se prende a mano.
