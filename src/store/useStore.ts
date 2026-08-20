@@ -36,6 +36,10 @@ import { setPanelVisible } from "@/lib/windows";
 // Side-effect import: registers the Pausa manifest into the kernel module registry on
 // boot. Nothing reads the registry yet (Fase 0), so behavior is unchanged.
 import "@/modules/pausa/pausa";
+// Side-effect import: registers the Entreno manifest (net-new module, default OFF). With the
+// module disabled (the default) nothing reads it, so the app behaves exactly as today.
+import "@/modules/entreno/entreno";
+import type { Modality, Session, SessionLocation, SkipReason } from "@/modules/entreno/entreno";
 
 /** A named routine template that can be assigned to weekdays. */
 export interface DayType {
@@ -77,6 +81,48 @@ export interface CoachConfig {
 /** Per-module enablement (kernel). Fresh installs enable Pausa (microset's only module today).
  *  Fresh factory each call so no default object is shared across store resets/migrations. */
 const defaultModules = (): Record<string, { enabled: boolean }> => ({ pausa: { enabled: true } });
+
+// ── Entreno module state (persisted; dormant until the module is enabled) ────────
+/** A logged outcome of a training session on a given day. */
+export interface EntrenoRecord {
+  id: string;
+  sessionId: string;
+  date: string; // `YYYY-M-D`
+  at: string; // ISO
+  status: "done" | "skipped";
+  /** Present when skipped — the motive that drives the adaptive planner. */
+  reason?: SkipReason;
+}
+
+/** Owned slice for the Entreno module: its sessions, weekly program, and outcome log. */
+export interface EntrenoState {
+  sessions: Session[];
+  /** length 7, Mon-first: a sessionId or null (rest / unassigned). */
+  week: (string | null)[];
+  records: EntrenoRecord[];
+}
+
+/** Fresh, empty Entreno state — the default in blank installs and old (pre-v7) blobs. */
+const defaultEntreno = (): EntrenoState => ({ sessions: [], week: Array(7).fill(null), records: [] });
+
+/** Input for creating a session (the store assigns the id + shapes the union). */
+export interface NewSessionInput {
+  modality: Modality;
+  location: SessionLocation;
+  external: boolean;
+  durationMin?: number;
+  intensity?: number;
+}
+
+/** Patch for editing a session (only fields relevant to its kind are applied). */
+export interface SessionPatch {
+  modality?: Modality;
+  location?: SessionLocation;
+  durationMin?: number;
+  intensity?: number;
+}
+
+const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 
 const DEFAULT_THEME: ThemeConfig = { mode: "dark", accent: "lime" };
 const DEFAULT_PROFILE: UserProfile = { goals: "", diet: "", constraints: "" };
@@ -182,8 +228,10 @@ interface State {
   toastBlockId: string | null; // block currently shown in the toast window
   profile: UserProfile; // goals/diet/constraints for the AI coach
   coach: CoachConfig; // provider/model/endpoint for the AI coach
-  /** Per-module enablement (kernel registry). Dormant in Fase 0 — nothing reads it yet. */
+  /** Per-module enablement (kernel registry). Read by the shell to mount enabled modules. */
   modules: Record<string, { enabled: boolean }>;
+  /** Entreno module's owned state (sessions/program/log). Dormant while the module is off. */
+  entreno: EntrenoState;
 
   // preferences
   panelEnabled: boolean;
@@ -229,8 +277,18 @@ interface State {
   setProfile: (patch: Partial<UserProfile>) => void;
   setCoachConfig: (patch: Partial<CoachConfig>) => void;
 
-  // modules (kernel enablement; no UI yet)
+  // modules (kernel enablement)
   setModuleEnabled: (id: string, enabled: boolean) => void;
+
+  // entreno module (create / edit / program / log / skip-with-reason a session)
+  addEntrenoSession: (input: NewSessionInput) => string;
+  updateEntrenoSession: (id: string, patch: SessionPatch) => void;
+  removeEntrenoSession: (id: string) => void;
+  addEntrenoItem: (sessionId: string, item: RoutineItem) => void;
+  removeEntrenoItem: (sessionId: string, exerciseId: string) => void;
+  setEntrenoWeekDay: (index: number, sessionId: string | null) => void;
+  logEntrenoSession: (sessionId: string) => void;
+  skipEntrenoSession: (sessionId: string, reason: SkipReason) => void;
 
   // week
   setWeekDay: (index: number, slot: string) => void;
@@ -318,6 +376,9 @@ export function migratePersisted(persisted: unknown, version: number): unknown {
   // v6: kernel module registry. Older stores (v5 and below) lack it; default to Pausa
   // enabled without touching any other field (routine/logs/settings stay intact).
   if (!p.modules || typeof p.modules !== "object") p.modules = defaultModules();
+  // v7: Entreno module state. Older stores (v6 and below) lack it; default to EMPTY
+  // without touching any other field (routine/logs/settings/modules stay intact).
+  if (!p.entreno || typeof p.entreno !== "object" || Array.isArray(p.entreno)) p.entreno = defaultEntreno();
   if (p && (version < 1 || !p.dayTypes)) {
     const routine = (p.routine as RoutineItem[]) ?? DEFAULT_ROUTINE;
     p.dayTypes = [{ id: DEFAULT_DAYTYPE_ID, name: "Estándar", routine }];
@@ -348,6 +409,7 @@ export const useStore = create<State>()(
       profile: DEFAULT_PROFILE,
       coach: DEFAULT_COACH,
       modules: defaultModules(),
+      entreno: defaultEntreno(),
       panelEnabled: true,
       notificationsEnabled: true,
       snoozeMinutes: 30,
@@ -532,6 +594,115 @@ export const useStore = create<State>()(
       setModuleEnabled: (id, enabled) =>
         set((s) => ({ modules: { ...s.modules, [id]: { ...s.modules[id], enabled } } })),
 
+      addEntrenoSession: (input) => {
+        const id = newId();
+        const session: Session = input.external
+          ? {
+              id,
+              modality: input.modality,
+              location: input.location,
+              external: true,
+              durationMin: Math.max(0, input.durationMin ?? 45),
+              intensity: clamp01(input.intensity ?? 0.7),
+            }
+          : { id, modality: input.modality, location: input.location, external: false, items: [] };
+        set((s) => ({ entreno: { ...s.entreno, sessions: [...s.entreno.sessions, session] } }));
+        return id;
+      },
+
+      updateEntrenoSession: (id, patch) =>
+        set((s) => ({
+          entreno: {
+            ...s.entreno,
+            sessions: s.entreno.sessions.map((ss) => {
+              if (ss.id !== id) return ss;
+              const next = { ...ss } as Session;
+              if (patch.modality) next.modality = patch.modality;
+              if (patch.location) next.location = patch.location;
+              if (next.external) {
+                if (patch.durationMin != null) next.durationMin = Math.max(0, patch.durationMin);
+                if (patch.intensity != null) next.intensity = clamp01(patch.intensity);
+              }
+              return next;
+            }),
+          },
+        })),
+
+      removeEntrenoSession: (id) =>
+        set((s) => ({
+          entreno: {
+            sessions: s.entreno.sessions.filter((ss) => ss.id !== id),
+            week: s.entreno.week.map((w) => (w === id ? null : w)),
+            records: s.entreno.records.filter((r) => r.sessionId !== id),
+          },
+        })),
+
+      addEntrenoItem: (sessionId, item) =>
+        set((s) => ({
+          entreno: {
+            ...s.entreno,
+            sessions: s.entreno.sessions.map((ss) =>
+              ss.id === sessionId && !ss.external
+                ? {
+                    ...ss,
+                    items: ss.items.some((it) => it.exerciseId === item.exerciseId)
+                      ? ss.items
+                      : [...ss.items, item],
+                  }
+                : ss,
+            ),
+          },
+        })),
+
+      removeEntrenoItem: (sessionId, exerciseId) =>
+        set((s) => ({
+          entreno: {
+            ...s.entreno,
+            sessions: s.entreno.sessions.map((ss) =>
+              ss.id === sessionId && !ss.external
+                ? { ...ss, items: ss.items.filter((it) => it.exerciseId !== exerciseId) }
+                : ss,
+            ),
+          },
+        })),
+
+      setEntrenoWeekDay: (index, sessionId) =>
+        set((s) => ({
+          entreno: {
+            ...s.entreno,
+            week: s.entreno.week.map((w, i) => (i === index ? sessionId : w)),
+          },
+        })),
+
+      logEntrenoSession: (sessionId) =>
+        set((s) => ({
+          entreno: {
+            ...s.entreno,
+            records: [
+              ...s.entreno.records,
+              { id: newId(), sessionId, date: todayKey(), at: new Date().toISOString(), status: "done" },
+            ],
+          },
+        })),
+
+      skipEntrenoSession: (sessionId, reason) =>
+        set((s) => ({
+          entreno: {
+            ...s.entreno,
+            records: [
+              ...s.entreno.records,
+              {
+                id: newId(),
+                sessionId,
+                date: todayKey(),
+                at: new Date().toISOString(),
+                status: "skipped",
+                reason,
+              },
+            ],
+          },
+        })),
+
       setWeekDay: (index, slot) => {
         set((s) => ({ week: s.week.map((v, i) => (i === index ? slot : v)) }));
         get().replan();
@@ -640,6 +811,7 @@ export const useStore = create<State>()(
           profile: DEFAULT_PROFILE,
           coach: DEFAULT_COACH,
           modules: defaultModules(),
+          entreno: defaultEntreno(),
           panelEnabled: true,
           notificationsEnabled: true,
           snoozeMinutes: 30,
@@ -749,7 +921,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 6,
+      version: 7,
       migrate: migratePersisted,
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,
@@ -768,6 +940,7 @@ export const useStore = create<State>()(
         profile: s.profile,
         coach: s.coach,
         modules: s.modules,
+        entreno: s.entreno,
         panelEnabled: s.panelEnabled,
         notificationsEnabled: s.notificationsEnabled,
         snoozeMinutes: s.snoozeMinutes,

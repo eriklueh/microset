@@ -49,6 +49,29 @@ const isExercise = (e: any): boolean =>
   e.axis.length > 0 &&
   e.axis.every(isVariant);
 
+// --- entreno module config validation --------------------------------------
+const MODALITIES = new Set(["calisthenics", "strength", "sport", "cardio"]);
+const LOCATIONS = new Set(["home", "away"]);
+const SKIP_REASONS = new Set(["enfermo", "lesionado", "ocupado", "viajando"]);
+/** A routine item inside a structured session (only id/name/sets are load-bearing). */
+const isSessionItem = (it: any): boolean =>
+  it && typeof it.exerciseId === "string" && typeof it.name === "string" && typeof it.sets === "number";
+/** A training session on disk — narrows the structured/external union defensively. */
+const isSession = (s: any): boolean => {
+  if (!s || typeof s.id !== "string" || !MODALITIES.has(s.modality) || !LOCATIONS.has(s.location)) return false;
+  return s.external === true
+    ? typeof s.durationMin === "number" && typeof s.intensity === "number"
+    : s.external === false && Array.isArray(s.items);
+};
+/** A logged outcome record (done/skipped, with a valid motive when skipped). */
+const isEntrenoRecord = (r: any): boolean =>
+  r &&
+  typeof r.id === "string" &&
+  typeof r.sessionId === "string" &&
+  typeof r.date === "string" &&
+  typeof r.at === "string" &&
+  (r.status === "done" || (r.status === "skipped" && SKIP_REASONS.has(r.reason)));
+
 /**
  * A module's file-group: one JSON file on disk plus how to move it to/from the store.
  *  - select:   store state -> the object written to `name`.
@@ -196,6 +219,35 @@ const REGISTRY: FileGroup[] = [
     apply: (logs) => (Array.isArray(logs) ? ({ logs } as Partial<State>) : {}),
     sanitize: (out) => {
       if (out.logs !== undefined && !Array.isArray(out.logs)) delete out.logs;
+    },
+  },
+  {
+    // Entreno module (net-new). Owns the training sessions, weekly program and outcome log.
+    // Dormant while the module is disabled, but its config still round-trips to disk.
+    name: "entreno.json",
+    select: (s) => s.entreno,
+    apply: (e) =>
+      e && typeof e === "object" && !Array.isArray(e) ? ({ entreno: e } as Partial<State>) : {},
+    // Defensive: drop malformed sessions/records, keep week length 7 with valid sessionIds.
+    sanitize: (out, cur) => {
+      if (out.entreno === undefined) return;
+      const e = out.entreno as any;
+      if (!e || typeof e !== "object" || Array.isArray(e)) {
+        out.entreno = cur.entreno;
+        return;
+      }
+      const sessions = Array.isArray(e.sessions)
+        ? (e.sessions as any[]).filter(isSession).map((s: any) => (s.external ? s : { ...s, items: (s.items as any[]).filter(isSessionItem) }))
+        : [];
+      const ids = new Set<string>(sessions.map((s: any) => s.id));
+      const week = Array.from({ length: 7 }, (_, i) => {
+        const w = Array.isArray(e.week) ? e.week[i] : null;
+        return typeof w === "string" && ids.has(w) ? w : null;
+      });
+      const records = Array.isArray(e.records)
+        ? (e.records as any[]).filter((r) => isEntrenoRecord(r) && ids.has(r.sessionId))
+        : [];
+      out.entreno = { sessions, week, records };
     },
   },
   {
