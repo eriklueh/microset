@@ -222,7 +222,7 @@ const es = {
   },
   routine: {
     title: "RUTINA",
-    sub: "ARMÁ CADA TIPO DE DÍA",
+    sub: "BIBLIOTECA DE ACTIVIDADES",
     noDayTypes: "No hay tipos de día. Restablecé desde Ajustes o creá uno.",
     dow: ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"],
     newDayType: "Nuevo",
@@ -296,6 +296,17 @@ const es = {
     patternWord: "Patrón",
     musclesWord: "músculos",
     musclesPickHint: "tocá un chip o el cuerpo · off → primario → secundario",
+    // — biblioteca de actividades (rutinas de series + deportes externos) —
+    routines: "RUTINAS",
+    sports: "DEPORTES",
+    sportShort: "DEPORTE",
+    noSports: "Sin deportes. Sumá uno con ＋ DEPORTE.",
+    modeLabel: "MODO",
+    modeSpread: "REPARTIDO",
+    modeBlock: "BLOQUE",
+    sportEditKicker: "DEPORTE · EXTERNA",
+    sportHint:
+      "Un deporte se marca hecho, con duración e intensidad, en el Calendario. Acá solo lo definís.",
   },
   progress: {
     title: "PROGRESO",
@@ -740,7 +751,7 @@ const en: Dict = {
   },
   routine: {
     title: "ROUTINE",
-    sub: "BUILD EACH DAY TYPE",
+    sub: "ACTIVITY LIBRARY",
     noDayTypes: "No day types. Reset from Settings or create one.",
     dow: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
     newDayType: "New",
@@ -814,6 +825,17 @@ const en: Dict = {
     patternWord: "Pattern",
     musclesWord: "muscles",
     musclesPickHint: "tap a chip or the body · off → primary → secondary",
+    // — activity library (series routines + external sports) —
+    routines: "ROUTINES",
+    sports: "SPORTS",
+    sportShort: "SPORT",
+    noSports: "No sports yet. Add one with ＋ SPORT.",
+    modeLabel: "MODE",
+    modeSpread: "SPREAD",
+    modeBlock: "BLOCK",
+    sportEditKicker: "SPORT · EXTERNAL",
+    sportHint:
+      "A sport is marked done, with duration and intensity, in the Calendar. Here you just define it.",
   },
   progress: {
     title: "PROGRESS",

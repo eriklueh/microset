@@ -8,7 +8,7 @@ import { scaleSets } from "@/domain/intensity";
 import type { EquipmentId, ExerciseContext, Measure, MuscleGroup } from "@/domain/types";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useT } from "@/lib/i18n";
-import { REST, dateKey, effectiveKind, effectiveSlot, useStore } from "@/store/useStore";
+import { useStore } from "@/store/useStore";
 import {
   BODY_GROUPS,
   GROUP_MUSCLES,
@@ -29,10 +29,12 @@ import {
 import type { Session } from "@/modules/entreno/entreno";
 import { BodyLegend, GroupChips, ModelRail } from "./BodyMap";
 import { FeasibilityHint, FeasibilityTag } from "./Feasibility";
-import { SessionLibrary } from "./SessionLibrary";
+import { SportEditor } from "./SessionLibrary";
 import { ViewHeader } from "./shell";
 
 type Mode = "list" | "crear" | "buscar";
+/** The active activity in the library: a day-type (series routine) or a sport (external). */
+type Active = { kind: "day"; id: string } | { kind: "sport"; id: string };
 
 /** Pattern selector order (Empuje · Tirón · Piernas · Core). */
 const PATTERN_ORDER: MuscleGroup[] = ["push", "pull", "legs", "core"];
@@ -43,18 +45,23 @@ const input =
   "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
 const stepBtn =
   "grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]";
-const todayIdx = (new Date().getDay() + 6) % 7; // Mon=0 … Sun=6
 
+/**
+ * RUTINA = DISEÑO PURO (VISION §7 "Modelo de superficies"). The activity library: you
+ * DEFINE what you do, you don't schedule or execute it here.
+ *  - RUTINAS: the day-types (series routines). Mode "repartido" if they have no window
+ *    (spread across the day) or "bloque" if they carry their own schedule window.
+ *  - DEPORTES: the external Entreno sessions (sport/outing: name, away, duration,
+ *    intensity), shown only when `modules.entreno.enabled`. A sport is marked hecho +
+ *    duración + intensidad in Calendario — never here.
+ * Assigning activities to weekdays (the week strip), the month overrides and the
+ * hecho/no-hecho runtime state all moved to CALENDARIO (incremento 1). This surface has
+ * no week and no runtime state. With Entreno OFF, Rutina shows only the day-types — exactly
+ * today's layout.
+ */
 export function RoutineView() {
   const t = useT();
   const dayTypes = useStore((s) => s.dayTypes);
-  const week = useStore((s) => s.week);
-  const dayKind = useStore((s) => s.dayKind);
-  const setWeekDay = useStore((s) => s.setWeekDay);
-  const setDayKind = useStore((s) => s.setDayKind);
-  const dayOverrides = useStore((s) => s.dayOverrides);
-  const setDayOverride = useStore((s) => s.setDayOverride);
-  const clearDayOverride = useStore((s) => s.clearDayOverride);
   const owned = useStore((s) => s.ownedEquipment);
   const settings = useStore((s) => s.settings);
   const setIntensity = useStore((s) => s.setIntensity);
@@ -69,30 +76,24 @@ export function RoutineView() {
   const renameDayType = useStore((s) => s.renameDayType);
   const removeDayType = useStore((s) => s.removeDayType);
   const addCustomExercise = useStore((s) => s.addCustomExercise);
-  // ENTRENO (opt-in module): unified into Rutina. With it off, the week gains no outing
-  // control and the SESIONES library never renders — Rutina is exactly today's layout.
+  // ENTRENO (opt-in module): adds the DEPORTES half of the library. With it off, the pills
+  // are just the day-types and Rutina is byte-for-byte today's layout.
   const entrenoOn = useStore((s) => !!s.modules.entreno?.enabled);
   const entrenoSessions = useStore((s) => s.entreno.sessions);
-  const entrenoWeek = useStore((s) => s.entreno.week);
-  const setEntrenoWeekDay = useStore((s) => s.setEntrenoWeekDay);
+  const addEntrenoSession = useStore((s) => s.addEntrenoSession);
 
   const { all, byId, name, variantLabel, allEquipment, eqName } = useCatalog();
   const intensities = useIntensities();
-  const [selectedId, setSelectedId] = useState(dayTypes[0]?.id ?? "");
+  const [active, setActive] = useState<Active>(() => ({ kind: "day", id: dayTypes[0]?.id ?? "" }));
   const [mode, setMode] = useState<Mode>("list");
   const [search, setSearch] = useState("");
   const [hoverEx, setHoverEx] = useState<string | null>(null);
-  const [planView, setPlanView] = useState<"semana" | "mes">("semana");
   const [renaming, setRenaming] = useState(false);
-  const [calMonth, setCalMonth] = useState(() => {
-    const d = new Date();
-    return { y: d.getFullYear(), m0: d.getMonth() };
-  });
-  const [selDate, setSelDate] = useState<string | null>(null);
-  const today = new Date();
-  const todayK = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
-  const prevMonth = () => setCalMonth((c) => (c.m0 === 0 ? { y: c.y - 1, m0: 11 } : { y: c.y, m0: c.m0 - 1 }));
-  const nextMonth = () => setCalMonth((c) => (c.m0 === 11 ? { y: c.y + 1, m0: 0 } : { y: c.y, m0: c.m0 + 1 }));
+
+  // Which sport is active — only when Entreno is on and the id still exists (else fall back).
+  const sportActive =
+    active.kind === "sport" && entrenoOn ? entrenoSessions.find((s) => s.id === active.id) : undefined;
+  const isSport = !!sportActive;
 
   // create-form state (lifted so the cockpit body can both preview and edit it)
   const [cName, setCName] = useState("");
@@ -104,7 +105,19 @@ export function RoutineView() {
   const [cContext, setCContext] = useState<ExerciseContext>("space");
   const [cRoles, setCRoles] = useState<Record<string, Role>>(() => presetRoles("push"));
 
+  // Selected day-type — used by the day-type cockpit/list (falls back so derived math is safe
+  // even while a sport tab is active; those panes just aren't rendered then).
+  const selectedId = active.kind === "day" ? active.id : dayTypes[0]?.id ?? "";
   const selected = dayTypes.find((d) => d.id === selectedId) ?? dayTypes[0];
+
+  const selectDay = (id: string) => setActive({ kind: "day", id });
+  const selectSport = (id: string) => {
+    setActive({ kind: "sport", id });
+    setMode("list");
+  };
+  const sportTitle = (s: Session) =>
+    `${t.entreno.modalities[s.modality]} · ${t.entreno.locations[s.location]}`.toUpperCase();
+
   if (!selected) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -116,7 +129,8 @@ export function RoutineView() {
   }
   const routine = selected.routine;
   const dayIntensity = selected.intensity ?? "normal";
-  // Per-day schedule override (own window/rest) — falls back to the global settings.
+  // Per-day schedule override (own window/rest) — falls back to the global settings. Also the
+  // "modo" of the day-type: bloque (own window/rest) vs repartido (spread across the day).
   const ownSchedule = !!selected.window || selected.minRest != null;
   const win = selected.window ?? settings.workWindow;
   const restMin = selected.minRest ?? settings.minRest;
@@ -149,9 +163,6 @@ export function RoutineView() {
   const regions = t.body.regions as Record<string, string>;
   const regionLabel = (g: BodyGroup) => regions[g].toUpperCase();
   const muscleName = (mu: string) => (t.body.muscleNames as Record<string, string>)[mu] ?? mu;
-  // Entreno outing session label (modality · location) for the per-day picker in the week strip.
-  const sessionTitle = (s: Session) =>
-    `${t.entreno.modalities[s.modality]} · ${t.entreno.locations[s.location]}`.toUpperCase();
 
   const inRoutine = new Set(routine.map((r) => r.exerciseId));
   const available = all.filter(
@@ -244,11 +255,15 @@ export function RoutineView() {
     setMode("list");
   };
 
-  // ----- shared header chrome ------------------------------------------------
+  // ----- activity tabs (the single library row: RUTINAS + DEPORTES) ----------
+  const groupLabel = (txt: string) => (
+    <span className="mr-0.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{txt}</span>
+  );
+
   const dayTypePills = (
     <>
       {dayTypes.map((dt) => {
-        const on = selected.id === dt.id;
+        const on = active.kind === "day" && selected.id === dt.id;
         // active tab in list mode = rename (double-click) + delete (×)
         if (on && mode === "list" && renaming) {
           return (
@@ -270,7 +285,7 @@ export function RoutineView() {
         return (
           <button
             key={dt.id}
-            onClick={() => setSelectedId(dt.id)}
+            onClick={() => selectDay(dt.id)}
             onDoubleClick={() => on && mode === "list" && setRenaming(true)}
             title={on && mode === "list" ? t.routine.renameHint : undefined}
             className="flex items-center gap-2 border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
@@ -299,13 +314,59 @@ export function RoutineView() {
       })}
       {mode === "list" && (
         <button
-          onClick={() => setSelectedId(addDayType(t.routine.newDayType))}
+          onClick={() => selectDay(addDayType(t.routine.newDayType))}
           className="flex items-center gap-1 border border-dashed border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--faint)] hover:text-[var(--fg)]"
         >
           <Plus className="size-3.5" /> {t.routine.type}
         </button>
       )}
     </>
+  );
+
+  const sportPills = (
+    <>
+      {entrenoSessions.map((s) => {
+        const on = isSport && sportActive!.id === s.id;
+        return (
+          <button
+            key={s.id}
+            onClick={() => selectSport(s.id)}
+            className="flex items-center gap-2 border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em]"
+            style={{
+              borderColor: on ? "var(--acc)" : "var(--rule2)",
+              background: on ? "var(--acc)" : "transparent",
+              color: on ? "var(--on)" : "var(--dim)",
+            }}
+          >
+            {sportTitle(s)}
+          </button>
+        );
+      })}
+      <button
+        onClick={() => selectSport(addEntrenoSession({ modality: "sport", location: "away", external: true }))}
+        className="flex items-center gap-1 border border-dashed border-[var(--rule2)] px-2.5 py-1.5 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--faint)] hover:text-[var(--fg)]"
+      >
+        <Plus className="size-3.5" /> {t.routine.sportShort}
+      </button>
+    </>
+  );
+
+  // Sports (and their group label) only surface in list mode; adding an exercise targets a
+  // day-type, so create/browse show just the day-type pills as the "add to" target.
+  const showSports = entrenoOn && mode === "list";
+  const activityTabs = (
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
+      {mode !== "list" && groupLabel(t.routine.addTo)}
+      {showSports && groupLabel(t.routine.routines)}
+      {dayTypePills}
+      {showSports && (
+        <>
+          <span className="mx-1 h-5 w-px flex-none bg-[var(--rule2)]" />
+          {groupLabel(t.routine.sports)}
+          {sportPills}
+        </>
+      )}
+    </div>
   );
 
   const modeTab = (label: string, val: Mode) => {
@@ -327,13 +388,33 @@ export function RoutineView() {
 
   const header = (
     <ViewHeader
-      onBack={mode !== "list" ? () => setMode("list") : undefined}
+      onBack={!isSport && mode !== "list" ? () => setMode("list") : undefined}
       backLabel={t.routine.title}
-      kicker={mode === "list" ? t.routine.sub : mode === "buscar" ? t.routine.fromLibrary : t.routine.newExercise}
-      title={mode === "list" ? t.routine.title : mode === "buscar" ? t.routine.searchTitle : cName || t.routine.unnamed}
-      titleMuted={mode === "crear" && !cName}
+      kicker={
+        isSport
+          ? t.routine.sportEditKicker
+          : mode === "list"
+            ? t.routine.sub
+            : mode === "buscar"
+              ? t.routine.fromLibrary
+              : t.routine.newExercise
+      }
+      title={
+        isSport
+          ? sportTitle(sportActive!)
+          : mode === "list"
+            ? t.routine.title
+            : mode === "buscar"
+              ? t.routine.searchTitle
+              : cName || t.routine.unnamed
+      }
+      titleMuted={!isSport && mode === "crear" && !cName}
       right={
-        mode === "list" ? (
+        isSport ? (
+          <span className="border border-[var(--rule2)] px-2 py-0.5 font-mono text-[9px] tracking-[0.12em] text-[var(--faint)]">
+            {t.entreno.external}
+          </span>
+        ) : mode === "list" ? (
           <>
             <span className="font-mono text-[11px] tracking-[0.06em]">
               <span className="text-[var(--faint)]">{t.routine.sets} </span>
@@ -362,257 +443,9 @@ export function RoutineView() {
           </>
         )
       }
-      context={
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          {mode !== "list" && (
-            <span className="mr-0.5 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)]">{t.routine.addTo}</span>
-          )}
-          {dayTypePills}
-        </div>
-      }
+      context={activityTabs}
     />
   );
-
-  // [SEMANA | MES] toggle — lives at the top of the right working pane so the
-  // cockpit (left) stays anchored across modes (no UI shift on add-exercise).
-  const planBar = (
-    <div className="flex flex-none items-center gap-1.5 border-b border-[var(--rule2)] px-6 py-2">
-      {(["semana", "mes"] as const).map((v) => {
-        const on = planView === v;
-        return (
-          <button
-            key={v}
-            onClick={() => setPlanView(v)}
-            className="border px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.12em]"
-            style={{
-              borderColor: on ? "var(--acc)" : "var(--rule2)",
-              background: on ? "var(--acc)" : "transparent",
-              color: on ? "var(--on)" : "var(--faint)",
-            }}
-          >
-            {v === "semana" ? t.cal.week : t.cal.month}
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  // ----- week strip (the merged Semana view): assign a day-type + place per day -
-  const weekStrip = (
-    <div className="flex flex-none border-b border-[var(--rule2)]">
-      {t.routine.dow.map((d, i) => {
-        const isToday = i === todayIdx;
-        const slot = week[i];
-        const isRest = slot === REST;
-        const editing = !isRest && slot === selected.id;
-        const place = dayKind[i];
-        return (
-          <div
-            key={i}
-            className="relative min-w-0 flex-1 border-r border-[var(--rule)] p-2 last:border-r-0"
-            style={{ background: editing ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent" }}
-          >
-            {editing && <span className="absolute inset-x-0 top-0 h-0.5 bg-[var(--acc)]" />}
-            <div className="flex items-center justify-between gap-1">
-              <button
-                onClick={() => !isRest && setSelectedId(slot)}
-                title={isRest ? undefined : t.routine.editDayHint}
-                className="min-w-0 flex-1 truncate text-left font-mono text-[9.5px] tracking-[0.14em]"
-                style={{ color: isToday ? "var(--acc)" : "var(--faint)", cursor: isRest ? "default" : "pointer" }}
-              >
-                {d}
-                {isToday ? " ·" : ""}
-              </button>
-              <button
-                onClick={() => setDayKind(i, place === null ? "home" : place === "home" ? "office" : null)}
-                aria-label={`${t.week.place} ${d}`}
-                title={place === "home" ? t.week.home : place === "office" ? t.week.office : t.week.place}
-                className="grid size-4 flex-none place-items-center font-mono text-[9px] font-semibold hover:text-[var(--fg)]"
-                style={{ color: place ? "var(--acc)" : "var(--faint2)" }}
-              >
-                {place ? (place === "home" ? t.week.home : t.week.office).charAt(0).toUpperCase() : "·"}
-              </button>
-            </div>
-            <select
-              value={slot}
-              onChange={(e) => setWeekDay(i, e.currentTarget.value)}
-              aria-label={`${t.week.day} ${d}`}
-              className={`${input} mt-1 w-full appearance-none px-1.5 py-1 font-mono text-[10.5px]`}
-              style={{ color: isRest ? "var(--faint2)" : "var(--fg)" }}
-            >
-              {dayTypes.map((x) => (
-                <option key={x.id} value={x.id} className="bg-[var(--ink2)]">
-                  {x.name.toUpperCase()}
-                </option>
-              ))}
-              <option value={REST} className="bg-[var(--ink2)]">
-                {t.today.rest.toUpperCase()}
-              </option>
-            </select>
-            {/* Outing session (Entreno) — a day can be casa (day-type) + salida (session). */}
-            {entrenoOn && (
-              <select
-                value={entrenoWeek[i] ?? ""}
-                onChange={(e) => setEntrenoWeekDay(i, e.currentTarget.value || null)}
-                aria-label={`${t.entreno.outing} ${d}`}
-                title={t.entreno.outing}
-                className={`${input} mt-1 w-full appearance-none px-1.5 py-1 font-mono text-[10.5px]`}
-                style={{ color: entrenoWeek[i] ? "var(--acc)" : "var(--faint2)" }}
-              >
-                <option value="" className="bg-[var(--ink2)]">
-                  {t.entreno.none}
-                </option>
-                {entrenoSessions.map((s) => (
-                  <option key={s.id} value={s.id} className="bg-[var(--ink2)]">
-                    {sessionTitle(s)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  // ----- month calendar (per-date overrides over the weekly pattern) ---------
-  const months = t.cal.months as string[];
-  const fmtDate = (key: string) => {
-    const [yy, mm, dd] = key.split("-").map(Number);
-    const wd = (new Date(yy, mm - 1, dd).getDay() + 6) % 7;
-    return `${t.routine.dow[wd]} ${dd} · ${months[mm - 1].slice(0, 3).toUpperCase()}`;
-  };
-  const monthInner = (() => {
-    const { y, m0 } = calMonth;
-    const firstWeekday = (new Date(y, m0, 1).getDay() + 6) % 7;
-    const start = new Date(y, m0, 1 - firstWeekday);
-    const cells = Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
-    const selSlot = selDate ? effectiveSlot(week, dayOverrides, selDate) : REST;
-    const selKind = selDate ? effectiveKind(dayKind, dayOverrides, selDate) : null;
-    const selHasOv = selDate ? selDate in dayOverrides : false;
-    return (
-      <>
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          <div className="flex items-center justify-between">
-            <button onClick={prevMonth} aria-label={t.cal.prev} className="grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:text-[var(--fg)]">
-              ‹
-            </button>
-            <span className="font-pixel text-[18px] tracking-[0.02em] text-[var(--fg)]">
-              {months[m0]} {y}
-            </span>
-            <button onClick={nextMonth} aria-label={t.cal.next} className="grid size-7 place-items-center border border-[var(--rule2)] text-[var(--dim)] hover:text-[var(--fg)]">
-              ›
-            </button>
-          </div>
-          <div className="mt-3 grid grid-cols-7 gap-1">
-            {t.routine.dow.map((d) => (
-              <span key={d} className="text-center font-mono text-[9px] tracking-[0.1em] text-[var(--faint2)]">
-                {d}
-              </span>
-            ))}
-          </div>
-          <div className="mt-1 grid grid-cols-7 gap-1">
-            {cells.map((dt) => {
-              const key = dateKey(dt.getFullYear(), dt.getMonth(), dt.getDate());
-              const outMonth = dt.getMonth() !== m0;
-              const slot = effectiveSlot(week, dayOverrides, key);
-              const rest = slot === REST;
-              const dtName = dayTypes.find((x) => x.id === slot)?.name ?? slot;
-              const hasOv = key in dayOverrides;
-              const isToday = key === todayK;
-              const isSel = key === selDate;
-              const place = effectiveKind(dayKind, dayOverrides, key);
-              return (
-                <button
-                  key={key}
-                  onClick={() => setSelDate(key)}
-                  className="relative flex h-[62px] flex-col border p-1.5 text-left"
-                  style={{
-                    borderColor: isSel ? "var(--acc)" : isToday ? "color-mix(in oklch, var(--acc) 45%, transparent)" : "var(--rule)",
-                    background: isSel ? "color-mix(in oklch, var(--acc) 9%, transparent)" : "transparent",
-                    opacity: outMonth ? 0.4 : 1,
-                  }}
-                >
-                  <span className="flex items-center justify-between">
-                    <span className="font-mono text-[10px]" style={{ color: isToday ? "var(--acc)" : "var(--faint)" }}>
-                      {dt.getDate()}
-                    </span>
-                    {hasOv && <span title={t.cal.overrideTag} className="size-1.5 flex-none bg-[var(--acc)]" />}
-                  </span>
-                  <span
-                    className="mt-auto truncate text-[10px] font-semibold uppercase"
-                    style={{ color: rest ? "var(--faint2)" : "var(--fg)" }}
-                  >
-                    {rest ? t.today.rest : dtName}
-                  </span>
-                  {place && (
-                    <span className="font-mono text-[8px] tracking-[0.06em] text-[var(--faint2)]">
-                      {place === "home" ? t.week.home : t.week.office}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {selDate && (
-          <div className="flex-none border-t border-[var(--rule2)] px-5 py-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="font-mono text-[9px] tracking-[0.16em] text-[var(--acc)]">{t.cal.dayPlan}</span>
-              <span className="text-[15px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">{fmtDate(selDate)}</span>
-              <select
-                value={selSlot}
-                onChange={(e) => setDayOverride(selDate, { slot: e.currentTarget.value })}
-                aria-label={t.routine.type}
-                className={`${input} appearance-none px-2.5 py-1.5 font-mono text-[11.5px]`}
-              >
-                {dayTypes.map((x) => (
-                  <option key={x.id} value={x.id} className="bg-[var(--ink2)]">
-                    {x.name.toUpperCase()}
-                  </option>
-                ))}
-                <option value={REST} className="bg-[var(--ink2)]">
-                  {t.today.rest.toUpperCase()}
-                </option>
-              </select>
-              <div className="flex gap-1.5">
-                {([null, "home", "office"] as const).map((k) => {
-                  const on = selKind === k;
-                  return (
-                    <button
-                      key={String(k)}
-                      onClick={() => setDayOverride(selDate, { kind: k })}
-                      aria-label={t.week.place}
-                      className="border px-2.5 py-1.5 font-mono text-[10px] tracking-[0.04em]"
-                      style={{
-                        borderColor: on ? "var(--acc)" : "var(--rule2)",
-                        color: on ? "var(--acc)" : "var(--faint)",
-                        background: on ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent",
-                      }}
-                    >
-                      {k === null ? "—" : k === "home" ? t.week.home.toUpperCase() : t.week.office.toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
-              <span className="flex-1" />
-              {selHasOv ? (
-                <button
-                  onClick={() => clearDayOverride(selDate)}
-                  className="flex items-center gap-1.5 border border-[var(--rule2)] px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.06em] text-[var(--dim)] hover:text-[var(--fg)]"
-                >
-                  <Trash2 className="size-3.5" /> {t.cal.useWeekly}
-                </button>
-              ) : (
-                <span className="font-mono text-[9.5px] tracking-[0.06em] text-[var(--faint2)]">◆ {t.cal.weeklyDefault}</span>
-              )}
-            </div>
-          </div>
-        )}
-      </>
-    );
-  })();
 
   // ----- gap / coverage card (mode-aware) ------------------------------------
   type Tone = "acc" | "warn" | "neutral";
@@ -923,39 +756,33 @@ export function RoutineView() {
     );
   };
 
-  // The right working pane in list mode: plan toggle, then either the week strip +
-  // exercise list (SEMANA) or the month calendar (MES). The cockpit stays anchored
-  // on the left; switching to create/browse just swaps THIS pane's content.
+  // The day-type working pane: the exercise list for the selected routine + its "modo" badge.
+  // No week, no runtime state — that lives in Calendario / Hoy now.
   const listPane = (
     <section className="flex min-h-0 flex-1 flex-col">
-      {planBar}
-      {planView === "mes" ? (
-        monthInner
-      ) : (
-        <>
-          {weekStrip}
-          <div className="flex flex-none items-center justify-between border-b border-[var(--rule2)] px-6 py-3">
-            <span className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--faint)]">
-              {t.routine.exercises} · {routine.length}
-            </span>
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-1.5 bg-[var(--acc)] px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)]"
-            >
-              <Plus className="size-3.5" /> {t.routine.addExercise}
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-3">
-            {routine.length === 0 ? (
-              <p className="py-6 text-center text-[13px] text-[var(--faint)]">{t.routine.emptyList}</p>
-            ) : (
-              routine.map((r, i) => exRow(r, i))
-            )}
-            {/* Entreno session library — only with the module on; else Rutina is untouched. */}
-            {entrenoOn && <SessionLibrary />}
-          </div>
-        </>
-      )}
+      <div className="flex flex-none items-center justify-between border-b border-[var(--rule2)] px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[var(--faint)]">
+            {t.routine.exercises} · {routine.length}
+          </span>
+          <span className="border border-[var(--rule2)] px-2 py-0.5 font-mono text-[9px] tracking-[0.12em] text-[var(--faint)]">
+            {t.routine.modeLabel} · {ownSchedule ? t.routine.modeBlock : t.routine.modeSpread}
+          </span>
+        </div>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-1.5 bg-[var(--acc)] px-3.5 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)]"
+        >
+          <Plus className="size-3.5" /> {t.routine.addExercise}
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-3">
+        {routine.length === 0 ? (
+          <p className="py-6 text-center text-[13px] text-[var(--faint)]">{t.routine.emptyList}</p>
+        ) : (
+          routine.map((r, i) => exRow(r, i))
+        )}
+      </div>
     </section>
   );
 
@@ -1299,8 +1126,14 @@ export function RoutineView() {
     <div className="flex h-full flex-col">
       {header}
       <div className="flex min-h-0 flex-1">
-        {leftCol}
-        {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}
+        {isSport ? (
+          <SportEditor session={sportActive!} onDeleted={() => selectDay(dayTypes[0]?.id ?? "")} />
+        ) : (
+          <>
+            {leftCol}
+            {mode === "crear" ? createPane : mode === "buscar" ? browsePane : listPane}
+          </>
+        )}
       </div>
     </div>
   );
