@@ -8,10 +8,24 @@ picked up.
 **Status:** ✅ shipped · 🔜 next · 🧪 in progress · 💡 idea · 🩹 parked fix
 **Effort:** S (hours) · M (a day-ish) · L (multi-session)
 
-> Tanda **2026-06-30** (en `main`, pendiente de release **v0.1.2**): se cerraron de una pasada
-> todas las tareas de 2/3/5 pts — módulo Niveles (racha, character sheet, logros, off-switch,
-> subir de nivel), quick-log, modo foco, splash/rest-day/pixel/motion, cockpit Equipo/Ajustes,
-> i18n del balance del coach, code-splitting y buscar-actualizaciones. Marcadas ✅ abajo.
+> **Estado (2026-08-20):** todo lo de abajo marcado ✅ + el track de plataforma están en `main`
+> **local, sin release aún** (23 commits desde v0.1.1). Se corta la **v0.1.2** con todo esto.
+
+## Plataforma BASE — track modular (ver [VISION.md](VISION.md))
+
+El refactor grande de microset → **plataforma modular** (kernel de datos compartido + módulos
+opt-in) vive acá; el detalle de arquitectura está en `VISION.md`.
+
+| Fase | Estado |
+|---|---|
+| **F0** kernel (contratos ActivityEvent/Schedulable + files-registry + `modules`/migración) | ✅ |
+| **F1** fuente única de XP + proyección de actividad + coach registry-aware | ✅ |
+| **F2** Entreno (sesiones multi-modalidad + planner adaptativo consciente del motivo) | ✅ |
+| **Rework 3 superficies** (Calendario = agenda · Rutina = diseño · Hoy = vivo) | ✅ |
+| **Polish Entreno** (nombre de sesión · hora editable en UI · avoid-window para las micro-series) | 🧪 en curso |
+| **F3** Nutrición | 💡 (necesita food-DB + los prompts de nutrición) |
+| **F4** Social (Convex + Clerk) | 💡 (necesita cuentas de Erik) |
+| **F5** escala / mobile (rollups + sync multi-dispositivo) | 💡 |
 
 ---
 
