@@ -36,6 +36,7 @@ export function SettingsView() {
   const levelsEnabled = useStore((s) => s.levelsEnabled);
   const setLevelsEnabled = useStore((s) => s.setLevelsEnabled);
   const entrenoEnabled = useStore((s) => !!s.modules.entreno?.enabled);
+  const socialEnabled = useStore((s) => !!s.modules.social?.enabled);
   const setModuleEnabled = useStore((s) => s.setModuleEnabled);
   const streakFreeze = useStore((s) => s.streakFreeze);
   const setStreakFreeze = useStore((s) => s.setStreakFreeze);
@@ -296,6 +297,9 @@ export function SettingsView() {
       <Section title={t.settings.modules}>
         <Row label={t.settings.entrenoModuleLabel} hint={t.settings.entrenoModuleHint}>
           <SquareSwitch on={entrenoEnabled} onClick={() => setModuleEnabled("entreno", !entrenoEnabled)} />
+        </Row>
+        <Row label={t.settings.socialModuleLabel} hint={t.settings.socialModuleHint}>
+          <SquareSwitch on={socialEnabled} onClick={() => setModuleEnabled("social", !socialEnabled)} />
         </Row>
       </Section>
 

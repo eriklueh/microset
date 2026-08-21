@@ -9,6 +9,7 @@ export type Section =
   | "routine"
   | "equipment"
   | "progress"
+  | "social"
   | "settings";
 
 /** Numbered nav (always shown). CALENDARIO (the agenda) sits between HOY and RUTINA;
@@ -28,8 +29,10 @@ export function Sidebar({
   const theme = useStore((s) => s.theme);
   const setThemeMode = useStore((s) => s.setThemeMode);
   const isDark = resolveDark(theme.mode);
+  const socialOn = useStore((s) => !!s.modules.social?.enabled);
   const t = useT();
-  const navIds = NAV;
+  // AMIGOS only appears when the social module is on — otherwise the nav is identical to today.
+  const navIds: Section[] = socialOn ? [...NAV, "social"] : NAV;
   const settingsNum = String(navIds.length + 1).padStart(2, "0");
 
   return (

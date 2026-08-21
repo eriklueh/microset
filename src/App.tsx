@@ -13,6 +13,7 @@ import { CalendarView } from "@/components/studio/CalendarView";
 import { RoutineView } from "@/components/studio/RoutineView";
 import { EquipmentView } from "@/components/studio/EquipmentView";
 import { ProgressView } from "@/components/studio/ProgressView";
+import { SocialView } from "@/components/studio/SocialView";
 import { SettingsView } from "@/components/studio/SettingsView";
 import { UpdateBanner } from "@/components/studio/UpdateBanner";
 
@@ -21,6 +22,7 @@ function App() {
   const t = useT();
   const ensureToday = useStore((s) => s.ensureToday);
   const panelEnabled = useStore((s) => s.panelEnabled);
+  const socialOn = useStore((s) => !!s.modules.social?.enabled);
 
   useEffect(() => {
     ensureToday();
@@ -46,6 +48,7 @@ function App() {
           {section === "routine" && <RoutineView />}
           {section === "equipment" && <EquipmentView />}
           {section === "progress" && <ProgressView />}
+          {section === "social" && socialOn && <SocialView />}
           {section === "settings" && <SettingsView />}
         </main>
         <RelayBar />
