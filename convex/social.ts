@@ -117,6 +117,7 @@ export const upsertMyStandings = mutation({
     streak: v.number(),
     level: v.number(),
     weeklyEffort: v.number(),
+    adherence: v.number(),
   },
   handler: async (ctx, args) => {
     const me = await requireUserId(ctx);
@@ -134,6 +135,7 @@ export const upsertMyStandings = mutation({
       streak: args.streak,
       level: args.level,
       weeklyEffort: args.weeklyEffort,
+      adherence: args.adherence,
       updatedAt: Date.now(),
     };
     const existing = await ctx.db
@@ -169,6 +171,7 @@ export const listGroupStandings = query({
         streak: r.streak,
         level: r.level,
         weeklyEffort: r.weeklyEffort,
+        adherence: r.adherence ?? 0,
         isMe: r.userId === me,
       }))
       .sort((a, b) => b.weeklyEffort - a.weeklyEffort);

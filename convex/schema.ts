@@ -37,6 +37,8 @@ export default defineSchema({
     streak: v.number(),
     level: v.number(),
     weeklyEffort: v.number(),
+    // 0..1 — % del plan semanal cumplido (done/planned). "¿está cumpliendo la rutina?"
+    adherence: v.optional(v.number()),
     updatedAt: v.number(),
   })
     .index("by_group_season", ["groupId", "seasonId"])

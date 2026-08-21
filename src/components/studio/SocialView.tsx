@@ -1,14 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { SignedIn, SignedOut, SignIn, useUser } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, SignIn } from "@clerk/clerk-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useT } from "@/lib/i18n";
 import { currentSeasonId } from "@/lib/social";
-import { useCatalog } from "@/hooks/useCatalog";
-import { computeLevels, type PlanContext } from "@/lib/levels";
-import { activityFromLogs } from "@/modules/pausa/pausa";
-import { effectiveSlot, REST, useStore } from "@/store/useStore";
+import { useMyStandings } from "@/hooks/useMyStandings";
 import { ViewHeader } from "./shell";
 
 /** True only when both cloud envs are present at build time. When false the app still runs
@@ -75,7 +72,6 @@ const btnClass =
 
 function LeagueSignedIn() {
   const t = useT();
-  const { user } = useUser();
   const season = currentSeasonId();
 
   const groups = useQuery(api.social.listMyGroups);
@@ -89,38 +85,60 @@ function LeagueSignedIn() {
   const [code, setCode] = useState("");
   const [publishState, setPublishState] = useState<"idle" | "busy" | "done">("idle");
 
-  // --- my derived stats (same projection the rest of the app uses) -----------
-  const logs = useStore((s) => s.logs);
-  const dayTypes = useStore((s) => s.dayTypes);
-  const week = useStore((s) => s.week);
-  const dayOverrides = useStore((s) => s.dayOverrides);
-  const streakFreeze = useStore((s) => s.streakFreeze);
-  const { byId } = useCatalog();
+  // My publishable row — the single projection shared by auto-publish + the manual button.
+  const myStats = useMyStandings();
 
-  const plan = useMemo<PlanContext>(
-    () => ({
-      intensityByDayType: Object.fromEntries(dayTypes.map((d) => [d.id, d.intensity])),
-      slotForDate: (key) => effectiveSlot(week, dayOverrides, key),
-      rest: REST,
-    }),
-    [dayTypes, week, dayOverrides],
-  );
-
-  const myStats = useMemo(() => {
-    const levels = computeLevels(logs, plan, byId, streakFreeze);
-    const weeklyEffort = Math.round(
-      activityFromLogs(logs, byId)
-        .filter((e) => currentSeasonId(new Date(e.at)) === season)
-        .reduce((n, e) => n + (e.metrics?.effortXp ?? 0), 0),
-    );
-    return { streak: levels.streak, level: levels.rank, weeklyEffort };
-  }, [logs, plan, byId, streakFreeze, season]);
+  // A stable signature of exactly what upsertMyStandings would write, so auto-publish only
+  // fires when a value actually changed (never on every render → no mutation spam).
+  const statsSig = JSON.stringify([
+    season,
+    myStats.handle,
+    myStats.formaElo,
+    myStats.streak,
+    myStats.level,
+    myStats.weeklyEffort,
+    myStats.adherence,
+  ]);
 
   const standings = useQuery(
     api.social.listGroupStandings,
     selectedId ? { groupId: selectedId, seasonId: season } : "skip",
   );
   const selectedGroup = groups?.find((g) => g.id === selectedId) ?? null;
+
+  const publishRow = (groupId: Id<"groups">) =>
+    upsertMyStandings({
+      groupId,
+      seasonId: season,
+      handle: myStats.handle,
+      formaElo: myStats.formaElo,
+      streak: myStats.streak,
+      level: myStats.level,
+      weeklyEffort: myStats.weeklyEffort,
+      adherence: myStats.adherence,
+    });
+
+  // AUTO-PUBLISH: this view only ever mounts when signed-in AND the social module is ON, so
+  // being rendered is the gate. Push my row to ALL my groups on mount and whenever my stats
+  // change. Deduped per group via `publishedRef` so re-renders / unrelated state changes never
+  // re-send an identical row.
+  const publishedRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    if (!groups) return;
+    for (const g of groups) {
+      if (publishedRef.current[g.id] === statsSig) continue;
+      publishedRef.current[g.id] = statsSig;
+      publishRow(g.id).catch(() => {
+        // let the next change retry this group
+        if (publishedRef.current[g.id] === statsSig) delete publishedRef.current[g.id];
+      });
+    }
+    // publishRow closes over the current stats; statsSig captures every value it would send.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, statsSig]);
+
+  // Fresh stats → reset the manual button so it stops reading "published".
+  useEffect(() => setPublishState("idle"), [statsSig]);
 
   const onCreate = async () => {
     const trimmed = name.trim();
@@ -140,23 +158,17 @@ function LeagueSignedIn() {
 
   const onLeave = async (groupId: Id<"groups">) => {
     await leaveGroup({ groupId });
+    delete publishedRef.current[groupId];
     if (selectedId === groupId) setSelectedId(null);
   };
 
-  const onPublish = async () => {
-    if (!selectedId) return;
+  // Manual fallback — force-publish my row to every group right now.
+  const onRefresh = async () => {
+    if (!groups || groups.length === 0) return;
     setPublishState("busy");
     try {
-      const handle = user?.username || user?.firstName || "Atleta";
-      await upsertMyStandings({
-        groupId: selectedId,
-        seasonId: season,
-        handle,
-        formaElo: 1000, // placeholder hasta construir FORMA
-        streak: myStats.streak,
-        level: myStats.level,
-        weeklyEffort: myStats.weeklyEffort,
-      });
+      await Promise.all(groups.map((g) => publishRow(g.id)));
+      for (const g of groups) publishedRef.current[g.id] = statsSig;
       setPublishState("done");
     } catch {
       setPublishState("idle");
@@ -252,20 +264,23 @@ function LeagueSignedIn() {
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--faint2)]">
+                {t.social.autoPublish}
+              </span>
               <button
-                onClick={onPublish}
+                onClick={onRefresh}
                 disabled={publishState === "busy"}
-                className="border border-[var(--acc)] bg-[var(--acc)] px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--on)] hover:opacity-85 disabled:opacity-50"
+                className="border border-[var(--rule2)] px-3 py-1.5 font-mono text-[10px] font-semibold tracking-[0.08em] text-[var(--faint)] hover:border-[var(--acc)] hover:text-[var(--fg)] disabled:opacity-50"
               >
                 {publishState === "busy"
                   ? t.social.publishing
                   : publishState === "done"
                     ? t.social.published
-                    : t.social.publish}
+                    : t.social.refresh}
               </button>
               <button
                 onClick={() => onLeave(selectedId)}
-                className="border border-[var(--rule2)] px-4 py-2 font-mono text-[11px] tracking-[0.06em] text-[var(--faint)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+                className="ml-auto border border-[var(--rule2)] px-4 py-2 font-mono text-[11px] tracking-[0.06em] text-[var(--faint)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
               >
                 {t.social.leave}
               </button>
@@ -289,6 +304,7 @@ function StandingsTable({
         streak: number;
         level: number;
         weeklyEffort: number;
+        adherence: number;
         isMe: boolean;
       }[]
     | undefined;
@@ -307,9 +323,10 @@ function StandingsTable({
   return (
     <div className="border border-[var(--rule2)]">
       {/* header row */}
-      <div className="grid grid-cols-[2rem_1fr_5rem_4rem_3.5rem] gap-2 border-b border-[var(--rule2)] px-4 py-2 font-mono text-[9px] font-semibold tracking-[0.14em] text-[var(--faint2)]">
+      <div className="grid grid-cols-[2rem_1fr_5rem_5rem_4rem_3.5rem] gap-2 border-b border-[var(--rule2)] px-4 py-2 font-mono text-[9px] font-semibold tracking-[0.14em] text-[var(--faint2)]">
         <span>{t.social.colRank}</span>
         <span>{t.social.colAthlete}</span>
+        <span className="text-right">{t.social.colAdherence}</span>
         <span className="text-right">{t.social.colEffort}</span>
         <span className="text-right">{t.social.colStreak}</span>
         <span className="text-right">{t.social.colLevel}</span>
@@ -317,7 +334,7 @@ function StandingsTable({
       {standings.map((row, i) => (
         <div
           key={row.userId}
-          className="grid grid-cols-[2rem_1fr_5rem_4rem_3.5rem] items-center gap-2 px-4 py-2.5 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[var(--rule)]"
+          className="grid grid-cols-[2rem_1fr_5rem_5rem_4rem_3.5rem] items-center gap-2 px-4 py-2.5 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[var(--rule)]"
           style={{
             background: row.isMe ? "var(--acc)" : "transparent",
             color: row.isMe ? "var(--on)" : "var(--fg)",
@@ -334,6 +351,17 @@ function StandingsTable({
                 {t.social.you}
               </span>
             )}
+          </span>
+          <span className="flex items-baseline justify-end gap-0.5">
+            <span className="font-pixel text-[18px] tabular-nums">
+              {Math.round(row.adherence * 100)}
+            </span>
+            <span
+              className="font-mono text-[9px]"
+              style={{ color: row.isMe ? "var(--on)" : "var(--faint2)" }}
+            >
+              %
+            </span>
           </span>
           <span className="text-right font-pixel text-[18px] tabular-nums">{row.weeklyEffort}</span>
           <span className="text-right font-pixel text-[16px] tabular-nums">{row.streak}</span>

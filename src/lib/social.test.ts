@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { currentSeasonId } from "./social";
+import { computeAdherence, currentSeasonId } from "./social";
 
 describe("social · currentSeasonId (ISO week, local)", () => {
   it("formats as AAAA-Wnn with a zero-padded, two-digit week", () => {
@@ -25,5 +25,38 @@ describe("social · currentSeasonId (ISO week, local)", () => {
 
   it("defaults to now when called without an argument", () => {
     expect(currentSeasonId()).toMatch(/^\d{4}-W\d{2}$/);
+  });
+});
+
+describe("social · computeAdherence (día-level, 0..1)", () => {
+  const REST = "rest";
+  // Wed 2026-08-19 → todayIdx = 2, so the window is Mon 08-17 → Wed 08-19 (inclusive).
+  const wed = new Date(2026, 7, 19, 12, 0);
+  const logOn = (m0: number, d: number) => ({ at: new Date(2026, m0, d, 12, 0).toISOString() });
+
+  it("= díasEntrenados / díasProgramados when every day Mon→today is programmed", () => {
+    const logs = [logOn(7, 17), logOn(7, 19)]; // trained Mon + Wed, out of Mon/Tue/Wed
+    expect(computeAdherence(logs, () => "train", REST, wed)).toBeCloseTo(2 / 3, 6);
+  });
+
+  it("rest days are NOT counted as programmed", () => {
+    const slot = (k: string) => (k === "2026-8-18" ? REST : "train"); // Tue is rest
+    const logs = [logOn(7, 17), logOn(7, 19)]; // both programmed days trained
+    expect(computeAdherence(logs, slot, REST, wed)).toBe(1);
+  });
+
+  it("counts a day at most once and caps the ratio at 1", () => {
+    const slot = (k: string) => (k === "2026-8-17" ? "train" : REST); // only Mon programmed
+    const logs = [logOn(7, 17), logOn(7, 17), logOn(7, 18), logOn(7, 19)]; // extra + off-plan logs
+    expect(computeAdherence(logs, slot, REST, wed)).toBe(1);
+  });
+
+  it("all-rest week so far → 1 if anything was trained, else 0", () => {
+    expect(computeAdherence([logOn(7, 18)], () => REST, REST, wed)).toBe(1);
+    expect(computeAdherence([], () => REST, REST, wed)).toBe(0);
+  });
+
+  it("returns 0 when days were programmed but nothing was trained", () => {
+    expect(computeAdherence([], () => "train", REST, wed)).toBe(0);
   });
 });
