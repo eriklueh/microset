@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createDayPlan, decline, markDone, snooze } from "./schedule";
+import { createDayPlan, decline, markDone, snooze, withAvoidWindows } from "./schedule";
 import { at } from "./time";
 import type { Block, Settings } from "./types";
 
@@ -76,6 +76,37 @@ describe("createDayPlan", () => {
       .map((b) => b.exerciseId);
     for (let i = 1; i < order.length; i++) {
       expect(order[i]).not.toBe(order[i - 1]);
+    }
+  });
+});
+
+describe("withAvoidWindows (session avoid-window merge)", () => {
+  it("returns settings unchanged when there are no extra windows", () => {
+    expect(withAvoidWindows(settings, [])).toBe(settings);
+  });
+
+  it("appends extra windows without mutating the input", () => {
+    const extra = { start: at(20), end: at(21) };
+    const merged = withAvoidWindows(noLunch, [extra]);
+    expect(noLunch.avoidWindows).toHaveLength(0); // input untouched
+    expect(merged.avoidWindows).toEqual([extra]);
+  });
+
+  it("keeps the micro-series out of the assigned session's window", () => {
+    // A session assigned to today at 20:00–21:00; the plan runs into the evening.
+    const evening: Settings = {
+      workWindow: { start: at(9), end: at(22) },
+      minRest: 30,
+      avoidWindows: [],
+    };
+    const sessionWindow = { start: at(20), end: at(21) };
+    const merged = withAvoidWindows(evening, [sessionWindow]);
+    const routine = [{ exerciseId: "pullups", name: "Dominadas", sets: 12 }];
+    const { blocks } = createDayPlan(routine, merged, at(9));
+    for (const b of blocks) {
+      if (b.time < 0) continue;
+      const inSession = b.time >= sessionWindow.start && b.time < sessionWindow.end;
+      expect(inSession).toBe(false);
     }
   });
 });

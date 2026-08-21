@@ -27,6 +27,17 @@ export function effectiveSettings(
   };
 }
 
+/**
+ * Add extra avoid windows (e.g. the day's assigned Entreno session window) onto `settings`,
+ * returning a NEW Settings. Derived/per-day: the store composes this transiently before
+ * calling the engine so the micro-series skip the session's window (e.g. BJJ 20:00); it is
+ * never persisted into settings.avoidWindows. Empty extras return `settings` unchanged.
+ */
+export function withAvoidWindows(settings: Settings, extra: TimeWindow[]): Settings {
+  if (extra.length === 0) return settings;
+  return { ...settings, avoidWindows: [...settings.avoidWindows, ...extra] };
+}
+
 /** Round-robin interleave per-exercise blocks so the same exercise isn't clustered. */
 function interleaveByExercise(blocks: Block[]): Block[] {
   const queues = new Map<string, Block[]>();

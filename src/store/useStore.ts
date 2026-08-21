@@ -7,6 +7,7 @@ import {
   markDone,
   skip as engineSkip,
   snooze as engineSnooze,
+  withAvoidWindows,
 } from "@/lib/engine";
 import type { Block, Minute, RoutineItem, Settings, TimeWindow } from "@/lib/engine";
 import type {
@@ -863,7 +864,7 @@ export const useStore = create<State>()(
       },
 
       replan: () => {
-        const { dayTypes, week, dayOverrides, settings, ownedEquipment, demoMode } = get();
+        const { dayTypes, week, dayOverrides, settings, ownedEquipment, demoMode, modules, entreno } = get();
         const slot = effectiveSlot(week, dayOverrides, todayKey());
         const rest = slot === REST;
         const dayType = rest ? undefined : dayTypeById(dayTypes, slot);
@@ -888,8 +889,19 @@ export const useStore = create<State>()(
             return ex ? isAvailable(ex, ownedEquipment) : true;
           })
           .map((r) => ({ ...r, sets: scaleSets(r.sets, dayType?.intensity) })); // intensity = non-destructive volume scale
+        // Entreno ON: if today's assigned session has a window (e.g. BJJ 20:00), fold it into
+        // the engine's avoidWindows for this day only, so the micro-series don't land on top of
+        // it. Derived/per-day — never persisted into settings.avoidWindows (Entreno OFF or no
+        // windowed session today → identical to before).
+        const sessionWindows: TimeWindow[] = [];
+        if (modules.entreno?.enabled) {
+          const sid = entreno.week[weekdayOfKey(todayKey())];
+          const session = sid ? entreno.sessions.find((ss) => ss.id === sid) : undefined;
+          if (session?.window) sessionWindows.push(session.window);
+        }
+        const planSettings = withAvoidWindows(settings, sessionWindows);
         // The day-type can run in its own window/rest (e.g. an evening session); else global.
-        const { blocks } = createDayPlan(doable, effectiveSettings(settings, dayType), nowMinutes());
+        const { blocks } = createDayPlan(doable, effectiveSettings(planSettings, dayType), nowMinutes());
         set({
           day: { date: todayKey(), blocks, rest, dayTypeName: dayType?.name ?? null },
         });
