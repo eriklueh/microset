@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { computeAdherence, currentSeasonId } from "./social";
+import {
+  computeAdherence,
+  currentSeasonId,
+  parseSharedRoutine,
+  serializeDayType,
+  type SharedDayType,
+} from "./social";
 
 describe("social · currentSeasonId (ISO week, local)", () => {
   it("formats as AAAA-Wnn with a zero-padded, two-digit week", () => {
@@ -58,5 +64,60 @@ describe("social · computeAdherence (día-level, 0..1)", () => {
 
   it("returns 0 when days were programmed but nothing was trained", () => {
     expect(computeAdherence([], () => "train", REST, wed)).toBe(0);
+  });
+});
+
+describe("social · compartir rutinas (serialize / parse round-trip)", () => {
+  const dt: SharedDayType = {
+    name: "Cuerpo completo A",
+    intensity: "normal",
+    window: { start: 1200, end: 1245 },
+    minRest: 3,
+    routine: [
+      { exerciseId: "pullups", name: "Dominadas", sets: 3, target: "5-6", variantId: "b-mid" },
+      { exerciseId: "dips", name: "Fondos", sets: 3, target: "5-6" },
+    ],
+  };
+
+  it("round-trips a full day-type without its id", () => {
+    const back = parseSharedRoutine(serializeDayType(dt));
+    expect(back).toEqual(dt);
+    expect(back).not.toHaveProperty("id");
+  });
+
+  it("returns null on bad JSON, missing name, or zero valid items", () => {
+    expect(parseSharedRoutine("{not json")).toBeNull();
+    expect(parseSharedRoutine(JSON.stringify({ routine: [] }))).toBeNull();
+    expect(parseSharedRoutine(JSON.stringify({ name: "X", routine: "nope" }))).toBeNull();
+    expect(parseSharedRoutine(JSON.stringify({ name: "X", routine: [{ foo: 1 }] }))).toBeNull();
+  });
+
+  it("drops invalid items but keeps the valid ones, clamping sets to 1..20", () => {
+    const payload = JSON.stringify({
+      name: "Mixta",
+      routine: [
+        { exerciseId: "a", name: "A", sets: 99 }, // clamped to 20
+        { exerciseId: "b", name: "B" }, // missing sets → defaults to 1
+        { name: "no id" }, // dropped
+        "garbage", // dropped
+      ],
+    });
+    const back = parseSharedRoutine(payload)!;
+    expect(back.routine).toEqual([
+      { exerciseId: "a", name: "A", sets: 20 },
+      { exerciseId: "b", name: "B", sets: 1 },
+    ]);
+  });
+
+  it("ignores malformed optional fields (window/minRest/intensity)", () => {
+    const payload = JSON.stringify({
+      name: "Solo core",
+      intensity: 5, // not a string → ignored
+      window: { start: "x", end: 10 }, // not both numbers → ignored
+      minRest: "no", // ignored
+      routine: [{ exerciseId: "abs", name: "Abs", sets: 3 }],
+    });
+    const back = parseSharedRoutine(payload)!;
+    expect(back).toEqual({ name: "Solo core", routine: [{ exerciseId: "abs", name: "Abs", sets: 3 }] });
   });
 });

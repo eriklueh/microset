@@ -177,3 +177,65 @@ export const listGroupStandings = query({
       .sort((a, b) => b.weeklyEffort - a.weeklyEffort);
   },
 });
+
+/**
+ * Compartir una rutina (day-type serializado en `payload`) con un grupo. Upsert por
+ * (grupo, yo, nombre) — re-compartir con el mismo nombre actualiza. El payload es opaco:
+ * el cliente lo stringifica al compartir y lo parsea + sanitiza al copiar.
+ */
+export const shareRoutine = mutation({
+  args: { groupId: v.id("groups"), name: v.string(), payload: v.string(), handle: v.string() },
+  handler: async (ctx, { groupId, name, payload, handle }) => {
+    const me = await requireUserId(ctx);
+    const mem = await ctx.db
+      .query("memberships")
+      .withIndex("by_group_user", (q) => q.eq("groupId", groupId).eq("userId", me))
+      .first();
+    if (!mem) throw new Error("No sos miembro de este grupo");
+    const mine = await ctx.db
+      .query("sharedRoutines")
+      .withIndex("by_group_owner", (q) => q.eq("groupId", groupId).eq("ownerId", me))
+      .collect();
+    const existing = mine.find((r) => r.name === name);
+    const row = { groupId, ownerId: me, ownerHandle: handle, name, payload, updatedAt: Date.now() };
+    if (existing) await ctx.db.patch(existing._id, row);
+    else await ctx.db.insert("sharedRoutines", row);
+  },
+});
+
+/** Las rutinas compartidas en un grupo (para ver / copiar). */
+export const listGroupRoutines = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, { groupId }) => {
+    const me = await requireUserId(ctx);
+    const mem = await ctx.db
+      .query("memberships")
+      .withIndex("by_group_user", (q) => q.eq("groupId", groupId).eq("userId", me))
+      .first();
+    if (!mem) throw new Error("No sos miembro de este grupo");
+    const rows = await ctx.db
+      .query("sharedRoutines")
+      .withIndex("by_group", (q) => q.eq("groupId", groupId))
+      .collect();
+    return rows
+      .map((r) => ({
+        id: r._id,
+        ownerHandle: r.ownerHandle,
+        name: r.name,
+        payload: r.payload,
+        mine: r.ownerId === me,
+        updatedAt: r.updatedAt,
+      }))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+/** Dejar de compartir una de MIS rutinas. */
+export const unshareRoutine = mutation({
+  args: { id: v.id("sharedRoutines") },
+  handler: async (ctx, { id }) => {
+    const me = await requireUserId(ctx);
+    const row = await ctx.db.get(id);
+    if (row && row.ownerId === me) await ctx.db.delete(id);
+  },
+});

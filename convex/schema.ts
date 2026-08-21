@@ -43,4 +43,17 @@ export default defineSchema({
   })
     .index("by_group_season", ["groupId", "seasonId"])
     .index("by_group_user_season", ["groupId", "userId", "seasonId"]),
+
+  // Rutinas compartidas dentro de un grupo. El `payload` es el day-type serializado (JSON),
+  // opaco para Convex: el cliente lo stringifica al compartir y lo parsea + sanitiza al copiar.
+  sharedRoutines: defineTable({
+    groupId: v.id("groups"),
+    ownerId: v.string(), // Clerk sub del que la comparte
+    ownerHandle: v.string(),
+    name: v.string(),
+    payload: v.string(), // day-type serializado
+    updatedAt: v.number(),
+  })
+    .index("by_group", ["groupId"])
+    .index("by_group_owner", ["groupId", "ownerId"]),
 });

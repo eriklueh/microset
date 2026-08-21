@@ -273,6 +273,8 @@ interface State {
 
   // day-type management
   addDayType: (name: string) => string;
+  /** Add a full day-type (e.g. copied from a shared routine) under a fresh id. Returns the new id. */
+  importDayType: (dt: Omit<DayType, "id">) => string;
   renameDayType: (id: string, name: string) => void;
   removeDayType: (id: string) => void;
 
@@ -530,6 +532,12 @@ export const useStore = create<State>()(
       addDayType: (name) => {
         const id = newId();
         set((s) => ({ dayTypes: [...s.dayTypes, { id, name, routine: [] }] }));
+        return id;
+      },
+
+      importDayType: (dt) => {
+        const id = newId();
+        set((s) => ({ dayTypes: [...s.dayTypes, { ...dt, id }] }));
         return id;
       },
 

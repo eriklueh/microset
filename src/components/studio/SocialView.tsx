@@ -4,8 +4,9 @@ import { SignedIn, SignedOut, SignIn } from "@clerk/clerk-react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useT } from "@/lib/i18n";
-import { currentSeasonId } from "@/lib/social";
+import { currentSeasonId, parseSharedRoutine, serializeDayType } from "@/lib/social";
 import { useMyStandings } from "@/hooks/useMyStandings";
+import { useStore } from "@/store/useStore";
 import { ViewHeader } from "./shell";
 
 /** True only when both cloud envs are present at build time. When false the app still runs
@@ -289,7 +290,119 @@ function LeagueSignedIn() {
           </>
         )}
       </section>
+
+      {/* RUTINAS DEL GRUPO — ver / copiar / compartir */}
+      {selectedId && <GroupRoutines groupId={selectedId} handle={myStats.handle} />}
     </div>
+  );
+}
+
+/**
+ * The routine-sharing panel for the selected group: a list of routines friends have shared
+ * (each copyable into your own library) plus a control to share one of yours. Only stats-free
+ * routine templates travel — never logs. The payload is validated on copy (parseSharedRoutine).
+ */
+function GroupRoutines({ groupId, handle }: { groupId: Id<"groups">; handle: string }) {
+  const t = useT();
+  const routines = useQuery(api.social.listGroupRoutines, { groupId });
+  const shareRoutine = useMutation(api.social.shareRoutine);
+  const unshareRoutine = useMutation(api.social.unshareRoutine);
+  const dayTypes = useStore((s) => s.dayTypes);
+  const importDayType = useStore((s) => s.importDayType);
+
+  const [chosen, setChosen] = useState("");
+  const [feedback, setFeedback] = useState<{ id: string; kind: "copied" | "bad" } | null>(null);
+
+  const onShare = async () => {
+    const dt = dayTypes.find((d) => d.id === chosen);
+    if (!dt) return;
+    await shareRoutine({ groupId, name: dt.name, payload: serializeDayType(dt), handle });
+    setChosen("");
+  };
+
+  const onCopy = (id: string, payload: string) => {
+    const parsed = parseSharedRoutine(payload);
+    if (!parsed) {
+      setFeedback({ id, kind: "bad" });
+      return;
+    }
+    importDayType(parsed);
+    setFeedback({ id, kind: "copied" });
+  };
+
+  return (
+    <section className="flex flex-col gap-2">
+      <SectionLabel>{t.social.routines}</SectionLabel>
+
+      {routines === undefined ? (
+        <div className="font-mono text-[11px] text-[var(--faint)]">{t.social.loading}</div>
+      ) : routines.length === 0 ? (
+        <div className="border border-[var(--rule2)] p-4 font-mono text-[11px] leading-[1.5] text-[var(--faint)]">
+          {t.social.noRoutines}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {routines.map((r) => {
+            const count = parseSharedRoutine(r.payload)?.routine.length ?? 0;
+            const fb = feedback?.id === r.id ? feedback.kind : null;
+            return (
+              <div
+                key={r.id}
+                className="flex items-center gap-3 border border-[var(--rule2)] px-4 py-3 [&+&]:border-t-0"
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate text-[14px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
+                    {r.name}
+                  </span>
+                  <span className="font-mono text-[10px] tracking-[0.08em] text-[var(--faint)]">
+                    {r.mine ? t.social.mineTag : `${t.social.sharedBy} ${r.ownerHandle}`} · {count}{" "}
+                    {t.social.routineSets}
+                  </span>
+                </div>
+                {fb === "bad" && (
+                  <span className="flex-none font-mono text-[10px] text-[var(--faint)]">
+                    {t.social.badRoutine}
+                  </span>
+                )}
+                <button
+                  onClick={() => onCopy(r.id, r.payload)}
+                  className="flex-none border border-[var(--acc)] px-3 py-1.5 font-mono text-[10px] font-semibold tracking-[0.06em] text-[var(--fg)] hover:bg-[var(--acc)] hover:text-[var(--on)]"
+                >
+                  {fb === "copied" ? t.social.copied : t.social.copy}
+                </button>
+                {r.mine && (
+                  <button
+                    onClick={() => unshareRoutine({ id: r.id })}
+                    className="flex-none border border-[var(--rule2)] px-3 py-1.5 font-mono text-[10px] tracking-[0.06em] text-[var(--faint)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+                  >
+                    {t.social.unshare}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* COMPARTIR UNA RUTINA */}
+      <div className="mt-1 flex gap-2">
+        <select
+          value={chosen}
+          onChange={(e) => setChosen(e.target.value)}
+          className={`${inputClass} cursor-pointer`}
+        >
+          <option value="">{t.social.chooseRoutine}</option>
+          {dayTypes.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={onShare} disabled={!chosen} className={btnClass}>
+          {t.social.share}
+        </button>
+      </div>
+    </section>
   );
 }
 
