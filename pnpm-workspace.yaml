@@ -1,3 +1,4 @@
 # esbuild (usado por Vite) necesita correr su script de instalación.
 allowBuilds:
+  '@clerk/shared': true
   esbuild: true
