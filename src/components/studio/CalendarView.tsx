@@ -345,11 +345,15 @@ export function CalendarView() {
               const isToday = key === todayK;
               const isSel = key === selDate;
               const place = effectiveKind(dayKind, dayOverrides, key);
+              // Entreno outing for this date's weekday (follows the weekly pattern). Off → none.
+              const outing = entrenoOn
+                ? entrenoSessions.find((s) => s.id === entrenoWeek[(dt.getDay() + 6) % 7])
+                : undefined;
               return (
                 <button
                   key={key}
                   onClick={() => setSelDate(key)}
-                  className="relative flex h-[62px] flex-col border p-1.5 text-left"
+                  className="relative flex h-[72px] flex-col border p-1.5 text-left"
                   style={{
                     borderColor: isSel ? "var(--acc)" : isToday ? "color-mix(in oklch, var(--acc) 45%, transparent)" : "var(--rule)",
                     background: isSel ? "color-mix(in oklch, var(--acc) 9%, transparent)" : "transparent",
@@ -368,6 +372,11 @@ export function CalendarView() {
                   >
                     {rest ? t.today.rest : dtName}
                   </span>
+                  {outing && (
+                    <span className="truncate font-mono text-[8.5px] font-semibold tracking-[0.04em] text-[var(--acc)]">
+                      {t.entreno.modalities[outing.modality].toUpperCase()}
+                    </span>
+                  )}
                   {place && (
                     <span className="font-mono text-[8px] tracking-[0.06em] text-[var(--faint2)]">
                       {place === "home" ? t.week.home : t.week.office}
