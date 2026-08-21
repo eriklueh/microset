@@ -67,6 +67,11 @@ jobs:
           # Clave privada del updater → firma los bundles y genera latest.json.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          # Capa social (F4) — envs PÚBLICAS que Vite embebe en el cliente en build-time.
+          # Ausentes → la app corre 100% local y la vista AMIGOS muestra "falta la nube".
+          # Son repo *variables* (no secretos): la publishable key y la URL de Convex son públicas.
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ vars.VITE_CLERK_PUBLISHABLE_KEY }}
+          VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "microset ${{ github.ref_name }}"
