@@ -110,6 +110,11 @@ export interface NewSessionInput {
   modality: Modality;
   location: SessionLocation;
   external: boolean;
+  name?: string;
+  /** Bounding window (minutes-of-day). For external, prefer `startMin` + duration. */
+  window?: { start: number; end: number };
+  /** Start time (minutes-of-day). For external, sets window = { start, end: start + durationMin }. */
+  startMin?: number;
   durationMin?: number;
   intensity?: number;
 }
@@ -118,6 +123,11 @@ export interface NewSessionInput {
 export interface SessionPatch {
   modality?: Modality;
   location?: SessionLocation;
+  name?: string;
+  /** Bounding window (minutes-of-day). Pass null to clear it. */
+  window?: { start: number; end: number } | null;
+  /** Start time (minutes-of-day). Recomputes the window end from the current/patched duration. */
+  startMin?: number;
   durationMin?: number;
   intensity?: number;
 }
@@ -596,16 +606,23 @@ export const useStore = create<State>()(
 
       addEntrenoSession: (input) => {
         const id = newId();
+        const durationMin = Math.max(0, input.durationMin ?? 45);
+        // Window: an explicit one wins; else derive from a start time (+ duration for external).
+        const window =
+          input.window ??
+          (input.startMin != null
+            ? { start: input.startMin, end: input.startMin + (input.external ? durationMin : 0) }
+            : undefined);
+        const base = {
+          id,
+          modality: input.modality,
+          location: input.location,
+          ...(input.name?.trim() ? { name: input.name.trim() } : {}),
+          ...(window ? { window } : {}),
+        };
         const session: Session = input.external
-          ? {
-              id,
-              modality: input.modality,
-              location: input.location,
-              external: true,
-              durationMin: Math.max(0, input.durationMin ?? 45),
-              intensity: clamp01(input.intensity ?? 0.7),
-            }
-          : { id, modality: input.modality, location: input.location, external: false, items: [] };
+          ? { ...base, external: true, durationMin, intensity: clamp01(input.intensity ?? 0.7) }
+          : { ...base, external: false, items: [] };
         set((s) => ({ entreno: { ...s.entreno, sessions: [...s.entreno.sessions, session] } }));
         return id;
       },
@@ -619,9 +636,24 @@ export const useStore = create<State>()(
               const next = { ...ss } as Session;
               if (patch.modality) next.modality = patch.modality;
               if (patch.location) next.location = patch.location;
-              if (next.external) {
-                if (patch.durationMin != null) next.durationMin = Math.max(0, patch.durationMin);
-                if (patch.intensity != null) next.intensity = clamp01(patch.intensity);
+              if (patch.name != null) {
+                const nm = patch.name.trim();
+                if (nm) next.name = nm;
+                else delete next.name;
+              }
+              if (next.external && patch.durationMin != null) next.durationMin = Math.max(0, patch.durationMin);
+              if (next.external && patch.intensity != null) next.intensity = clamp01(patch.intensity);
+              // Window: explicit patch (null clears) wins; else a start time (re)builds it. For
+              // external the end tracks the (possibly just-patched) duration; else start === end.
+              if ("window" in patch) {
+                if (patch.window) next.window = patch.window;
+                else delete next.window;
+              } else if (patch.startMin != null) {
+                const span = next.external ? next.durationMin : 0;
+                next.window = { start: patch.startMin, end: patch.startMin + span };
+              } else if (next.external && patch.durationMin != null && next.window) {
+                // Editing the duration keeps the existing start but slides the window end.
+                next.window = { start: next.window.start, end: next.window.start + next.durationMin };
               }
               return next;
             }),

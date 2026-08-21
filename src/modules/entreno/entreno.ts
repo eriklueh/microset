@@ -44,6 +44,8 @@ interface SessionBase {
   id: string;
   modality: Modality;
   location: SessionLocation;
+  /** Optional user-facing name (e.g. "BJJ"); UIs fall back to modality · location. */
+  name?: string;
   /** Bounding window (minutes-of-day) for windowed/clustered placement. */
   window?: { start: number; end: number };
   /** Tiebreak for ordering within a day (lower = earlier). */

@@ -24,6 +24,14 @@ const inputCls =
 const MODALITIES: Modality[] = ["calisthenics", "strength", "sport", "cardio"];
 const LOCATIONS: SessionLocation[] = ["home", "away"];
 
+/** Minutes-of-day → "HH:MM". */
+const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+/** "HH:MM" → minutes-of-day. */
+const parseHHMM = (s: string): number => {
+  const [h, mm] = s.split(":").map((n) => parseInt(n, 10));
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(mm) ? mm : 0);
+};
+
 /** Edit a single sport (external session) — the right working pane when a sport tab is active. */
 export function SportEditor({ session, onDeleted }: { session: Session; onDeleted: () => void }) {
   const t = useT();
@@ -34,6 +42,16 @@ export function SportEditor({ session, onDeleted }: { session: Session; onDelete
     <section className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-7 py-6">
         <div className="flex flex-wrap gap-7">
+          <Labeled label={t.entreno.nameLabel}>
+            <input
+              type="text"
+              value={session.name ?? ""}
+              onChange={(e) => updateEntrenoSession(session.id, { name: e.currentTarget.value })}
+              placeholder={t.entreno.modalities[session.modality]}
+              aria-label={t.entreno.nameLabel}
+              className={`${inputCls} w-40 px-3 py-2.5 font-mono text-[13px] placeholder:text-[var(--faint2)]`}
+            />
+          </Labeled>
           <Labeled label={t.entreno.modality}>
             <select
               value={session.modality}
@@ -66,6 +84,18 @@ export function SportEditor({ session, onDeleted }: { session: Session; onDelete
 
         {session.external && (
           <div className="mt-7 flex flex-wrap gap-7">
+            <Labeled label={t.entreno.startLabel}>
+              <input
+                type="time"
+                value={session.window ? hhmm(session.window.start) : ""}
+                onChange={(e) => {
+                  const v = e.currentTarget.value;
+                  updateEntrenoSession(session.id, v ? { startMin: parseHHMM(v) } : { window: null });
+                }}
+                aria-label={t.entreno.startLabel}
+                className={`${inputCls} px-3 py-2.5 font-mono text-[13px] [color-scheme:dark]`}
+              />
+            </Labeled>
             <Labeled label={t.entreno.duration}>
               <span className="flex items-center gap-1.5">
                 <input

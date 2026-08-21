@@ -74,7 +74,9 @@ function EntrenoDayBlock({ session }: { session: Session }) {
     setReasonsOpen(false);
   };
 
-  const title = metaLine([t.entreno.modalities[session.modality], t.entreno.locations[session.location]]).toUpperCase();
+  const title =
+    session.name?.trim().toUpperCase() ||
+    metaLine([t.entreno.modalities[session.modality], t.entreno.locations[session.location]]).toUpperCase();
   const win = session.window;
 
   return (

@@ -116,6 +116,7 @@ export function RoutineView() {
     setMode("list");
   };
   const sportTitle = (s: Session) =>
+    s.name?.trim().toUpperCase() ||
     `${t.entreno.modalities[s.modality]} · ${t.entreno.locations[s.location]}`.toUpperCase();
 
   if (!selected) {

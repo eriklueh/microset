@@ -79,7 +79,11 @@ export function CalendarView() {
   const nextMonth = () => setCalMonth((c) => (c.m0 === 11 ? { y: c.y + 1, m0: 0 } : { y: c.y, m0: c.m0 + 1 }));
 
   const sessionTitle = (s: Session) =>
+    s.name?.trim().toUpperCase() ||
     `${t.entreno.modalities[s.modality]} · ${t.entreno.locations[s.location]}`.toUpperCase();
+  // Minutes-of-day → "HH:MM" for a session's window start (shown where it helps).
+  const startTime = (s: Session) =>
+    s.window ? `${String(Math.floor(s.window.start / 60)).padStart(2, "0")}:${String(s.window.start % 60).padStart(2, "0")}` : null;
 
   const cyclePlace = (i: number, place: "home" | "office" | null) =>
     setDayKind(i, place === null ? "home" : place === "home" ? "office" : null);
@@ -242,6 +246,9 @@ export function CalendarView() {
             <span className="font-mono text-[10px] tracking-[0.1em] text-[var(--faint2)]">
               {t.routine.dow[weekSel!]} {weekDates[weekSel!].getDate()} · {months[weekDates[weekSel!].getMonth()].slice(0, 3).toUpperCase()}
             </span>
+            {startTime(selSession) && (
+              <span className="font-pixel text-[14px] leading-none tabular-nums text-[var(--acc)]">{startTime(selSession)}</span>
+            )}
             {selDone && <span className="font-mono text-[10px] tracking-[0.1em] text-[var(--acc)]">{t.entreno.status.done}</span>}
             {selReason && !selDone && (
               <span className="font-mono text-[10px] tracking-[0.1em] text-[var(--faint2)]">
@@ -373,8 +380,13 @@ export function CalendarView() {
                     {rest ? t.today.rest : dtName}
                   </span>
                   {outing && (
-                    <span className="truncate font-mono text-[8.5px] font-semibold tracking-[0.04em] text-[var(--acc)]">
-                      {t.entreno.modalities[outing.modality].toUpperCase()}
+                    <span className="flex items-baseline gap-1">
+                      <span className="min-w-0 truncate font-mono text-[8.5px] font-semibold tracking-[0.04em] text-[var(--acc)]">
+                        {outing.name?.trim().toUpperCase() || t.entreno.modalities[outing.modality].toUpperCase()}
+                      </span>
+                      {startTime(outing) && (
+                        <span className="flex-none font-mono text-[8px] tabular-nums text-[var(--faint2)]">{startTime(outing)}</span>
+                      )}
                     </span>
                   )}
                   {place && (
