@@ -3,7 +3,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useCatalog } from "@/hooks/useCatalog";
 import { computeLevels, type PlanContext } from "@/lib/levels";
 import { activityFromLogs } from "@/modules/pausa/pausa";
-import { computeAdherence, currentSeasonId } from "@/lib/social";
+import { computeAdherence, computeForma, currentSeasonId, type EffortSample } from "@/lib/social";
 import { effectiveSlot, REST, useStore } from "@/store/useStore";
 
 /**
@@ -11,8 +11,9 @@ import { effectiveSlot, REST, useStore } from "@/store/useStore";
  * "mis stats" que sube a la liga, para que auto-publish y el botón manual publiquen lo mismo.
  *
  * Todo se deriva de los mismos logs/plan que ya usa el resto de la app (ProgressView):
- * `streak`/`level` de computeLevels, `weeklyEffort` = Σ effortXp de esta temporada, y la nueva
- * `adherence` (día-level, ver `computeAdherence`). `formaElo` es placeholder (1000) hasta FORMA.
+ * `streak`/`level` de computeLevels, `weeklyEffort` = Σ effortXp de esta temporada, la
+ * `adherence` (día-level, ver `computeAdherence`) y `formaElo` = FORMA (índice persistente que
+ * decae, ver `computeForma`) — ambos derivados del MISMO stream que weeklyEffort.
  *
  * Usa Clerk `useUser`, así que SOLO debe llamarse dentro del árbol CLOUD_READY + <SignedIn>.
  */
@@ -49,11 +50,18 @@ export function useMyStandings(): MyStandings {
   return useMemo(() => {
     const season = currentSeasonId();
     const levels = computeLevels(logs, plan, byId, streakFreeze);
+    // Un único paso por el stream: weeklyEffort mira sólo esta temporada; FORMA mira TODO el
+    // historial (EMA multi-semana). Misma fuente ⇒ misma "moneda de esfuerzo" y misma "semana".
+    const events = activityFromLogs(logs, byId);
     const weeklyEffort = Math.round(
-      activityFromLogs(logs, byId)
+      events
         .filter((e) => currentSeasonId(new Date(e.at)) === season)
         .reduce((n, e) => n + (e.metrics?.effortXp ?? 0), 0),
     );
+    const samples: EffortSample[] = events.map((e) => ({
+      at: e.at,
+      effortXp: e.metrics?.effortXp ?? 0,
+    }));
     const adherence = computeAdherence(logs, plan.slotForDate, plan.rest);
     return {
       handle,
@@ -61,7 +69,7 @@ export function useMyStandings(): MyStandings {
       level: levels.rank,
       weeklyEffort,
       adherence,
-      formaElo: 1000, // placeholder hasta construir FORMA
+      formaElo: computeForma(samples),
     };
   }, [logs, plan, byId, streakFreeze, handle]);
 }

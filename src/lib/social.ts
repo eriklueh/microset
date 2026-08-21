@@ -170,3 +170,92 @@ export function computeAdherence(
   if (programmed === 0) return trained > 0 ? 1 : 0;
   return Math.max(0, Math.min(1, trained / programmed));
 }
+
+// ── FORMA — índice persistente de "estar en forma" ───────────────────────────────
+// Ver docs/VISION.md §6. FORMA es un eje ORTOGONAL a weeklyEffort: weeklyEffort es el
+// sprint de la semana en curso (se resetea por temporada); FORMA es la identidad de largo
+// plazo — una EMA saturada del esfuerzo semanal que se CONSTRUYE con constancia y DECAE
+// cuando dejás de entrenar. Como el resto de las capas (adherencia/niveles), no persiste
+// estado propio: se RE-COMPUTA desde el stream de logs en cada render, determinista y sin NaN.
+
+/** Una muestra de esfuerzo: el `at` ISO del log + su effortXp intrínseco (intensity=1). */
+export interface EffortSample {
+  at: string; // ISO timestamp (mismo campo que LogEntry.at)
+  effortXp: number; // metrics.effortXp del set (vía activityFromLogs)
+}
+
+/**
+ * Índice entero monótono de semanas ISO — dos fechas de la misma semana ISO comparten índice y
+ * semanas consecutivas dan índices consecutivos (diferencia 1). Reusa el MISMO anclaje que
+ * `currentSeasonId` (el jueves ISO, vía `isoThursday`), así FORMA y la liga cuentan "la semana"
+ * igual. `Math.round` (no floor) lo hace inmune al ±1h de DST: el jueves de una semana y el de
+ * la siguiente están a 7 días exactos, y el offset local nunca cae cerca del borde de redondeo.
+ */
+function isoWeekIndex(d: Date): number {
+  return Math.round(isoThursday(d).getTime() / 604_800_000);
+}
+
+// Constantes finales de FORMA (ver SPEC). Anti-gaming y decaimiento salen de acá:
+const FORMA_ALPHA = 0.3; // peso EMA de la semana más nueva ⇒ decaimiento 1-α = 0.7/semana
+const FORMA_CEIL = 2000; // techo asintótico (una sola semana aporta a lo sumo α·CEIL = 600)
+const FORMA_SCALE = 90; // media-saturación del esfuerzo semanal, en unidades effortXp
+const FORMA_MAX_WEEKS = 104; // cota de lookback O(1): 0.7^104 ≈ 3e-16 ⇒ igual al historial completo
+
+/** Mapa saturante por semana: esfuerzo semanal `E` → aporte acotado en [0, CEIL). */
+function formaWeekMap(E: number): number {
+  return FORMA_CEIL * (1 - Math.exp(-Math.max(0, E) / FORMA_SCALE));
+}
+
+/**
+ * FORMA — índice PERSISTENTE de "estar en forma" (entero 0..2000).
+ *
+ * EMA (media-vida ≈ 1.94 semanas) del esfuerzo semanal ISO, saturado por semana ANTES de
+ * promediar. Sube con constancia/esfuerzo sostenido; BAJA en semanas idle (cada semana sin
+ * logs es un paso de decaimiento ×0.7). No se reinicia por temporada — eso es la carrera
+ * semanal (weeklyEffort), aparte. Funciona entrenando solo o con amigos (no es ELO pairwise),
+ * es comparable en una escala común, y es difícil de gamear: ni una semana enorme aislada lo
+ * dispara (tope duro α·CEIL) ni un plan minúsculo lo maximiza (satura en su propio nivel).
+ *
+ * Puro + determinista: sólo depende de `samples` y `now` (inyectable para tests). Nunca NaN,
+ * siempre en rango, sin estado global.
+ *
+ * @param samples  muestras de esfuerzo (una por set logueado; ver `activityFromLogs`)
+ * @param now      reloj inyectable para tests (default: la hora de pared)
+ * @returns entero en [0, 2000]
+ */
+export function computeForma(samples: EffortSample[], now: Date = new Date()): number {
+  // PASO 0 — agrupar por índice de semana ISO, descartando basura y semanas futuras.
+  const nowIdx = isoWeekIndex(now);
+  const effortByIdx = new Map<number, number>();
+  let minIdx = Infinity;
+  for (const s of samples) {
+    const ms = Date.parse(s.at);
+    if (!Number.isFinite(ms)) continue; // fecha basura → ignorar
+    const wi = isoWeekIndex(new Date(ms));
+    if (wi > nowIdx) continue; // semana futura → no infla
+    const xp = Number.isFinite(s.effortXp) ? Math.max(0, s.effortXp) : 0;
+    effortByIdx.set(wi, (effortByIdx.get(wi) ?? 0) + xp);
+    if (wi < minIdx) minIdx = wi;
+  }
+  if (minIdx === Infinity) return 0; // sin muestras usables
+
+  // PASO 1 — EMA sobre semanas COMPLETAS (viejo → nuevo, EXCLUYE la semana actual). Al iterar
+  // el rango entero y contiguo, cada semana vacía intermedia aporta E=0 ⇒ fp(0)=0, que es
+  // exactamente el paso de decaimiento ema ← 0.7·ema. No hace falta enumerar fechas.
+  const startIdx = Math.max(minIdx, nowIdx - FORMA_MAX_WEEKS);
+  let ema = 0;
+  for (let wi = startIdx; wi <= nowIdx - 1; wi++) {
+    ema = FORMA_ALPHA * formaWeekMap(effortByIdx.get(wi) ?? 0) + (1 - FORMA_ALPHA) * ema;
+  }
+
+  // PASO 2 — plegar la semana ACTUAL (parcial) sólo hacia ARRIBA (anti-sawtooth): entrenar hoy
+  // puede SUBIR FORMA sobre el cierre de la semana pasada, pero no haber entrenado TODAVÍA esta
+  // semana no la baja (evita el bajón de los lunes). La caída por una semana idle se materializa
+  // recién cuando esa semana pasa a ser "completa" (PASO 1).
+  const candidate =
+    FORMA_ALPHA * formaWeekMap(effortByIdx.get(nowIdx) ?? 0) + (1 - FORMA_ALPHA) * ema;
+  const result = Math.max(ema, candidate);
+
+  // PASO 3 — mapear a entero acotado.
+  return Math.round(Math.min(FORMA_CEIL, Math.max(0, result)));
+}

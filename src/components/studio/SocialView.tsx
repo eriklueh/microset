@@ -423,6 +423,10 @@ function StandingsTable({
     | undefined;
 }) {
   const t = useT();
+  // Orden client-side: por esfuerzo de la SEMANA (la carrera en curso) o por FORMA (el índice
+  // persistente de largo plazo). Default SEMANA — el ranking que la liga ya mostraba.
+  const [sortBy, setSortBy] = useState<"week" | "forma">("week");
+
   if (standings === undefined) {
     return <div className="font-mono text-[11px] text-[var(--faint)]">{t.social.loading}</div>;
   }
@@ -433,54 +437,91 @@ function StandingsTable({
       </div>
     );
   }
+
+  const sorted = [...standings].sort((a, b) =>
+    sortBy === "forma" ? b.formaElo - a.formaElo : b.weeklyEffort - a.weeklyEffort,
+  );
+  const GRID = "grid-cols-[1.75rem_1fr_4rem_4rem_4.5rem_3.5rem_3rem]";
+
   return (
-    <div className="border border-[var(--rule2)]">
-      {/* header row */}
-      <div className="grid grid-cols-[2rem_1fr_5rem_5rem_4rem_3.5rem] gap-2 border-b border-[var(--rule2)] px-4 py-2 font-mono text-[9px] font-semibold tracking-[0.14em] text-[var(--faint2)]">
-        <span>{t.social.colRank}</span>
-        <span>{t.social.colAthlete}</span>
-        <span className="text-right">{t.social.colAdherence}</span>
-        <span className="text-right">{t.social.colEffort}</span>
-        <span className="text-right">{t.social.colStreak}</span>
-        <span className="text-right">{t.social.colLevel}</span>
+    <div className="flex flex-col gap-2">
+      {/* toggle de orden — SEMANA / FORMA */}
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--faint2)]">
+          {t.social.sortLabel}
+        </span>
+        <div className="flex">
+          {(["week", "forma"] as const).map((key) => {
+            const active = sortBy === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setSortBy(key)}
+                className="border border-[var(--rule2)] px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.08em] [&+&]:border-l-0"
+                style={{
+                  background: active ? "var(--acc)" : "transparent",
+                  color: active ? "var(--on)" : "var(--faint)",
+                }}
+              >
+                {key === "week" ? t.social.sortWeek : t.social.sortForma}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      {standings.map((row, i) => (
+
+      <div className="overflow-x-auto border border-[var(--rule2)]">
+        {/* header row */}
         <div
-          key={row.userId}
-          className="grid grid-cols-[2rem_1fr_5rem_5rem_4rem_3.5rem] items-center gap-2 px-4 py-2.5 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[var(--rule)]"
-          style={{
-            background: row.isMe ? "var(--acc)" : "transparent",
-            color: row.isMe ? "var(--on)" : "var(--fg)",
-          }}
+          className={`grid min-w-[26rem] ${GRID} gap-2 border-b border-[var(--rule2)] px-4 py-2 font-mono text-[9px] font-semibold tracking-[0.14em] text-[var(--faint2)]`}
         >
-          <span className="font-pixel text-[16px] tabular-nums">{i + 1}</span>
-          <span className="flex min-w-0 items-baseline gap-2">
-            <span className="truncate text-[14px] font-bold tracking-[-0.01em]">{row.handle}</span>
-            {row.isMe && (
+          <span>{t.social.colRank}</span>
+          <span>{t.social.colAthlete}</span>
+          <span className="text-right">{t.social.colForma}</span>
+          <span className="text-right">{t.social.colAdherence}</span>
+          <span className="text-right">{t.social.colEffort}</span>
+          <span className="text-right">{t.social.colStreak}</span>
+          <span className="text-right">{t.social.colLevel}</span>
+        </div>
+        {sorted.map((row, i) => (
+          <div
+            key={row.userId}
+            className={`grid min-w-[26rem] ${GRID} items-center gap-2 px-4 py-2.5 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[var(--rule)]`}
+            style={{
+              background: row.isMe ? "var(--acc)" : "transparent",
+              color: row.isMe ? "var(--on)" : "var(--fg)",
+            }}
+          >
+            <span className="font-pixel text-[16px] tabular-nums">{i + 1}</span>
+            <span className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate text-[14px] font-bold tracking-[-0.01em]">{row.handle}</span>
+              {row.isMe && (
+                <span
+                  className="flex-none font-mono text-[8.5px] font-semibold tracking-[0.14em]"
+                  style={{ color: row.isMe ? "var(--on)" : "var(--faint2)" }}
+                >
+                  {t.social.you}
+                </span>
+              )}
+            </span>
+            <span className="text-right font-pixel text-[18px] tabular-nums">{row.formaElo}</span>
+            <span className="flex items-baseline justify-end gap-0.5">
+              <span className="font-pixel text-[18px] tabular-nums">
+                {Math.round(row.adherence * 100)}
+              </span>
               <span
-                className="flex-none font-mono text-[8.5px] font-semibold tracking-[0.14em]"
+                className="font-mono text-[9px]"
                 style={{ color: row.isMe ? "var(--on)" : "var(--faint2)" }}
               >
-                {t.social.you}
+                %
               </span>
-            )}
-          </span>
-          <span className="flex items-baseline justify-end gap-0.5">
-            <span className="font-pixel text-[18px] tabular-nums">
-              {Math.round(row.adherence * 100)}
             </span>
-            <span
-              className="font-mono text-[9px]"
-              style={{ color: row.isMe ? "var(--on)" : "var(--faint2)" }}
-            >
-              %
-            </span>
-          </span>
-          <span className="text-right font-pixel text-[18px] tabular-nums">{row.weeklyEffort}</span>
-          <span className="text-right font-pixel text-[16px] tabular-nums">{row.streak}</span>
-          <span className="text-right font-pixel text-[16px] tabular-nums">{row.level}</span>
-        </div>
-      ))}
+            <span className="text-right font-pixel text-[18px] tabular-nums">{row.weeklyEffort}</span>
+            <span className="text-right font-pixel text-[16px] tabular-nums">{row.streak}</span>
+            <span className="text-right font-pixel text-[16px] tabular-nums">{row.level}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
