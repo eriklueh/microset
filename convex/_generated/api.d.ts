@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as coach from "../coach.js";
+import type * as http from "../http.js";
+import type * as mcp from "../mcp.js";
 import type * as social from "../social.js";
 import type * as userDocs from "../userDocs.js";
 
@@ -18,6 +21,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  coach: typeof coach;
+  http: typeof http;
+  mcp: typeof mcp;
   social: typeof social;
   userDocs: typeof userDocs;
 }>;
@@ -48,4 +54,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  mcpGateway: import("convex-mcp-gateway/_generated/component.js").ComponentApi<"mcpGateway">;
+};
