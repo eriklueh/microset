@@ -17,8 +17,12 @@ import {
 /** Clerk issuer OIDC — el MISMO de convex/auth.config.ts (Frontend API URL). */
 export const CLERK_ISSUER = "https://becoming-bison-9194.clerk.accounts.dev";
 
+/** Origin de NUESTRO server (deployment DEV, dominio de HTTP actions). Es también el
+ * issuer de nuestro authorization-server metadata bridge (ver convex/http.ts). */
+export const MCP_ORIGIN = "https://rapid-kiwi-381.convex.site";
+
 /** URI del recurso MCP (deployment DEV, dominio de HTTP actions). */
-export const MCP_RESOURCE_URL = "https://rapid-kiwi-381.convex.site/mcp";
+export const MCP_RESOURCE_URL = `${MCP_ORIGIN}/mcp`;
 
 export const gateway = new McpGateway(components.mcpGateway);
 
@@ -64,7 +68,11 @@ export const authorize: McpAuthorizerHandler = async (_ctx, { identity }) => {
  * Corré UNA vez tras el deploy: configura la OAuth 2.1 protected-resource discovery.
  * Con esto (y `requireAuth: true` en http.ts) un POST anónimo a /mcp devuelve
  * 401 + `WWW-Authenticate: Bearer resource_metadata=...` — el disparador que hace que
- * claude.ai arranque el flujo OAuth contra Clerk. Sin esto el 401 va sin el header.
+ * claude.ai arranque el flujo OAuth. Sin esto el 401 va sin el header.
+ *
+ * `authServerUrl` apunta a NUESTRO origin (el AS-metadata bridge de http.ts), NO directo
+ * a Clerk: coherente con la PRM que servimos, para que claude.ai haga fake-DCR contra
+ * nuestro `registration_endpoint`. Re-corré tras deploy si cambió:
  *
  *   npx convex run mcp:setupOAuth
  */
@@ -72,9 +80,9 @@ export const setupOAuth = internalMutation({
   args: {},
   handler: async (ctx) => {
     await gateway.setOAuthConfig(ctx, {
-      authServerUrl: CLERK_ISSUER,
+      authServerUrl: MCP_ORIGIN,
       resourceUrl: MCP_RESOURCE_URL,
     });
-    return { ok: true, authServerUrl: CLERK_ISSUER, resourceUrl: MCP_RESOURCE_URL };
+    return { ok: true, authServerUrl: MCP_ORIGIN, resourceUrl: MCP_RESOURCE_URL };
   },
 });
