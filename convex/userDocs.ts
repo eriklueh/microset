@@ -69,18 +69,24 @@ export const getMyDoc = query({
 /**
  * Upsert de MI documento de un file-group (por userId + group). `data` es JSON opaco:
  * se guarda tal cual, NO se parsea. `rev` es un contador monotónico (existente + 1).
- * La resolución de conflictos LWW real es de la Fase B — acá siempre pisa.
+ *
+ * Resolución de conflictos = LWW: SIEMPRE pisa, bumpea `rev` y setea `updatedAt` al server
+ * time. `baseRev` es el `lastSyncedRev` que el cliente creía vigente al empezar el push;
+ * `clobbered` (telemetría, la escritura igual entra) es true cuando otra escritura se coló
+ * entre medio — el rev almacenado ya no coincide con lo que el cliente vio. Ver docs/agent/sync.md §5.
  */
 export const upsertMyDoc = mutation({
-  args: { group: v.string(), data: v.string() },
-  handler: async (ctx, { group, data }) => {
+  args: { group: v.string(), data: v.string(), baseRev: v.optional(v.number()) },
+  handler: async (ctx, { group, data, baseRev }) => {
     const me = await requireUserId(ctx);
     if (!VALID_GROUPS.has(group)) throw new Error(`file-group inválido: ${group}`);
     const existing = await ctx.db
       .query("userDocs")
       .withIndex("by_user_group", (q) => q.eq("userId", me).eq("group", group))
       .first();
-    const rev = (existing?.rev ?? 0) + 1;
+    const storedRev = existing?.rev ?? 0; // 0 = aún no existe remoto
+    const clobbered = baseRev != null && storedRev !== baseRev;
+    const rev = storedRev + 1;
     const row = {
       userId: me, // del token — el cliente NO puede escribir otro
       group,
@@ -90,6 +96,6 @@ export const upsertMyDoc = mutation({
     };
     if (existing) await ctx.db.patch(existing._id, row);
     else await ctx.db.insert("userDocs", row);
-    return { rev };
+    return { rev, clobbered };
   },
 });
