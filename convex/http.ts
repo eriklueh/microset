@@ -72,8 +72,12 @@ http.route({
   method: "GET",
   handler: httpAction(async (_ctx, req) => {
     const origin = new URL(req.url).origin;
+    // Con el DCR NATIVO de Clerk habilitado, apuntamos DIRECTO a Clerk (no al bridge): así Clerk
+    // es el authorization server real (issuer, authorize, token y registration todos de Clerk),
+    // el `iss` de la respuesta matchea la metadata (RFC 9207) y el redirect dinámico lo maneja
+    // Clerk. El fake-DCR bridge (rutas de abajo) queda DORMIDO — el cliente ya no las consulta.
     const metadata = generateProtectedResourceMetadata({
-      authServerUrl: origin, // ← era CLERK_ISSUER; ahora nuestro AS-metadata bridge
+      authServerUrl: CLERK_ISSUER,
       resourceUrl: `${origin}/mcp`,
     });
     return new Response(JSON.stringify(metadata), {
