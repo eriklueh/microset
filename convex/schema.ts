@@ -56,4 +56,19 @@ export default defineSchema({
   })
     .index("by_group", ["groupId"])
     .index("by_group_owner", ["groupId", "ownerId"]),
+
+  // SYNC Fase A · "archivos mandan, Convex espeja". Espejo por-usuario de los documentos de
+  // config (los file-groups de src/store/files.ts). `data` es el JSON del file-group serializado,
+  // OPACO para Convex (no se parsea). `group` es el nombre del file-group (p.ej. "routine.json").
+  // `rev` es un contador monotónico por (userId, group); la resolución LWW real llega en Fase B.
+  // Aditivo: nada en la app lo consume todavía.
+  userDocs: defineTable({
+    userId: v.string(), // Clerk sub — el cliente nunca puede escribir otro
+    group: v.string(),
+    data: v.string(), // JSON opaco del file-group
+    rev: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_group", ["userId", "group"]),
 });

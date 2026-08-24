@@ -9,6 +9,7 @@
  */
 
 import type * as social from "../social.js";
+import type * as userDocs from "../userDocs.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +19,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   social: typeof social;
+  userDocs: typeof userDocs;
 }>;
 
 /**
