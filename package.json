@@ -26,6 +26,7 @@
     "clsx": "^2.1.1",
     "convex": "^1.44.0",
     "convex-mcp-gateway": "^0.11.0",
+    "jose": "^6.2.10",
     "lucide-react": "^1.18.0",
     "radix-ui": "^1.5.0",
     "react": "^19.1.0",

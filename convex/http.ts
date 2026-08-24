@@ -4,7 +4,7 @@ import {
   generateProtectedResourceMetadata,
   corsHeaders,
 } from "@clerk/mcp-tools/server";
-import { gateway, tools, authorize, CLERK_ISSUER } from "./mcp";
+import { gateway, tools, authorize, resolveIdentity, CLERK_ISSUER } from "./mcp";
 
 /**
  * MCP · Fase C — montaje HTTP del Gateway (todo vive en el host: el componente no tiene
@@ -49,6 +49,9 @@ const mcp = httpAction(async (ctx, req) =>
     tools,
     requireAuth: true,
     cors: CLAUDE_ORIGINS,
+    // Bug #5: validamos el bearer de Clerk NOSOTROS (JWKS, aud=MCP_RESOURCE_URL) en vez del
+    // default `ctx.auth.getUserIdentity()` (que espera aud="convex" por auth.config.ts). Ver mcp.ts.
+    resolveIdentity,
   }),
 );
 for (const path of ["/mcp", "/mcp/"]) {
