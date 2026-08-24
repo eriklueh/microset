@@ -92,12 +92,21 @@ http.route({
  * override `response_types_supported: ["code"]` fuerza el code-flow PKCE puro (evita el
  * híbrido con id_token, cuyo `iss` de Clerk no matchearía el issuer del bridge y sería
  * rechazado por clientes estrictos). El handler ya maneja el preflight OPTIONS.
+ *
+ * `scopes_supported` se RECORTA a los estándar OIDC + offline_access: Clerk anuncia además
+ * `public_metadata`/`private_metadata` (scopes internos que la OAuth app no otorga), y
+ * claude.ai los pedía por leer la metadata → el token exchange fallaba con `invalid_scope`
+ * (el error #1 reportado de Claude+MCP). Anunciando solo estos 4, claude.ai pide solo lo
+ * que la app concede.
  */
 const asMetadata = httpAction(async (ctx, req) =>
   gateway.serveAuthorizationServerMetadata(ctx, req, {
     upstreamIssuer: CLERK_ISSUER,
     registrationPath: REGISTRATION_PATH,
-    overrides: { response_types_supported: ["code"] },
+    overrides: {
+      response_types_supported: ["code"],
+      scopes_supported: ["openid", "profile", "email", "offline_access"],
+    },
   }),
 );
 for (const method of ["GET", "OPTIONS"] as const) {
