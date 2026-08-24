@@ -242,6 +242,9 @@ interface State {
   levelsEnabled: boolean;
   /** When on, a single missed non-rest day doesn't break the streak. */
   streakFreeze: boolean;
+  /** Opt-in cross-device sync of CONFIG via Convex (Fase B1). Per-device, DEFAULT false.
+   *  With it off the shipped app is identical to today — no cloud engine mounts. */
+  syncEnabled: boolean;
 
   // routine editing (per day-type)
   addToRoutine: (dayTypeId: string, item: RoutineItem) => void;
@@ -316,6 +319,7 @@ interface State {
   setDemoMode: (value: boolean) => void;
   setLevelsEnabled: (value: boolean) => void;
   setStreakFreeze: (value: boolean) => void;
+  setSyncEnabled: (value: boolean) => void;
 
   // focus / DND (silences reminders for a window)
   setFocus: (minutes: number) => void;
@@ -373,6 +377,9 @@ export function migratePersisted(persisted: unknown, version: number): unknown {
   if (typeof p.streakFreeze !== "boolean") p.streakFreeze = false;
   // v5: Foco/DND window. Older stores lack it; start cleared.
   if (typeof p.focusUntil !== "number") p.focusUntil = null;
+  // v8: opt-in cross-device sync (Fase B1). Older stores lack it; DEFAULT OFF so an upgraded
+  // install behaves exactly as before until the user turns sync on in Ajustes.
+  if (typeof p.syncEnabled !== "boolean") p.syncEnabled = false;
   // v6: kernel module registry. Older stores (v5 and below) lack it; default to Pausa
   // enabled without touching any other field (routine/logs/settings stay intact).
   if (!p.modules || typeof p.modules !== "object") p.modules = defaultModules();
@@ -417,6 +424,7 @@ export const useStore = create<State>()(
       focusUntil: null,
       levelsEnabled: true,
       streakFreeze: false,
+      syncEnabled: false,
 
       addToRoutine: (dayTypeId, item) => {
         set((s) => reducers.addToRoutine(s, dayTypeId, item));
@@ -714,6 +722,7 @@ export const useStore = create<State>()(
 
       setLevelsEnabled: (value) => set({ levelsEnabled: value }),
       setStreakFreeze: (value) => set({ streakFreeze: value }),
+      setSyncEnabled: (value) => set({ syncEnabled: value }),
 
       setFocus: (minutes) =>
         set({ focusUntil: Date.now() + Math.max(1, minutes) * 60_000 }),
@@ -755,6 +764,7 @@ export const useStore = create<State>()(
           focusUntil: null,
           levelsEnabled: true,
           streakFreeze: false,
+          syncEnabled: false,
         });
         applyTheme(DEFAULT_THEME.mode, DEFAULT_THEME.accent);
         get().replan();
@@ -868,7 +878,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 7,
+      version: 8,
       migrate: migratePersisted,
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,
@@ -895,6 +905,7 @@ export const useStore = create<State>()(
         focusUntil: s.focusUntil,
         levelsEnabled: s.levelsEnabled,
         streakFreeze: s.streakFreeze,
+        syncEnabled: s.syncEnabled,
       }),
     },
   ),

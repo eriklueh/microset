@@ -16,6 +16,7 @@ import { ProgressView } from "@/components/studio/ProgressView";
 import { SocialView } from "@/components/studio/SocialView";
 import { SettingsView } from "@/components/studio/SettingsView";
 import { UpdateBanner } from "@/components/studio/UpdateBanner";
+import { CloudSync } from "@/store/sync/cloudSync";
 
 function App() {
   const [section, setSection] = useState<Section>("today");
@@ -54,6 +55,9 @@ function App() {
         <RelayBar />
       </div>
       <UpdateBanner />
+      {/* Cross-device CONFIG sync (Fase B1). Self-gates: renders nothing unless CLOUD_READY +
+          signed-in + the opt-in toggle is ON, so with sync off the app is unchanged. */}
+      <CloudSync />
     </div>
   );
 }

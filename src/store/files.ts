@@ -164,6 +164,32 @@ const REGISTRY: FileGroup[] = [
 /** The groups that round-trip (written and read back); excludes read-only snapshots. */
 const CONFIG_GROUPS = REGISTRY.filter((g) => !g.readonly);
 
+/**
+ * The config file-groups that the CLOUD sync engine (cloudSync.ts, Fase B1) mirrors to
+ * Convex — every round-tripping group EXCEPT logs (logs are append-only and sync by union
+ * in Fase B2, never LWW; see docs/agent/sync.md §4). Exported so cloudSync reuses the exact
+ * same `select`/`apply` mapping, guaranteeing local and remote hash identically.
+ */
+export const SYNC_GROUPS = CONFIG_GROUPS.filter((g) => g.name !== "logs.json");
+
+/**
+ * Apply one config group's parsed cloud data into the store (cloud-sync PULL executor).
+ * Runs ONLY that group's sanitizer (its keys are disjoint from the others), applies the
+ * patch WITHOUT `suppress` — so the store→files subscription mirrors the pulled doc back to
+ * disk (the coach's editable substrate) — then re-applies theme + replans, exactly like an
+ * external file edit would. A malformed/empty `data` yields an empty patch (no-op), never a crash.
+ */
+export function applyCloudGroup(name: string, data: unknown): void {
+  const g = SYNC_GROUPS.find((x) => x.name === name);
+  if (!g?.apply) return;
+  const out = { ...g.apply(data) } as Record<string, unknown>;
+  g.sanitize?.(out, useStore.getState());
+  useStore.setState(out as Partial<State>);
+  const st = useStore.getState();
+  applyTheme(st.theme.mode, st.theme.accent);
+  st.replan();
+}
+
 async function writeAll(): Promise<void> {
   const s = useStore.getState();
   const all: [string, string][] = REGISTRY.map(

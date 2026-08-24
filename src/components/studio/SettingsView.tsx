@@ -12,6 +12,11 @@ import { SquareSwitch } from "./EquipmentView";
 /** App version — mirrors the Titlebar build stamp. */
 const APP_VERSION = "2.6.0";
 
+/** Both cloud envs present at build time — the cross-device sync toggle is only shown then
+ *  (without the cloud layer there's nothing to sync against; same gate as SocialView). */
+const CLOUD_READY =
+  !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY && !!import.meta.env.VITE_CONVEX_URL;
+
 const toHour = (min: number) => Math.round(min / 60);
 const input = "border border-[var(--rule2)] bg-transparent text-[var(--fg)] outline-none focus:border-[var(--acc)]";
 const dataBtn = "border border-[var(--rule2)] px-4 py-2 font-mono text-[11px] font-semibold tracking-[0.06em] text-[var(--fg)] hover:border-[var(--fg)]";
@@ -40,6 +45,8 @@ export function SettingsView() {
   const setModuleEnabled = useStore((s) => s.setModuleEnabled);
   const streakFreeze = useStore((s) => s.streakFreeze);
   const setStreakFreeze = useStore((s) => s.setStreakFreeze);
+  const syncEnabled = useStore((s) => s.syncEnabled);
+  const setSyncEnabled = useStore((s) => s.setSyncEnabled);
   const coach = useStore((s) => s.coach);
   const setCoachConfig = useStore((s) => s.setCoachConfig);
   const profile = useStore((s) => s.profile);
@@ -302,6 +309,14 @@ export function SettingsView() {
           <SquareSwitch on={socialEnabled} onClick={() => setModuleEnabled("social", !socialEnabled)} />
         </Row>
       </Section>
+
+      {CLOUD_READY && (
+        <Section title={t.settings.syncSection}>
+          <Row label={t.settings.syncLabel} hint={t.settings.syncHint}>
+            <SquareSwitch on={syncEnabled} onClick={() => setSyncEnabled(!syncEnabled)} />
+          </Row>
+        </Section>
+      )}
 
       <Section title={t.settings.demo}>
         <Row label={t.settings.demoLabel} hint={t.settings.demoHint}>
