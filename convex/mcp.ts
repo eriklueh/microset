@@ -86,8 +86,9 @@ const CLERK_JWKS = createRemoteJWKSet(
  * el bearer con la `aud` correcta.
  *
  * El Gateway ya extrae el bearer del header `Authorization` y nos pasa SOLO el token string.
- * Verificamos firma + issuer + audience + expiración contra el JWKS público de Clerk (sin
- * secret). `null` ⇒ token rechazado (el Gateway lo trata igual que "sin token"). La regla de
+ * Verificamos firma + issuer + expiración contra el JWKS público de Clerk, y la audiencia
+ * SOLO si el token la trae (Claude Code CLI no pide `resource=`, así que Clerk no emite
+ * `aud`; el connector de claude.ai sí). Sin secret. `null` ⇒ token rechazado (el Gateway lo trata igual que "sin token"). La regla de
  * oro se mantiene: el `subject` sale del token verificado, jamás de un arg del cliente.
  *
  * NOTA: NO se usa `verifyClerkToken` de @clerk/mcp-tools: esa función NO verifica el JWT,
@@ -99,8 +100,21 @@ export const resolveIdentity: McpIdentityResolver = async (token) => {
   try {
     const { payload } = await jwtVerify(token, CLERK_JWKS, {
       issuer: CLERK_ISSUER,
-      audience: MCP_RESOURCE_URL,
     });
+    // `aud` es OPCIONAL: Clerk solo la emite si el cliente pidió el token con `resource=`
+    // (RFC 8707). El connector de claude.ai lo manda; Claude Code (CLI) NO, así que su token
+    // llega SIN `aud` y exigirla rechazaba tokens perfectamente válidos. Si viene, tiene que
+    // ser nuestro recurso; si no viene, alcanza con firma + issuer (el JWKS es de NUESTRO Clerk).
+    const aud = payload.aud;
+    if (aud !== undefined) {
+      const audiences = Array.isArray(aud) ? aud : [aud];
+      if (!audiences.includes(MCP_RESOURCE_URL)) {
+        console.log(
+          `resolveIdentity FAIL: aud=${JSON.stringify(aud)} (esperado ${MCP_RESOURCE_URL})`,
+        );
+        return null;
+      }
+    }
     if (!payload.sub) {
       console.log("resolveIdentity FAIL: token válido pero sin claim `sub`");
       return null;
