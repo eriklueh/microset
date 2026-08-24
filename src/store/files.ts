@@ -4,6 +4,13 @@ import { applyTheme } from "@/lib/theme";
 import { buildCoachContext } from "@/coach/context";
 import { COACH_CLAUDE_MD } from "@/coach/workspace";
 import { REST, useStore } from "./useStore";
+import {
+  sanitizeEntreno,
+  sanitizeEquipment,
+  sanitizeExercises,
+  sanitizeLogs,
+  sanitizeRoutine,
+} from "./sanitize";
 
 /**
  * Mirror the user's config to human-editable JSON files in the OS config folder
@@ -28,49 +35,8 @@ let lastWritten: Record<string, string> = {}; // file -> last JSON we wrote (ski
 
 type State = ReturnType<typeof useStore.getState>;
 
-// --- config validation helpers (used by the file-group sanitizers) ---------
-
-type DayTypeLike = { id: string; name: string; routine: unknown[] };
-const isDayType = (d: any): d is DayTypeLike =>
-  d && typeof d.id === "string" && typeof d.name === "string" && Array.isArray(d.routine);
-
-const MUSCLES = new Set(["pull", "push", "core", "legs"]);
-const isVariant = (v: any) => v && typeof v.id === "string" && typeof v.label === "string";
-/** A custom exercise the catalog can render safely — id/name/muscle/axis are load-bearing. */
-const isExercise = (e: any): boolean =>
-  !!e &&
-  typeof e.id === "string" &&
-  typeof e.name === "string" &&
-  MUSCLES.has(e.muscle) &&
-  Array.isArray(e.equipment) &&
-  typeof e.defaultReps === "string" &&
-  typeof e.defaultSets === "number" &&
-  Array.isArray(e.axis) &&
-  e.axis.length > 0 &&
-  e.axis.every(isVariant);
-
-// --- entreno module config validation --------------------------------------
-const MODALITIES = new Set(["calisthenics", "strength", "sport", "cardio"]);
-const LOCATIONS = new Set(["home", "away"]);
-const SKIP_REASONS = new Set(["enfermo", "lesionado", "ocupado", "viajando"]);
-/** A routine item inside a structured session (only id/name/sets are load-bearing). */
-const isSessionItem = (it: any): boolean =>
-  it && typeof it.exerciseId === "string" && typeof it.name === "string" && typeof it.sets === "number";
-/** A training session on disk — narrows the structured/external union defensively. */
-const isSession = (s: any): boolean => {
-  if (!s || typeof s.id !== "string" || !MODALITIES.has(s.modality) || !LOCATIONS.has(s.location)) return false;
-  return s.external === true
-    ? typeof s.durationMin === "number" && typeof s.intensity === "number"
-    : s.external === false && Array.isArray(s.items);
-};
-/** A logged outcome record (done/skipped, with a valid motive when skipped). */
-const isEntrenoRecord = (r: any): boolean =>
-  r &&
-  typeof r.id === "string" &&
-  typeof r.sessionId === "string" &&
-  typeof r.date === "string" &&
-  typeof r.at === "string" &&
-  (r.status === "done" || (r.status === "skipped" && SKIP_REASONS.has(r.reason)));
+// The pure config validators + per-group sanitizers live in ./sanitize (no
+// @tauri-apps/DOM/React/zustand) so the Convex backend can reuse them verbatim.
 
 /**
  * A module's file-group: one JSON file on disk plus how to move it to/from the store.
@@ -137,43 +103,7 @@ const REGISTRY: FileGroup[] = [
       return p as Partial<State>;
     },
     // Guarantee: at least one dayType, and week/dayKind length 7 with valid slots.
-    sanitize: (out, cur) => {
-      if (out.dayTypes !== undefined) {
-        const dts = Array.isArray(out.dayTypes) ? (out.dayTypes as any[]).filter(isDayType) : [];
-        if (dts.length === 0) delete out.dayTypes; // never empty dayTypes — keep current
-        else
-          out.dayTypes = dts.map((d: any) => {
-            const c = { ...d };
-            // strip a malformed per-day schedule override so it can't break createDayPlan
-            if (!(c.window && typeof c.window.start === "number" && typeof c.window.end === "number")) delete c.window;
-            if (typeof c.minRest !== "number") delete c.minRest;
-            return c;
-          });
-      }
-      const dayTypes = (out.dayTypes as DayTypeLike[] | undefined) ?? cur.dayTypes;
-      const fallbackId = dayTypes[0]?.id ?? "default";
-      const valid = new Set<string>([...dayTypes.map((d) => d.id), REST]);
-
-      if (out.week !== undefined) {
-        const w = Array.isArray(out.week) ? (out.week as any[]) : [];
-        out.week = Array.from({ length: 7 }, (_, i) => (valid.has(w[i]) ? w[i] : fallbackId));
-      }
-      if (out.dayKind !== undefined) {
-        const k = Array.isArray(out.dayKind) ? (out.dayKind as any[]) : [];
-        out.dayKind = Array.from({ length: 7 }, (_, i) =>
-          k[i] === "home" || k[i] === "office" ? k[i] : null,
-        );
-      }
-      if (out.dayOverrides !== undefined) {
-        const src = (out.dayOverrides ?? {}) as Record<string, any>;
-        const clean: Record<string, { slot: string; kind: "home" | "office" | null }> = {};
-        for (const [date, o] of Object.entries(src)) {
-          if (!o || typeof o !== "object" || !valid.has(o.slot)) continue;
-          clean[date] = { slot: o.slot, kind: o.kind === "home" || o.kind === "office" ? o.kind : null };
-        }
-        out.dayOverrides = clean;
-      }
-    },
+    sanitize: (out, cur) => sanitizeRoutine(out, cur, REST),
   },
   {
     name: "equipment.json",
@@ -186,11 +116,7 @@ const REGISTRY: FileGroup[] = [
       }
       return p as Partial<State>;
     },
-    sanitize: (out) => {
-      for (const key of ["ownedEquipment", "customEquipment"] as const) {
-        if (out[key] !== undefined && !Array.isArray(out[key])) delete out[key];
-      }
-    },
+    sanitize: (out) => sanitizeEquipment(out),
   },
   {
     name: "exercises.json",
@@ -198,13 +124,7 @@ const REGISTRY: FileGroup[] = [
     apply: (ex) => (ex && Array.isArray(ex.custom) ? ({ customExercises: ex.custom } as Partial<State>) : {}),
     // Custom exercises: drop any malformed entry so a bad edit can't break the catalog
     // (the rest of the app reads .muscle/.axis/.equipment on these without guarding).
-    sanitize: (out, cur) => {
-      if (out.customExercises !== undefined) {
-        out.customExercises = Array.isArray(out.customExercises)
-          ? (out.customExercises as any[]).filter(isExercise)
-          : cur.customExercises;
-      }
-    },
+    sanitize: (out, cur) => sanitizeExercises(out, cur),
   },
   {
     name: "profile.json",
@@ -221,9 +141,7 @@ const REGISTRY: FileGroup[] = [
     name: "logs.json",
     select: (s) => s.logs,
     apply: (logs) => (Array.isArray(logs) ? ({ logs } as Partial<State>) : {}),
-    sanitize: (out) => {
-      if (out.logs !== undefined && !Array.isArray(out.logs)) delete out.logs;
-    },
+    sanitize: (out) => sanitizeLogs(out),
   },
   {
     // Entreno module (net-new). Owns the training sessions, weekly program and outcome log.
@@ -233,26 +151,7 @@ const REGISTRY: FileGroup[] = [
     apply: (e) =>
       e && typeof e === "object" && !Array.isArray(e) ? ({ entreno: e } as Partial<State>) : {},
     // Defensive: drop malformed sessions/records, keep week length 7 with valid sessionIds.
-    sanitize: (out, cur) => {
-      if (out.entreno === undefined) return;
-      const e = out.entreno as any;
-      if (!e || typeof e !== "object" || Array.isArray(e)) {
-        out.entreno = cur.entreno;
-        return;
-      }
-      const sessions = Array.isArray(e.sessions)
-        ? (e.sessions as any[]).filter(isSession).map((s: any) => (s.external ? s : { ...s, items: (s.items as any[]).filter(isSessionItem) }))
-        : [];
-      const ids = new Set<string>(sessions.map((s: any) => s.id));
-      const week = Array.from({ length: 7 }, (_, i) => {
-        const w = Array.isArray(e.week) ? e.week[i] : null;
-        return typeof w === "string" && ids.has(w) ? w : null;
-      });
-      const records = Array.isArray(e.records)
-        ? (e.records as any[]).filter((r) => isEntrenoRecord(r) && ids.has(r.sessionId))
-        : [];
-      out.entreno = { sessions, week, records };
-    },
+    sanitize: (out, cur) => sanitizeEntreno(out, cur),
   },
   {
     // read-only snapshot for the coach (Claude Code reads this); not a config file

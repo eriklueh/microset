@@ -41,6 +41,11 @@ import "@/modules/pausa/pausa";
 // module disabled (the default) nothing reads it, so the app behaves exactly as today.
 import "@/modules/entreno/entreno";
 import type { Modality, Session, SessionLocation, SkipReason } from "@/modules/entreno/entreno";
+// Pure config reducers (framework-free): the read-modify-write bodies of the config
+// actions live here so Convex (Fase C) can reuse the exact same transforms. The store
+// keeps the surrounding effects (set + get().replan(), id minting, clock reads).
+import { newId, weekdayOfKey } from "./reducers";
+import * as reducers from "./reducers";
 
 /** A named routine template that can be assigned to weekdays. */
 export interface DayType {
@@ -153,10 +158,6 @@ const DEFAULT_DAYTYPES: DayType[] = [
 const DEFAULT_WEEK: string[] = ["full-a", "full-b", "full-a", "full-b", "deload", REST, REST];
 const DEFAULT_DAYKIND: (WeekKind | null)[] = Array(7).fill(null);
 
-function newId(): string {
-  return crypto.randomUUID();
-}
-
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -165,12 +166,6 @@ function todayKey(): string {
 /** Canonical date key `YYYY-M-D` (matches todayKey) from numeric parts. */
 export function dateKey(y: number, month0: number, day: number): string {
   return `${y}-${month0 + 1}-${day}`;
-}
-
-/** Mon-first weekday (0=Mon … 6=Sun) for a stored date key. */
-function weekdayOfKey(key: string): number {
-  const [y, m, d] = key.split("-").map(Number);
-  return (new Date(y, (m ?? 1) - 1, d ?? 1).getDay() + 6) % 7;
 }
 
 /** A per-date plan override on top of the recurring weekly pattern. */
@@ -206,14 +201,6 @@ export function nowMinutes(): Minute {
 
 function dayTypeById(dayTypes: DayType[], id: string): DayType | undefined {
   return dayTypes.find((d) => d.id === id);
-}
-
-function updateRoutine(
-  dayTypes: DayType[],
-  id: string,
-  fn: (routine: RoutineItem[]) => RoutineItem[],
-): DayType[] {
-  return dayTypes.map((d) => (d.id === id ? { ...d, routine: fn(d.routine) } : d));
 }
 
 interface DayPlan {
@@ -432,146 +419,71 @@ export const useStore = create<State>()(
       streakFreeze: false,
 
       addToRoutine: (dayTypeId, item) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
-            r.some((x) => x.exerciseId === item.exerciseId) ? r : [...r, item],
-          ),
-        }));
+        set((s) => reducers.addToRoutine(s, dayTypeId, item));
         get().replan();
       },
 
       setRoutineSets: (dayTypeId, exerciseId, sets) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
-            r.map((x) => (x.exerciseId === exerciseId ? { ...x, sets: Math.max(1, sets) } : x)),
-          ),
-        }));
+        set((s) => reducers.setRoutineSets(s, dayTypeId, exerciseId, sets));
         get().replan();
       },
 
       setRoutineTarget: (dayTypeId, exerciseId, target) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
-            r.map((x) => (x.exerciseId === exerciseId ? { ...x, target } : x)),
-          ),
-        }));
+        set((s) => reducers.setRoutineTarget(s, dayTypeId, exerciseId, target));
       },
 
       setRoutineVariant: (dayTypeId, exerciseId, variantId) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
-            r.map((x) => (x.exerciseId === exerciseId ? { ...x, variantId } : x)),
-          ),
-        }));
+        set((s) => reducers.setRoutineVariant(s, dayTypeId, exerciseId, variantId));
         get().replan();
       },
 
       removeFromRoutine: (dayTypeId, exerciseId) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) =>
-            r.filter((x) => x.exerciseId !== exerciseId),
-          ),
-        }));
+        set((s) => reducers.removeFromRoutine(s, dayTypeId, exerciseId));
         get().replan();
       },
 
       moveRoutineItem: (dayTypeId, exerciseId, dir) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) => {
-            const i = r.findIndex((x) => x.exerciseId === exerciseId);
-            const j = i + dir;
-            if (i < 0 || j < 0 || j >= r.length) return r;
-            const next = [...r];
-            [next[i], next[j]] = [next[j], next[i]];
-            return next;
-          }),
-        }));
+        set((s) => reducers.moveRoutineItem(s, dayTypeId, exerciseId, dir));
         get().replan();
       },
 
       setRoutineOrder: (dayTypeId, orderedExerciseIds) => {
-        set((s) => ({
-          dayTypes: updateRoutine(s.dayTypes, dayTypeId, (r) => {
-            const rank = new Map(orderedExerciseIds.map((id, i) => [id, i]));
-            const at = (x: RoutineItem) => rank.get(x.exerciseId) ?? Number.POSITIVE_INFINITY;
-            return [...r]
-              .map((x, i) => ({ x, i }))
-              .sort((a, b) => at(a.x) - at(b.x) || a.i - b.i)
-              .map((e) => e.x);
-          }),
-        }));
+        set((s) => reducers.setRoutineOrder(s, dayTypeId, orderedExerciseIds));
         get().replan();
       },
 
       setIntensity: (dayTypeId, id) => {
-        set((s) => ({
-          dayTypes: s.dayTypes.map((d) => (d.id === dayTypeId ? { ...d, intensity: id } : d)),
-        }));
+        set((s) => reducers.setIntensity(s, dayTypeId, id));
         get().replan();
       },
 
       setDaySchedule: (dayTypeId, patch) => {
-        set((s) => ({
-          dayTypes: s.dayTypes.map((d) => {
-            if (d.id !== dayTypeId) return d;
-            const next = { ...d };
-            if ("window" in patch) {
-              if (patch.window) next.window = patch.window;
-              else delete next.window;
-            }
-            if ("minRest" in patch) {
-              if (patch.minRest != null) next.minRest = Math.max(1, Math.min(180, patch.minRest));
-              else delete next.minRest;
-            }
-            return next;
-          }),
-        }));
+        set((s) => reducers.setDaySchedule(s, dayTypeId, patch));
         get().replan();
       },
 
       addDayType: (name) => {
         const id = newId();
-        set((s) => ({ dayTypes: [...s.dayTypes, { id, name, routine: [] }] }));
+        set((s) => reducers.addDayType(s, id, name));
         return id;
       },
 
       importDayType: (dt) => {
         const id = newId();
-        set((s) => ({ dayTypes: [...s.dayTypes, { ...dt, id }] }));
+        set((s) => reducers.importDayType(s, id, dt));
         return id;
       },
 
-      renameDayType: (id, name) =>
-        set((s) => ({
-          dayTypes: s.dayTypes.map((d) => (d.id === id ? { ...d, name } : d)),
-        })),
+      renameDayType: (id, name) => set((s) => reducers.renameDayType(s, id, name)),
 
       removeDayType: (id) => {
-        set((s) => {
-          if (s.dayTypes.length <= 1) return s;
-          const dayTypes = s.dayTypes.filter((d) => d.id !== id);
-          const fallback = dayTypes[0].id;
-          const week = s.week.map((slot) => (slot === id ? fallback : slot));
-          return { dayTypes, week };
-        });
+        set((s) => reducers.removeDayType(s, id));
         get().replan();
       },
 
       addCustomExercise: (input) => {
-        const ex: Exercise = {
-          id: newId(),
-          name: input.name,
-          equipment: input.equipment,
-          muscle: input.muscle,
-          primary: input.primary,
-          secondary: input.secondary,
-          measure: input.measure,
-          context: input.context,
-          defaultSets: input.defaultSets ?? 3,
-          defaultReps: input.defaultReps,
-          axis: [{ id: "bw", label: "Peso corporal", kind: "bodyweight" }],
-        };
-        set((s) => ({ customExercises: [...s.customExercises, ex] }));
+        const ex = reducers.buildExercise(newId(), input);
+        set((s) => reducers.addExercise(s, ex));
         return ex;
       },
 
@@ -587,11 +499,8 @@ export const useStore = create<State>()(
       },
 
       addCustomEquipment: (name) => {
-        const eq: Equipment = { id: newId(), name: name.trim() };
-        set((s) => ({
-          customEquipment: [...s.customEquipment, eq],
-          ownedEquipment: [...s.ownedEquipment, eq.id], // you own what you add
-        }));
+        const eq = reducers.buildEquipment(newId(), name); // you own what you add
+        set((s) => reducers.addEquipment(s, eq));
         return eq;
       },
 
@@ -607,7 +516,7 @@ export const useStore = create<State>()(
         get().replan();
       },
 
-      setProfile: (patch) => set((s) => ({ profile: { ...s.profile, ...patch } })),
+      setProfile: (patch) => set((s) => reducers.setProfile(s, patch)),
       setCoachConfig: (patch) => set((s) => ({ coach: { ...s.coach, ...patch } })),
 
       setModuleEnabled: (id, enabled) =>
@@ -745,43 +654,29 @@ export const useStore = create<State>()(
         })),
 
       setWeekDay: (index, slot) => {
-        set((s) => ({ week: s.week.map((v, i) => (i === index ? slot : v)) }));
+        set((s) => reducers.setWeekDay(s, index, slot));
         get().replan();
       },
 
-      setDayKind: (index, kind) =>
-        set((s) => ({ dayKind: s.dayKind.map((v, i) => (i === index ? kind : v)) })),
+      setDayKind: (index, kind) => set((s) => reducers.setDayKind(s, index, kind)),
 
       setDayOverride: (date, patch) => {
-        set((s) => {
-          const wd = weekdayOfKey(date);
-          const base = s.dayOverrides[date] ?? { slot: s.week[wd], kind: s.dayKind[wd] };
-          return { dayOverrides: { ...s.dayOverrides, [date]: { ...base, ...patch } } };
-        });
+        set((s) => reducers.setDayOverride(s, date, patch));
         if (date === todayKey()) get().replan();
       },
 
       clearDayOverride: (date) => {
-        set((s) => {
-          if (!(date in s.dayOverrides)) return {};
-          const next = { ...s.dayOverrides };
-          delete next[date];
-          return { dayOverrides: next };
-        });
+        set((s) => reducers.clearDayOverride(s, date));
         if (date === todayKey()) get().replan();
       },
 
       toggleEquipment: (id) => {
-        set((s) => ({
-          ownedEquipment: s.ownedEquipment.includes(id)
-            ? s.ownedEquipment.filter((e) => e !== id)
-            : [...s.ownedEquipment, id],
-        }));
+        set((s) => reducers.toggleEquipment(s, id));
         get().replan();
       },
 
       setSettings: (patch) => {
-        set((s) => ({ settings: { ...s.settings, ...patch } }));
+        set((s) => reducers.setSettings(s, patch));
         get().replan();
       },
 
