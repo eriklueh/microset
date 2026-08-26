@@ -3,12 +3,14 @@ import { internalMutation } from "./_generated/server";
 import {
   McpGateway,
   defineMcpQuery,
+  defineMcpMutation,
   mcpCallerValidator,
   type McpToolRegistration,
   type McpAuthorizerHandler,
   type McpIdentityResolver,
 } from "convex-mcp-gateway";
 import { createRemoteJWKSet, jwtVerify, decodeJwt } from "jose";
+import * as cw from "./coachWrite";
 
 /**
  * MCP · Fase C mínima — wiring del Gateway: catálogo de tools, authorize host-side y la
@@ -34,8 +36,11 @@ export const gateway = new McpGateway(components.mcpGateway);
  * — sin mutation de registro aparte. Anotado como `McpToolRegistration[]` para evitar el
  * error de tipo circular del codegen de Convex al exportarlo desde un módulo de convex/.
  *
- * Ambos tools son de SOLO lectura y usan `identityArg: "caller"`: el Gateway inyecta la
- * identidad verificada. Fase B agregará tools que escriben (coach.*).
+ * Los tools de lectura (whoami/list_my_docs) y los de ESCRITURA (coach.*) usan
+ * `identityArg: "caller"`: el Gateway inyecta la identidad verificada (Clerk `sub`) en el arg
+ * `caller` y descarta cualquier valor del cliente. Cada tool de escritura hace read-modify-write
+ * de UN userDoc del PROPIO usuario reusando los reducers + sanitizers puros (ver coachWrite.ts).
+ * Ningún tool recibe `userId`/`docId`. Sin tools de escritura para `logs`/`coach`/`entreno`.
  */
 export const tools: McpToolRegistration[] = [
   defineMcpQuery({
@@ -52,6 +57,164 @@ export const tools: McpToolRegistration[] = [
       "Lista los file-groups de config espejados del usuario autenticado.",
     fn: api.coach.listMyDocs,
     args: { caller: mcpCallerValidator },
+    identityArg: "caller",
+  }),
+
+  // ── ESCRITURA · doc equipment ──────────────────────────────────────────────
+  defineMcpMutation({
+    name: "add_equipment",
+    description:
+      "Crea un equipo propio custom (p.ej. anillas, kettlebell, agarre). Lo marca como que lo tenés.",
+    fn: api.coachWrite.addEquipment,
+    args: cw.addEquipmentArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_equipment_owned",
+    description: "Marca un equipo (por id) como que lo tenés o no lo tenés.",
+    fn: api.coachWrite.setEquipmentOwned,
+    args: cw.setEquipmentOwnedArgs,
+    identityArg: "caller",
+  }),
+
+  // ── ESCRITURA · doc exercises ──────────────────────────────────────────────
+  defineMcpMutation({
+    name: "add_exercise",
+    description:
+      "Crea un ejercicio custom. context 'desk' = silencioso/sin setup (sirve en reuniones); 'space' = necesita lugar. En primary/secondary van los músculos específicos (para el mapa corporal).",
+    fn: api.coachWrite.addExercise,
+    args: cw.addExerciseArgs,
+    identityArg: "caller",
+  }),
+
+  // ── ESCRITURA · doc routine ────────────────────────────────────────────────
+  defineMcpMutation({
+    name: "add_to_routine",
+    description: "Agrega un ejercicio a la rutina de un tipo de día (dedup por exerciseId).",
+    fn: api.coachWrite.addToRoutine,
+    args: cw.addToRoutineArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "remove_from_routine",
+    description: "Quita un ejercicio de la rutina de un tipo de día.",
+    fn: api.coachWrite.removeFromRoutine,
+    args: cw.removeFromRoutineArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_routine_sets",
+    description: "Fija la cantidad de series diarias de un ejercicio en un tipo de día.",
+    fn: api.coachWrite.setRoutineSets,
+    args: cw.setRoutineSetsArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_routine_target",
+    description: "Fija las reps/duración de un ejercicio en un tipo de día (p.ej. '5' o '20s').",
+    fn: api.coachWrite.setRoutineTarget,
+    args: cw.setRoutineTargetArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_routine_variant",
+    description: "Fija la variante de intensidad de un ejercicio en un tipo de día.",
+    fn: api.coachWrite.setRoutineVariant,
+    args: cw.setRoutineVariantArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_routine_order",
+    description:
+      "Fija el orden en que se recorren los ejercicios de un tipo de día (round-robin). Pasá los exerciseIds en el orden deseado.",
+    fn: api.coachWrite.setRoutineOrder,
+    args: cw.setRoutineOrderArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "add_day_type",
+    description: "Crea un tipo de día (plantilla de rutina) vacío. Devuelve su id.",
+    fn: api.coachWrite.addDayType,
+    args: cw.addDayTypeArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "rename_day_type",
+    description: "Renombra un tipo de día.",
+    fn: api.coachWrite.renameDayType,
+    args: cw.renameDayTypeArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "remove_day_type",
+    description:
+      "Elimina un tipo de día (tiene que quedar al menos uno; las refs de la semana pasan al fallback).",
+    fn: api.coachWrite.removeDayType,
+    args: cw.removeDayTypeArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_week",
+    description: "Asigna un tipo de día (o 'rest') a un día de la semana. index 0=Lun … 6=Dom.",
+    fn: api.coachWrite.setWeek,
+    args: cw.setWeekArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_day_kind",
+    description: "Etiqueta un día de la semana como casa/oficina (o lo limpia). index 0=Lun … 6=Dom.",
+    fn: api.coachWrite.setDayKind,
+    args: cw.setDayKindArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_day_override",
+    description:
+      "Planifica una fecha específica ('YYYY-M-D'), pisando el patrón semanal solo ese día. slot = tipo de día o 'rest'; kind = casa/oficina/none. Omití slot o kind para heredar del patrón.",
+    fn: api.coachWrite.setDayOverride,
+    args: cw.setDayOverrideArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "clear_day_override",
+    description: "Quita el override de una fecha — ese día vuelve al patrón semanal.",
+    fn: api.coachWrite.clearDayOverride,
+    args: cw.clearDayOverrideArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_intensity",
+    description:
+      "Fija la INTENSIDAD de un tipo de día (perilla de volumen no destructiva): 'deload' ~mitad de series, 'normal' = lo configurado, 'push' ~1.5×.",
+    fn: api.coachWrite.setIntensity,
+    args: cw.setIntensityArgs,
+    identityArg: "caller",
+  }),
+  defineMcpMutation({
+    name: "set_day_schedule",
+    description:
+      "Le da a un tipo de día su PROPIA ventana horaria + descanso (minutos desde medianoche) para agrupar sus series en una sesión. useGlobal:true limpia el override y vuelve al global. windowStart+windowEnd van juntos.",
+    fn: api.coachWrite.setDaySchedule,
+    args: cw.setDayScheduleArgs,
+    identityArg: "caller",
+  }),
+
+  // ── ESCRITURA · doc settings (solo workWindow/minRest) ─────────────────────
+  defineMcpMutation({
+    name: "set_settings",
+    description:
+      "Actualiza la ventana de trabajo / descanso mínimo (minutos desde medianoche). Solo toca workWindow y minRest; nunca theme/módulos/notificaciones.",
+    fn: api.coachWrite.setSettings,
+    args: cw.setSettingsArgs,
+    identityArg: "caller",
+  }),
+
+  // ── ESCRITURA · doc profile ────────────────────────────────────────────────
+  defineMcpMutation({
+    name: "set_profile",
+    description: "Actualiza el perfil del coach (objetivos / dieta / restricciones).",
+    fn: api.coachWrite.setProfile,
+    args: cw.setProfileArgs,
     identityArg: "caller",
   }),
 ];

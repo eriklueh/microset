@@ -9,6 +9,7 @@
  */
 
 import type * as coach from "../coach.js";
+import type * as coachWrite from "../coachWrite.js";
 import type * as http from "../http.js";
 import type * as mcp from "../mcp.js";
 import type * as social from "../social.js";
@@ -22,6 +23,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   coach: typeof coach;
+  coachWrite: typeof coachWrite;
   http: typeof http;
   mcp: typeof mcp;
   social: typeof social;
