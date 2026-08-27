@@ -57,6 +57,47 @@ export default defineSchema({
     .index("by_group", ["groupId"])
     .index("by_group_owner", ["groupId", "ownerId"]),
 
+  // RETO de grupo (F4). Cada grupo puede tener UN reto: un título + fecha objetivo. Solo
+  // MIEMBROS del grupo lo leen/escriben (se chequea en challenges.ts). El `createdBy` es el
+  // Clerk `sub` del que lo creó (único que puede borrarlo). Aditivo sobre la capa social.
+  challenges: defineTable({
+    groupId: v.id("groups"),
+    title: v.string(),
+    targetDate: v.string(), // YYYY-MM-DD
+    createdBy: v.string(), // Clerk sub
+    createdAt: v.number(),
+  }).index("by_group", ["groupId"]),
+
+  // El OBJETIVO físico de un miembro dentro de un reto. Descripción libre + una métrica
+  // numérica OPCIONAL (label/unit/start/target — p.ej. "Peso" kg 82→75). Cada quien escribe
+  // SOLO su propia fila (userId del token). Upsert por (challengeId, userId).
+  challengeGoals: defineTable({
+    challengeId: v.id("challenges"),
+    userId: v.string(), // Clerk sub — el cliente nunca puede escribir otro
+    handle: v.string(),
+    description: v.string(),
+    metricLabel: v.optional(v.string()),
+    metricUnit: v.optional(v.string()),
+    metricStart: v.optional(v.number()),
+    metricTarget: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_challenge", ["challengeId"])
+    .index("by_challenge_user", ["challengeId", "userId"]),
+
+  // CHECK-IN de progreso de un miembro en un reto: valor actual (numérico) y/o % auto-reportado
+  // + nota. Se insertan (append-only); la vista usa el ÚLTIMO por usuario. userId del token.
+  challengeCheckins: defineTable({
+    challengeId: v.id("challenges"),
+    userId: v.string(), // Clerk sub — el cliente nunca puede escribir otro
+    at: v.number(),
+    currentValue: v.optional(v.number()),
+    progressPct: v.optional(v.number()),
+    note: v.optional(v.string()),
+  })
+    .index("by_challenge", ["challengeId"])
+    .index("by_challenge_user", ["challengeId", "userId"]),
+
   // SYNC Fase A · "archivos mandan, Convex espeja". Espejo por-usuario de los documentos de
   // config (los file-groups de src/store/files.ts). `data` es el JSON del file-group serializado,
   // OPACO para Convex (no se parsea). `group` es el nombre del file-group (p.ej. "routine.json").

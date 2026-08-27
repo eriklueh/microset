@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as challenges from "../challenges.js";
 import type * as coach from "../coach.js";
 import type * as coachWrite from "../coachWrite.js";
 import type * as http from "../http.js";
@@ -22,6 +23,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  challenges: typeof challenges;
   coach: typeof coach;
   coachWrite: typeof coachWrite;
   http: typeof http;

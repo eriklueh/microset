@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { SignedIn, SignedOut, SignIn } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, SignIn, useUser } from "@clerk/clerk-react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useT } from "@/lib/i18n";
@@ -291,6 +292,11 @@ function LeagueSignedIn() {
         )}
       </section>
 
+      {/* RETO DEL GRUPO — objetivo + check-ins por atleta */}
+      {selectedId && (
+        <GroupChallenge groupId={selectedId} handle={myStats.handle} standings={standings} />
+      )}
+
       {/* RUTINAS DEL GRUPO — ver / copiar / compartir */}
       {selectedId && <GroupRoutines groupId={selectedId} handle={myStats.handle} />}
     </div>
@@ -406,22 +412,504 @@ function GroupRoutines({ groupId, handle }: { groupId: Id<"groups">; handle: str
   );
 }
 
-function StandingsTable({
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+
+/** Días (enteros, local) desde hoy hasta `targetDate` (YYYY-MM-DD). Negativo si ya pasó. */
+function daysUntil(targetDate: string): number {
+  const [y, m, d] = targetDate.split("-").map(Number);
+  if (!y || !m || !d) return 0;
+  const target = new Date(y, m - 1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+}
+
+/**
+ * Fracción de progreso 0..1 del último check-in. Con métrica numérica completa:
+ * (actual-inicio)/(objetivo-inicio) — funciona subiendo (6→12) o bajando (82→75). Si no,
+ * usa el % auto-reportado. Sin datos usables → 0.
+ */
+function progressFrac(entry: {
+  metric: { start: number | null; target: number | null } | null;
+  latest: { currentValue: number | null; progressPct: number | null } | null;
+}): number {
+  const m = entry.metric;
+  const l = entry.latest;
+  if (
+    m &&
+    m.start !== null &&
+    m.target !== null &&
+    m.target !== m.start &&
+    l &&
+    l.currentValue !== null
+  ) {
+    return clamp01((l.currentValue - m.start) / (m.target - m.start));
+  }
+  if (l && l.progressPct !== null) return clamp01(l.progressPct / 100);
+  return 0;
+}
+
+/**
+ * RETO del grupo (F4). Un reto por grupo con título + fecha objetivo; cada miembro fija su
+ * objetivo (descripción + métrica opcional) y loguea check-ins. La vista combina las entries
+ * del reto con la tabla de la liga (`standings`) para mostrar esfuerzo-semanal + racha por
+ * atleta. Cualquier miembro puede crear el reto; sólo el creador puede borrarlo; cada quien
+ * escribe SOLO su objetivo/avance (el backend fuerza el userId desde el token).
+ */
+function GroupChallenge({
+  groupId,
+  handle,
   standings,
 }: {
-  standings:
-    | {
-        userId: string;
-        handle: string;
-        formaElo: number;
-        streak: number;
-        level: number;
-        weeklyEffort: number;
-        adherence: number;
-        isMe: boolean;
-      }[]
-    | undefined;
+  groupId: Id<"groups">;
+  handle: string;
+  standings: StandingRow[] | undefined;
 }) {
+  const t = useT();
+  const { user } = useUser();
+  const data = useQuery(api.challenges.getGroupChallenge, { groupId });
+  const createChallenge = useMutation(api.challenges.createChallenge);
+  const deleteChallenge = useMutation(api.challenges.deleteChallenge);
+  const setMyGoal = useMutation(api.challenges.setMyGoal);
+  const addCheckin = useMutation(api.challenges.addCheckin);
+
+  // Crear reto
+  const [title, setTitle] = useState("");
+  const [targetDate, setTargetDate] = useState("");
+
+  // Mi objetivo (se siembra una vez por reto desde mi entry actual)
+  const [desc, setDesc] = useState("");
+  const [mLabel, setMLabel] = useState("");
+  const [mUnit, setMUnit] = useState("");
+  const [mStart, setMStart] = useState("");
+  const [mTarget, setMTarget] = useState("");
+  const [goalSaved, setGoalSaved] = useState(false);
+
+  // Registrar avance
+  const [cVal, setCVal] = useState("");
+  const [cPct, setCPct] = useState("");
+  const [cNote, setCNote] = useState("");
+
+  const challengeId = data?.challenge.id ?? null;
+  const myEntry = data?.entries.find((e) => e.isMe) ?? null;
+
+  // Sembrar el form de MI objetivo una sola vez por reto (no pisar ediciones en curso).
+  const seededRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!challengeId) {
+      seededRef.current = null;
+      return;
+    }
+    if (seededRef.current === challengeId) return;
+    seededRef.current = challengeId;
+    setDesc(myEntry?.description ?? "");
+    setMLabel(myEntry?.metric?.label ?? "");
+    setMUnit(myEntry?.metric?.unit ?? "");
+    setMStart(myEntry?.metric?.start != null ? String(myEntry.metric.start) : "");
+    setMTarget(myEntry?.metric?.target != null ? String(myEntry.metric.target) : "");
+  }, [challengeId, myEntry]);
+
+  const onCreate = async () => {
+    if (!title.trim() || !targetDate) return;
+    await createChallenge({ groupId, title: title.trim(), targetDate });
+    setTitle("");
+    setTargetDate("");
+  };
+
+  const onDelete = async () => {
+    if (!challengeId) return;
+    await deleteChallenge({ challengeId });
+  };
+
+  const onSaveGoal = async () => {
+    if (!challengeId || !desc.trim()) return;
+    const label = mLabel.trim();
+    const start = Number(mStart);
+    const target = Number(mTarget);
+    await setMyGoal({
+      challengeId,
+      handle,
+      description: desc.trim(),
+      ...(label
+        ? {
+            metricLabel: label,
+            ...(mUnit.trim() ? { metricUnit: mUnit.trim() } : {}),
+            ...(mStart.trim() !== "" && Number.isFinite(start) ? { metricStart: start } : {}),
+            ...(mTarget.trim() !== "" && Number.isFinite(target) ? { metricTarget: target } : {}),
+          }
+        : {}),
+    });
+    setGoalSaved(true);
+    setTimeout(() => setGoalSaved(false), 1500);
+  };
+
+  const onCheckin = async () => {
+    if (!challengeId) return;
+    const val = Number(cVal);
+    const pct = Number(cPct);
+    const note = cNote.trim();
+    const hasVal = cVal.trim() !== "" && Number.isFinite(val);
+    const hasPct = cPct.trim() !== "" && Number.isFinite(pct);
+    if (!hasVal && !hasPct && !note) return;
+    await addCheckin({
+      challengeId,
+      ...(hasVal ? { currentValue: val } : {}),
+      ...(hasPct ? { progressPct: pct } : {}),
+      ...(note ? { note } : {}),
+    });
+    setCVal("");
+    setCPct("");
+    setCNote("");
+  };
+
+  // Mapa userId → fila de la liga (esfuerzo-semanal / racha), para no duplicar ese cálculo.
+  const standingById = new Map((standings ?? []).map((s) => [s.userId, s]));
+
+  return (
+    <section className="flex flex-col gap-2">
+      <SectionLabel>{t.challenge.label}</SectionLabel>
+
+      {data === undefined ? (
+        <div className="font-mono text-[11px] text-[var(--faint)]">{t.social.loading}</div>
+      ) : data === null ? (
+        /* SIN RETO — cualquier miembro puede crear uno */
+        <div className="flex flex-col gap-2 border border-[var(--rule2)] p-4">
+          <p className="font-mono text-[11px] leading-[1.5] text-[var(--faint)]">
+            {t.challenge.none}
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t.challenge.titlePlaceholder}
+              className={inputClass}
+            />
+            <input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              aria-label={t.challenge.targetDateLabel}
+              className={`${inputClass} sm:max-w-[11rem]`}
+            />
+            <button
+              onClick={onCreate}
+              disabled={!title.trim() || !targetDate}
+              className={btnClass}
+            >
+              {t.challenge.create}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <ChallengeBody
+          data={data}
+          standingById={standingById}
+          isCreator={!!user && user.id === data.challenge.createdBy}
+          onDelete={onDelete}
+          goal={{
+            desc,
+            setDesc,
+            mLabel,
+            setMLabel,
+            mUnit,
+            setMUnit,
+            mStart,
+            setMStart,
+            mTarget,
+            setMTarget,
+            onSaveGoal,
+            goalSaved,
+          }}
+          checkin={{ cVal, setCVal, cPct, setCPct, cNote, setCNote, onCheckin }}
+        />
+      )}
+    </section>
+  );
+}
+
+type ChallengeData = NonNullable<
+  FunctionReturnType<typeof api.challenges.getGroupChallenge>
+>;
+type ChallengeEntry = ChallengeData["entries"][number];
+
+/** El cuerpo del reto activo: título + cuenta regresiva, lista por atleta, y mi bloque. */
+function ChallengeBody({
+  data,
+  standingById,
+  isCreator,
+  onDelete,
+  goal,
+  checkin,
+}: {
+  data: ChallengeData;
+  standingById: Map<string, StandingRow>;
+  isCreator: boolean;
+  onDelete: () => void;
+  goal: {
+    desc: string;
+    setDesc: (v: string) => void;
+    mLabel: string;
+    setMLabel: (v: string) => void;
+    mUnit: string;
+    setMUnit: (v: string) => void;
+    mStart: string;
+    setMStart: (v: string) => void;
+    mTarget: string;
+    setMTarget: (v: string) => void;
+    onSaveGoal: () => void;
+    goalSaved: boolean;
+  };
+  checkin: {
+    cVal: string;
+    setCVal: (v: string) => void;
+    cPct: string;
+    setCPct: (v: string) => void;
+    cNote: string;
+    setCNote: (v: string) => void;
+    onCheckin: () => void;
+  };
+}) {
+  const t = useT();
+  const days = daysUntil(data.challenge.targetDate);
+  const countdown =
+    days < 0
+      ? t.challenge.finished
+      : days === 0
+        ? t.challenge.lastDay
+        : days === 1
+          ? `1 ${t.challenge.dayLeft}`
+          : `${days} ${t.challenge.daysLeft}`;
+
+  // Ordená por progreso desc (las entries no vienen ordenadas del backend).
+  const entries = [...data.entries].sort((a, b) => progressFrac(b) - progressFrac(a));
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* CABECERA — título + cuenta regresiva + eliminar */}
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border border-[var(--rule2)] px-4 py-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="truncate text-[18px] font-bold tracking-[-0.01em] text-[var(--fg)] uppercase">
+            {data.challenge.title}
+          </span>
+          <span className="font-mono text-[10px] tracking-[0.12em] text-[var(--faint)]">
+            {data.challenge.targetDate}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span
+            className="font-mono text-[11px] font-semibold tracking-[0.1em]"
+            style={{ color: days < 0 ? "var(--faint2)" : "var(--acc)" }}
+          >
+            {countdown}
+          </span>
+          {isCreator && (
+            <button
+              onClick={onDelete}
+              className="border border-[var(--rule2)] px-3 py-1.5 font-mono text-[10px] tracking-[0.06em] text-[var(--faint)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+            >
+              {t.challenge.delete}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* LISTA POR ATLETA */}
+      {entries.length === 0 ? (
+        <div className="border border-[var(--rule2)] p-4 font-mono text-[11px] leading-[1.5] text-[var(--faint)]">
+          {t.challenge.noEntries}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {entries.map((e) => (
+            <ChallengeRow key={e.userId} entry={e} standing={standingById.get(e.userId)} />
+          ))}
+        </div>
+      )}
+
+      {/* MI OBJETIVO + REGISTRAR AVANCE */}
+      <div className="mt-1 flex flex-col gap-3 border border-[var(--acc)] p-4">
+        <SectionLabel>{t.challenge.myGoal}</SectionLabel>
+
+        {/* objetivo */}
+        <input
+          value={goal.desc}
+          onChange={(e) => goal.setDesc(e.target.value)}
+          placeholder={t.challenge.goalDescPlaceholder}
+          className={inputClass}
+        />
+        <div className="font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)] uppercase">
+          {t.challenge.metricOptional}
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <input
+            value={goal.mLabel}
+            onChange={(e) => goal.setMLabel(e.target.value)}
+            placeholder={t.challenge.metricLabelPlaceholder}
+            className={inputClass}
+          />
+          <input
+            value={goal.mUnit}
+            onChange={(e) => goal.setMUnit(e.target.value)}
+            placeholder={t.challenge.metricUnitPlaceholder}
+            className={inputClass}
+          />
+          <input
+            value={goal.mStart}
+            onChange={(e) => goal.setMStart(e.target.value)}
+            inputMode="decimal"
+            placeholder={t.challenge.metricStartPlaceholder}
+            className={inputClass}
+          />
+          <input
+            value={goal.mTarget}
+            onChange={(e) => goal.setMTarget(e.target.value)}
+            inputMode="decimal"
+            placeholder={t.challenge.metricTargetPlaceholder}
+            className={inputClass}
+          />
+        </div>
+        <button onClick={goal.onSaveGoal} disabled={!goal.desc.trim()} className={btnClass}>
+          {goal.goalSaved ? t.challenge.saved : t.challenge.saveGoal}
+        </button>
+
+        {/* avance */}
+        <div className="mt-1 font-mono text-[9px] tracking-[0.14em] text-[var(--faint2)] uppercase">
+          {t.challenge.logProgress}
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[1fr_1fr_2fr_auto]">
+          <input
+            value={checkin.cVal}
+            onChange={(e) => checkin.setCVal(e.target.value)}
+            inputMode="decimal"
+            placeholder={t.challenge.currentValuePlaceholder}
+            className={inputClass}
+          />
+          <input
+            value={checkin.cPct}
+            onChange={(e) => checkin.setCPct(e.target.value)}
+            inputMode="decimal"
+            placeholder={t.challenge.pctPlaceholder}
+            className={inputClass}
+          />
+          <input
+            value={checkin.cNote}
+            onChange={(e) => checkin.setCNote(e.target.value)}
+            placeholder={t.challenge.notePlaceholder}
+            className={inputClass}
+          />
+          <button onClick={checkin.onCheckin} className={btnClass}>
+            {t.challenge.checkin}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Una fila del reto: objetivo + barra de progreso + esfuerzo-semanal/racha de la liga. */
+function ChallengeRow({
+  entry,
+  standing,
+}: {
+  entry: ChallengeEntry;
+  standing: StandingRow | undefined;
+}) {
+  const t = useT();
+  const frac = progressFrac(entry);
+  const pct = Math.round(frac * 100);
+  const m = entry.metric;
+  const metricStr = m
+    ? `${m.label}${
+        m.start !== null && m.target !== null ? ` ${m.start}→${m.target}` : ""
+      }${m.unit ? ` ${m.unit}` : ""}`
+    : null;
+
+  return (
+    <div
+      className="flex flex-col gap-2 border border-[var(--rule2)] px-4 py-3 [&+&]:border-t-0"
+      style={{
+        background: entry.isMe ? "var(--acc)" : "transparent",
+        color: entry.isMe ? "var(--on)" : "var(--fg)",
+      }}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="truncate text-[14px] font-bold tracking-[-0.01em]">{entry.handle}</span>
+          {entry.isMe && (
+            <span
+              className="flex-none font-mono text-[8.5px] font-semibold tracking-[0.14em]"
+              style={{ color: "var(--on)" }}
+            >
+              {t.social.you}
+            </span>
+          )}
+        </span>
+        {standing && (
+          <span
+            className="flex-none font-mono text-[10px] tracking-[0.08em]"
+            style={{ color: entry.isMe ? "var(--on)" : "var(--faint)" }}
+          >
+            {t.social.colEffort} {standing.weeklyEffort} · {t.social.colStreak} {standing.streak}
+          </span>
+        )}
+      </div>
+
+      <div
+        className="font-mono text-[11px] leading-[1.4]"
+        style={{ color: entry.isMe ? "var(--on)" : "var(--faint)" }}
+      >
+        {entry.description || t.challenge.noGoal}
+        {metricStr && <span className="tracking-[0.04em]"> · {metricStr}</span>}
+      </div>
+
+      {/* barra de progreso */}
+      <div className="flex items-center gap-2">
+        <div
+          className="h-2 min-w-0 flex-1 border"
+          style={{ borderColor: entry.isMe ? "var(--on)" : "var(--rule2)" }}
+        >
+          <div
+            className="h-full"
+            style={{
+              width: `${pct}%`,
+              background: entry.isMe ? "var(--on)" : "var(--acc)",
+            }}
+          />
+        </div>
+        <span className="flex-none font-pixel text-[16px] tabular-nums">{pct}</span>
+        <span
+          className="flex-none font-mono text-[9px]"
+          style={{ color: entry.isMe ? "var(--on)" : "var(--faint2)" }}
+        >
+          %
+        </span>
+      </div>
+
+      {entry.latest?.note && (
+        <div
+          className="font-mono text-[10px] leading-[1.4] italic"
+          style={{ color: entry.isMe ? "var(--on)" : "var(--faint2)" }}
+        >
+          {t.challenge.lastCheckin}: {entry.latest.note}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Una fila publicada de standings (lo que devuelve listGroupStandings). */
+type StandingRow = {
+  userId: string;
+  handle: string;
+  formaElo: number;
+  streak: number;
+  level: number;
+  weeklyEffort: number;
+  adherence: number;
+  isMe: boolean;
+};
+
+function StandingsTable({ standings }: { standings: StandingRow[] | undefined }) {
   const t = useT();
   // Orden client-side: por esfuerzo de la SEMANA (la carrera en curso) o por FORMA (el índice
   // persistente de largo plazo). Default SEMANA — el ranking que la liga ya mostraba.
