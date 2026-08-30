@@ -112,4 +112,17 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_group", ["userId", "group"]),
+
+  // PERFIL DEL ATLETA (F4). Las rutinas (day-types) que un usuario hace VISIBLES a sus grupos
+  // — opt-in POR rutina. Reemplaza el "pozo plano" de sharedRoutines por navegación por persona:
+  // en un grupo se abre el perfil de un atleta y se ven SUS rutinas visibles. `payload` es un
+  // JSON array de day-types serializados (via serializeDayType), OPACO para Convex: el cliente lo
+  // stringifica al publicar y lo parsea + sanitiza (parseSharedRoutine) al copiar. UNA fila por
+  // usuario (upsert by_user); el `userId` sale SIEMPRE del token. Aditivo sobre la capa social.
+  athleteRoutines: defineTable({
+    userId: v.string(), // Clerk sub — el cliente nunca puede escribir otro
+    handle: v.string(),
+    payload: v.string(), // JSON array de day-types visibles serializados
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 });

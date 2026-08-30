@@ -287,6 +287,26 @@ export function renameDayType(s: RoutineSlice, id: string, name: string): Partia
 }
 
 /**
+ * Mark a day-type as visible (or not) to my groups' Perfil del Atleta (F4) — opt-in por rutina.
+ * `false` deletes the flag (undefined = not visible) so the persisted shape stays minimal.
+ */
+export function setDayTypeVisible(
+  s: RoutineSlice,
+  id: string,
+  visible: boolean,
+): Partial<RoutineSlice> {
+  return {
+    dayTypes: s.dayTypes.map((d) => {
+      if (d.id !== id) return d;
+      const next = { ...d };
+      if (visible) next.visibleToGroups = true;
+      else delete next.visibleToGroups;
+      return next;
+    }),
+  };
+}
+
+/**
  * Delete a day-type. Guard: at least one must remain — if only one is left the
  * transform is a no-op (returns no changed keys). Week refs to the removed id
  * are rewritten to the first surviving day-type.

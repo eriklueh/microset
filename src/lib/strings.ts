@@ -72,6 +72,20 @@ const es = {
     routineSets: "ej.",
     badRoutine: "No se pudo leer esa rutina.",
   },
+  // Perfil del Atleta (F4) — navegar por persona; cada quien opta-in por rutina visible.
+  profile: {
+    heading: "PERFIL",
+    visibleLabel: "VISIBLE A GRUPOS",
+    visibleHint: "Mostrá esta rutina a tus grupos en Amigos",
+    selectAthleteHint: "Tocá un atleta de la tabla para ver su perfil.",
+    noVisibleRoutines: "Sin rutinas visibles.",
+    exercisesUnit: "ej.",
+    copyRoutine: "Copiar rutina",
+    copyExercise: "Copiar ejercicio",
+    chooseTarget: "¿A cuál rutina?",
+    copied: "Copiado ✓",
+    cantRead: "No se pudo leer esa rutina.",
+  },
   // Reto de grupo (F4) — un reto por grupo, objetivo + check-ins por atleta.
   challenge: {
     label: "Reto del grupo",
@@ -696,6 +710,20 @@ const en: Dict = {
     mineTag: "YOURS",
     routineSets: "ex.",
     badRoutine: "Couldn't read that routine.",
+  },
+  // Athlete Profile (F4) — browse per person; each opts in per visible routine.
+  profile: {
+    heading: "PROFILE",
+    visibleLabel: "VISIBLE TO GROUPS",
+    visibleHint: "Show this routine to your groups under Friends",
+    selectAthleteHint: "Tap an athlete in the table to see their profile.",
+    noVisibleRoutines: "No visible routines.",
+    exercisesUnit: "ex.",
+    copyRoutine: "Copy routine",
+    copyExercise: "Copy exercise",
+    chooseTarget: "Into which routine?",
+    copied: "Copied ✓",
+    cantRead: "Couldn't read that routine.",
   },
   // Group challenge (F4) — one challenge per group, goal + check-ins per athlete.
   challenge: {

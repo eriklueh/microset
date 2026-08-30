@@ -58,6 +58,8 @@ export interface DayType {
   window?: TimeWindow;
   /** Per-day min rest between sets; falls back to global. Low values cluster sets together. */
   minRest?: number;
+  /** Opt-in: this day-type is published to my groups' Perfil del Atleta (F4). Undefined = not visible. */
+  visibleToGroups?: boolean;
 }
 
 export type WeekKind = "home" | "office";
@@ -266,6 +268,8 @@ interface State {
   /** Add a full day-type (e.g. copied from a shared routine) under a fresh id. Returns the new id. */
   importDayType: (dt: Omit<DayType, "id">) => string;
   renameDayType: (id: string, name: string) => void;
+  /** Opt-in: mark a day-type visible (or not) to my groups' Perfil del Atleta (F4). */
+  setDayTypeVisible: (id: string, visible: boolean) => void;
   removeDayType: (id: string) => void;
 
   // custom exercises
@@ -380,6 +384,9 @@ export function migratePersisted(persisted: unknown, version: number): unknown {
   // v8: opt-in cross-device sync (Fase B1). Older stores lack it; DEFAULT OFF so an upgraded
   // install behaves exactly as before until the user turns sync on in Ajustes.
   if (typeof p.syncEnabled !== "boolean") p.syncEnabled = false;
+  // v9: Perfil del Atleta (F4) — opt-in `visibleToGroups` per day-type. Purely additive: older
+  // day-types simply lack the flag (undefined = not visible), so no day-type data is touched.
+  // No transform needed; the version bump alone marks the shape as current.
   // v6: kernel module registry. Older stores (v5 and below) lack it; default to Pausa
   // enabled without touching any other field (routine/logs/settings stay intact).
   if (!p.modules || typeof p.modules !== "object") p.modules = defaultModules();
@@ -483,6 +490,8 @@ export const useStore = create<State>()(
       },
 
       renameDayType: (id, name) => set((s) => reducers.renameDayType(s, id, name)),
+
+      setDayTypeVisible: (id, visible) => set((s) => reducers.setDayTypeVisible(s, id, visible)),
 
       removeDayType: (id) => {
         set((s) => reducers.removeDayType(s, id));
@@ -878,7 +887,7 @@ export const useStore = create<State>()(
     }),
     {
       name: "microset-store",
-      version: 8,
+      version: 9,
       migrate: migratePersisted,
       partialize: (s) => ({
         ownedEquipment: s.ownedEquipment,

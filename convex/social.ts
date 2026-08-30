@@ -239,3 +239,66 @@ export const unshareRoutine = mutation({
     if (row && row.ownerId === me) await ctx.db.delete(id);
   },
 });
+
+// ── PERFIL DEL ATLETA (F4) ────────────────────────────────────────────────────────
+// Cada atleta publica UNA fila con sus rutinas VISIBLES (opt-in por rutina). El `payload`
+// es el JSON array de day-types serializados (serializeDayType por cada visible), opaco para
+// Convex. En el grupo, cada quien lee los perfiles de sus co-miembros y navega por persona.
+
+/**
+ * Publicar/actualizar MIS rutinas visibles (opt-in por rutina). Upsert de MI única fila
+ * (by_user). El `userId` sale del token — el cliente NUNCA escribe otro. El `payload` es el
+ * JSON array de day-types visibles ya serializados (el server lo trata como string opaco).
+ * Un array vacío (`"[]"`) = no muestro ninguna rutina (queda la fila, sin exponer nada).
+ */
+export const upsertMyAthleteRoutines = mutation({
+  args: { handle: v.string(), payload: v.string() },
+  handler: async (ctx, { handle, payload }) => {
+    const me = await requireUserId(ctx);
+    const row = { userId: me, handle, payload, updatedAt: Date.now() };
+    const existing = await ctx.db
+      .query("athleteRoutines")
+      .withIndex("by_user", (q) => q.eq("userId", me))
+      .first();
+    if (existing) await ctx.db.patch(existing._id, row);
+    else await ctx.db.insert("athleteRoutines", row);
+  },
+});
+
+/**
+ * Los perfiles de atleta de un grupo: para cada MIEMBRO, sus rutinas visibles (si publicó).
+ * Solo MIEMBROS del grupo pueden leer. Devuelve una fila por miembro que ya publicó su perfil
+ * (los que aún no publicaron se OMITEN). `isMe` marca mi propia fila. El `payload` viaja opaco;
+ * el cliente lo parsea + sanitiza al mostrar/copiar.
+ */
+export const getGroupAthleteRoutines = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, { groupId }) => {
+    const me = await requireUserId(ctx);
+    const mem = await ctx.db
+      .query("memberships")
+      .withIndex("by_group_user", (q) => q.eq("groupId", groupId).eq("userId", me))
+      .first();
+    if (!mem) throw new Error("No sos miembro de este grupo");
+    const members = await ctx.db
+      .query("memberships")
+      .withIndex("by_group", (q) => q.eq("groupId", groupId))
+      .collect();
+    const profiles = await Promise.all(
+      members.map((m) =>
+        ctx.db
+          .query("athleteRoutines")
+          .withIndex("by_user", (q) => q.eq("userId", m.userId))
+          .first(),
+      ),
+    );
+    return profiles
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+      .map((p) => ({
+        userId: p.userId,
+        handle: p.handle,
+        payload: p.payload,
+        isMe: p.userId === me,
+      }));
+  },
+});

@@ -75,6 +75,7 @@ export function RoutineView() {
   const addDayType = useStore((s) => s.addDayType);
   const renameDayType = useStore((s) => s.renameDayType);
   const removeDayType = useStore((s) => s.removeDayType);
+  const setDayTypeVisible = useStore((s) => s.setDayTypeVisible);
   const addCustomExercise = useStore((s) => s.addCustomExercise);
   // ENTRENO (opt-in module): adds the DEPORTES half of the library. With it off, the pills
   // are just the day-types and Rutina is byte-for-byte today's layout.
@@ -769,6 +770,32 @@ export function RoutineView() {
           <span className="border border-[var(--rule2)] px-2 py-0.5 font-mono text-[9px] tracking-[0.12em] text-[var(--faint)]">
             {t.routine.modeLabel} · {ownSchedule ? t.routine.modeBlock : t.routine.modeSpread}
           </span>
+          {/* OPT-IN por rutina: expone este day-type al Perfil del Atleta de mis grupos (F4). */}
+          {(() => {
+            const visible = !!selected.visibleToGroups;
+            return (
+              <button
+                onClick={() => setDayTypeVisible(selected.id, !visible)}
+                title={t.profile.visibleHint}
+                aria-pressed={visible}
+                className="flex items-center gap-1.5 border px-2 py-0.5 font-mono text-[9px] tracking-[0.12em]"
+                style={{
+                  borderColor: visible ? "var(--acc)" : "var(--rule2)",
+                  color: visible ? "var(--acc)" : "var(--faint)",
+                  background: visible ? "color-mix(in oklch, var(--acc) 7%, transparent)" : "transparent",
+                }}
+              >
+                <span
+                  className="size-1.5 flex-none"
+                  style={{
+                    background: visible ? "var(--acc)" : "transparent",
+                    border: visible ? "none" : "1px solid var(--faint2)",
+                  }}
+                />
+                {t.profile.visibleLabel}
+              </button>
+            );
+          })()}
         </div>
         <button
           onClick={openCreate}
